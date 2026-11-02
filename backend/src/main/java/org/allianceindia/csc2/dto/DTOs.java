@@ -118,15 +118,18 @@ public class DTOs {
             String generalNotes,
             Integer cd4Count,
             Integer viralLoadCount,
+            String action, // Explicit action: 'COMPLETE' to close the task, or null/other to keep open
             Integer expectedTaskVersion
     ) {}
 
     public record RecordPlannedServiceRequest(
             UUID clientId,
             UUID taskId,
-            String serviceCode,
-            String serviceName,
-            LocalDate targetDueDate,
+            String purposeCode, // Canonical J5 purpose code ('1'..'13')
+            String serviceCategory, // Canonical J5 service category ('cc', 'pc', 'rh', etc.)
+            String serviceCode, // Service code from XLSForm svc list
+            String serviceName, // Canonical or admin service description
+            LocalDate targetDueDate, // Manually entered due date
             String notes
     ) {}
 

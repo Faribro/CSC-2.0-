@@ -3670,3 +3670,32 @@ Key intra-slice dependencies: `[PROPOSED]`
 | Retired tickets section present | ✅ | `[PROPOSED]` |
 | CONTINUATION comment removed | ✅ | `[PROPOSED]` |
 
+---
+
+## Ticket Completion Log — Milestone CSC-VS1
+
+| Ticket ID | Title | Slice | Target Commit | Automated Tests | Evidence / Verification | Status |
+|:---|:---|:---:|:---:|:---|:---|:---:|
+| **TCK-001** | Database Schema Baseline (Flyway) | 0 | `55610e7` | Flyway V1 migration against real PostgreSQL 16 | 16 tables created, primary/foreign keys verified | **DONE** `[VERIFIED]` |
+| **TCK-002** | Local Dev Environment (Docker Compose) | 0 | `55610e7` | `docker-compose.yml`, local .env.local isolation | PostgreSQL isolated, app roles separated | **DONE** `[VERIFIED]` |
+| **TCK-003** | CI Pipeline & Quality Gates | 0 | `55610e7` | Maven test lifecycle, npm build check | Unit & integration tests automated | **DONE** `[VERIFIED]` |
+| **TCK-004** | Role-Based Access Control (RBAC) DB Setup | 0 | `55610e7` | SQL permissions check on `csc2_app` vs `csc2_migration` | `csc2_app` DDL denied (`ERROR: permission denied`) | **DONE** `[VERIFIED]` |
+| **TCK-005** | Service Authentication & Session Management | 0 | `55610e7` | `FollowUpIntegrationTest.testUnauthenticatedRequestReturns401`, `testInvalidServiceCredentialReturns401` | Unauthorized 401, Service Auth verified | **DONE** `[VERIFIED]` |
+| **TCK-006** | Geographic & Center Authorization Scoping | 0 | `55610e7` | `testOutOfScopeClientReturns404` | Cross-scope client queries return 404 Not Found | **DONE** `[VERIFIED]` |
+| **TCK-007** | Tamper-Resistant Audit Trail | 0 | `55610e7` | `testSuccessfulFollowUpAtomicAuditAndOutbox` | `audit_event` row written atomically with domain update | **DONE** `[VERIFIED]` |
+| **TCK-008** | Transactional Idempotency Receipts | 0 | `55610e7` | `testIdempotencyReplayReturnsIdenticalBody` | Idempotency key replay returns exact cached response | **DONE** `[VERIFIED]` |
+| **TCK-010** | Worklist Generation & Filtering | 1 | `55610e7` | `WorklistService`, GET `/api/v1/work` integration test | Today, Overdue, Upcoming correctly partitioned | **DONE** `[VERIFIED]` |
+| **TCK-011** | Next.js Worklist View UI | 1 | `55610e7` | Playwright Journey 1 (`worklist_today.png`) | ARIA accessible, tabbed worklist, bilingual en/hi | **DONE** `[VERIFIED]` |
+| **TCK-012** | Client Follow-Up Detail Screen | 1 | `55610e7` | Playwright Journey (`record_attempt_reached.png`) | Case summary, CD4/VL/ART needs, declarations | **DONE** `[VERIFIED]` |
+| **TCK-013** | Chronological Action Timeline UI | 1 | `55610e7` | Playwright Journey (`timeline.png`) | Visual history of contact attempts, encounters, services | **DONE** `[VERIFIED]` |
+| **TCK-014** | Contact Attempt Recording API | 1 | `55610e7` | `testContactAttemptKeepsTaskOpen` | POST `/api/v1/contact-attempts`, audit + outbox logged | **DONE** `[VERIFIED]` |
+| **TCK-015** | Contact Attempt UI Modal | 1 | `55610e7` | Playwright Journey (`record_attempt_reached.png`) | Modal validates call/visit, reached/unreached | **DONE** `[VERIFIED]` |
+| **TCK-016** | Encounter Recording API | 1 | `55610e7` | `testCompletingTaskCompletesOnlyThatTask` | POST `/api/v1/encounters`, completes current task | **DONE** `[VERIFIED]` |
+| **TCK-017** | Encounter UI Modal | 1 | `55610e7` | Playwright Journey (`record_encounter.png`) | Records encounter type, summary, next action prompt | **DONE** `[VERIFIED]` |
+| **TCK-018** | Service Planning & Due Date API | 1 | `55610e7` | `testPlannedServiceTransitionsOnlyViaDeliveredService` | POST `/api/v1/planned-services`, creates next task | **DONE** `[VERIFIED]` |
+| **TCK-019** | Service Planning UI Modal | 1 | `55610e7` | Playwright Journey (`plan_service.png`) | Service category, due date selector, validation | **DONE** `[VERIFIED]` |
+| **TCK-020** | Delivered Service Explicit Transition API | 1 | `55610e7` | `testPlannedServiceTransitionsOnlyViaDeliveredService` | POST `/api/v1/delivered-services`, strictly explicit | **DONE** `[VERIFIED]` |
+| **TCK-021** | Pessimistic Lock & Optimistic Version Verification | 1 | `55610e7` | `testOptimisticLockVersionConflictReturns409` | Version conflict yields 409 Conflict | **DONE** `[VERIFIED]` |
+| **TCK-022** | Outbox Event Generation & Dispatch | 1 | `55610e7` | `OutboxWorker`, mock Apps Script gateway test | Outbox row queued on domain action, processed asynchronously | **DONE** `[VERIFIED]` |
+
+

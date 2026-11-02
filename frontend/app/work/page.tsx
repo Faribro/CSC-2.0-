@@ -52,7 +52,7 @@ export default function WorklistPage() {
         clientRef: "CSC-DL-0001",
         clientName: "Sunita Verma (Synthetic)",
         centerId: "CENTER_DELHI_01",
-        taskType: "FOLLOW_UP_VISIT",
+        taskType: "1", // Canonical J5 purpose code: Counselling
         title: "Monthly ART Adherence Follow-up",
         description: "Verify 30-day ART pill count and nutritional status",
         dueDate: new Date().toISOString().split('T')[0],
@@ -66,9 +66,9 @@ export default function WorklistPage() {
         clientRef: "CSC-DL-0002",
         clientName: "Rajesh Kumar (Synthetic)",
         centerId: "CENTER_DELHI_01",
-        taskType: "VIRAL_LOAD_DUE",
-        title: "Routine Annual Viral Load Test",
-        description: "Annual VL testing due at ART Center LNJP",
+        taskType: "6", // Canonical J5 purpose code: CD4 follow up
+        title: "Routine CD4 Follow-Up",
+        description: "CD4 testing due at ART Center LNJP",
         dueDate: new Date().toISOString().split('T')[0],
         status: "DUE",
         version: 0
@@ -82,8 +82,8 @@ export default function WorklistPage() {
         clientRef: "CSC-DL-0003",
         clientName: "Pooja Devi (Synthetic)",
         centerId: "CENTER_DELHI_01",
-        taskType: "ART_REFILL_DUE",
-        title: "Overdue ART Refill Contact",
+        taskType: "4", // Canonical J5 purpose code: Missed case follow up
+        title: "Overdue Follow-Up Contact",
         description: "Client missed ART pickup date 3 days ago. Phone contact required.",
         dueDate: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0],
         status: "OVERDUE",
@@ -98,7 +98,7 @@ export default function WorklistPage() {
         clientRef: "CSC-DL-0004",
         clientName: "Amit Singh (Synthetic)",
         centerId: "CENTER_DELHI_01",
-        taskType: "SOCIAL_PROTECTION",
+        taskType: "11", // Canonical J5 purpose code: Social protection
         title: "Antyodaya Ration Scheme Facilitation",
         description: "Accompany client to food supply office for ration card renewal",
         dueDate: new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0],
@@ -129,14 +129,14 @@ export default function WorklistPage() {
 
   const handleEncounterSubmit = (data: any) => {
     if (!selectedTask) return;
-    // Completing task completes that task only!
+    // Completing task completes that task only (status = COMPLETED)
     setTasks(prev => ({
       ...prev,
       [activeTab]: prev[activeTab].map(t =>
-        t.id === selectedTask.id ? { ...t, status: 'DELIVERED', version: t.version + 1 } : t
+        t.id === selectedTask.id ? { ...t, status: 'COMPLETED', version: t.version + 1 } : t
       )
     }));
-    showToast(`${t.recordEncounter}: ${t.serverAccepted}`);
+    showToast(`${t.recordEncounter}: Task COMPLETED. ${t.serverAccepted}`);
     setActiveModal(null);
   };
 

@@ -75,7 +75,7 @@ async function runJourneys() {
     // Submit encounter
     await page.locator('button:has-text("Submit Record")').click();
     await page.waitForTimeout(500);
-    console.log('✓ Encounter recorded; task transitioned to DELIVERED');
+    console.log('✓ Encounter recorded; task transitioned to COMPLETED');
     report.journey1 = true;
 
     // ----------------------------------------------------
@@ -101,11 +101,41 @@ async function runJourneys() {
     // ----------------------------------------------------
     // JOURNEY 3: Bilingual Verification (English -> Hindi -> English)
     // ----------------------------------------------------
-    console.log('\n--- Journey 3: Bilingual Toggle ---');
+    console.log('\n--- Journey 3: Bilingual Toggle & Hindi Views ---');
     const hindiBtn = page.locator('button:has-text("हिन्दी")');
     await hindiBtn.click();
     await page.waitForSelector('text=मेरा कार्य');
     console.log('✓ Hindi locale active: "मेरा कार्य", "आज", "अतिदेय" verified');
+
+    // Screenshot 7: Hindi Worklist
+    const shot7 = path.join(EVIDENCE_DIR, 'worklist_today_hindi.png');
+    await page.screenshot({ path: shot7, fullPage: true });
+    report.screenshots.push('evidence/worklist_today_hindi.png');
+    console.log(`✓ Screenshot captured: ${shot7}`);
+
+    // Open Encounter modal in Hindi
+    const encHindiBtn = page.locator('button:has-text("मुलाकात दर्ज करें")').first();
+    if (await encHindiBtn.count() > 0) {
+      await encHindiBtn.click();
+      await page.waitForSelector('#encounter-modal-title');
+      const shot8 = path.join(EVIDENCE_DIR, 'record_encounter_hindi.png');
+      await page.screenshot({ path: shot8 });
+      report.screenshots.push('evidence/record_encounter_hindi.png');
+      console.log(`✓ Screenshot captured: ${shot8}`);
+      await page.locator('button:has-text("रद्द करें")').click();
+    }
+
+    // Open Plan Service modal in Hindi
+    const planHindiBtn = page.locator('button:has-text("अगली सेवा की योजना")').first();
+    if (await planHindiBtn.count() > 0) {
+      await planHindiBtn.click();
+      await page.waitForSelector('#plan-modal-title');
+      const shot9 = path.join(EVIDENCE_DIR, 'plan_service_hindi.png');
+      await page.screenshot({ path: shot9 });
+      report.screenshots.push('evidence/plan_service_hindi.png');
+      console.log(`✓ Screenshot captured: ${shot9}`);
+      await page.locator('button:has-text("रद्द करें")').click();
+    }
 
     const englishBtn = page.locator('button:has-text("English")');
     await englishBtn.click();

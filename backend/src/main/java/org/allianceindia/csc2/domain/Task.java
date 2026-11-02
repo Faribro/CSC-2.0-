@@ -26,7 +26,7 @@ public class Task {
     private String centerId;
 
     @Column(name = "task_type", nullable = false, length = 50)
-    private String taskType; // 'FOLLOW_UP_VISIT', 'ART_REFILL_DUE', 'VIRAL_LOAD_DUE', 'SOCIAL_PROTECTION'
+    private String taskType; // Canonical J5 purpose codes ('1'..'13') or administrator-entered labels
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -38,7 +38,7 @@ public class Task {
     private LocalDate dueDate;
 
     @Column(nullable = false, length = 30)
-    private String status = "PENDING"; // 'PENDING', 'DUE', 'OVERDUE', 'DELIVERED', 'CANCELLED'
+    private String status = "PENDING"; // 'PENDING', 'DUE', 'OVERDUE', 'COMPLETED', 'CANCELLED'
 
     @Column(name = "completed_at")
     private Instant completedAt;

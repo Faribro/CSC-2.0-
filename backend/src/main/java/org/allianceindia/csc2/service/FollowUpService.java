@@ -79,6 +79,9 @@ public class FollowUpService {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<IdempotencyReceipt> receipt = idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey);
             if (receipt.isPresent()) {
+                if (!receipt.get().getRequestHash().equals(computeHash(req))) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key reused with different payload");
+                }
                 return parseReceipt(receipt.get());
             }
         }
@@ -146,6 +149,9 @@ public class FollowUpService {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<IdempotencyReceipt> receipt = idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey);
             if (receipt.isPresent()) {
+                if (!receipt.get().getRequestHash().equals(computeHash(req))) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key reused with different payload");
+                }
                 return parseReceipt(receipt.get());
             }
         }
@@ -185,9 +191,9 @@ public class FollowUpService {
         client.setUpdatedAt(Instant.now());
         clientRepository.save(client);
 
-        // If encounter resolves this specific task, complete that task ONLY
-        if (task != null) {
-            task.setStatus("DELIVERED");
+        // A task closes ONLY through an encounter with the explicit COMPLETE action.
+        if (task != null && req.action() != null && req.action().equalsIgnoreCase("COMPLETE")) {
+            task.setStatus("COMPLETED");
             task.setCompletedAt(Instant.now());
             task.setCompletedBy(user.getId());
             task.setUpdatedAt(Instant.now());
@@ -227,6 +233,9 @@ public class FollowUpService {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<IdempotencyReceipt> receipt = idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey);
             if (receipt.isPresent()) {
+                if (!receipt.get().getRequestHash().equals(computeHash(req))) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key reused with different payload");
+                }
                 return parseReceipt(receipt.get());
             }
         }
@@ -240,11 +249,24 @@ public class FollowUpService {
         }
 
         PlannedService planned = new PlannedService(
-                client, task, req.serviceCode(), req.serviceName(),
+                client, task, req.serviceCode() != null ? req.serviceCode() : "GENERAL_FOLLOWUP",
+                req.serviceName() != null ? req.serviceName() : "Planned follow-up service",
                 req.targetDueDate() != null ? req.targetDueDate() : LocalDate.now().plusWeeks(1),
                 req.notes()
         );
         plannedServiceRepository.save(planned);
+
+        // Rule: Next action creates a SEPARATE task; task reasons come from J5 purpose codes or admin labels
+        Task nextTask = new Task(
+                "TSK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
+                client,
+                user.getId(),
+                client.getCenterId(),
+                req.purposeCode() != null ? req.purposeCode() : "1",
+                req.serviceName() != null ? req.serviceName() : "Planned Follow-up Task",
+                req.targetDueDate() != null ? req.targetDueDate() : LocalDate.now().plusWeeks(1)
+        );
+        taskRepository.save(nextTask);
 
         // Audit & Outbox in same TX
         AuditEvent audit = new AuditEvent(
@@ -278,6 +300,9 @@ public class FollowUpService {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<IdempotencyReceipt> receipt = idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey);
             if (receipt.isPresent()) {
+                if (!receipt.get().getRequestHash().equals(computeHash(req))) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key reused with different payload");
+                }
                 return parseReceipt(receipt.get());
             }
         }
@@ -303,13 +328,8 @@ public class FollowUpService {
         Task task = null;
         if (req.taskId() != null) {
             task = taskRepository.findByIdAndCenterIdInWithLock(req.taskId(), user.getAuthorizedCenters()).orElse(null);
-            if (task != null) {
-                task.setStatus("DELIVERED");
-                task.setCompletedAt(Instant.now());
-                task.setCompletedBy(user.getId());
-                task.setUpdatedAt(Instant.now());
-                taskRepository.save(task);
-            }
+            // Non-negotiable rule: Task closes ONLY via Encounter with explicit COMPLETE action;
+            // Delivered service links to task for audit reference but does not alter task status.
         }
 
         DeliveredService delivered = new DeliveredService(

@@ -1,0 +1,8 @@
+# Benchmark & Reference Analysis: Health Worker & mHealth Platforms
+
+| Reference Project | Origin / Focus | Key Architectural Patterns to Adopt in CSC 2.0 |
+| :--- | :--- | :--- |
+| **Childcare Support Phase 3** | Alliance India (Childcare) | • Brand tokens: Alliance Emerald (`#047857`), Brand Teal (`#0D9488`), Slate 50 Canvas (`#F8FAFC`).<br>• `MobileContextBar`: Persistent sticky beneficiary header (Ref ID, Name, Center, Status).<br>• Section Runner & Jump Menu: Sticky navigation with progress indicators.<br>• Touch targets: Minimum 48px on mobile, responsive form grids.<br>• Strict role separation (`field_worker`, `supervisor`, `state_reviewer`, `administrator`, `leadership`). |
+| **eGov Health Campaign Field Worker App** | eGovernments Foundation (DIGIT) | • Household member repeat handling: Relational child tables for family members with individual HIV status and relationship.<br>• Scalable offline queue with idempotency keys and transactional retry backoff.<br>• Center & Geographic Scoping: Strict boundary enforcement preventing cross-center leakage. |
+| **MOTECH mHealth Platform** | Grameen Foundation / ThoughtWorks | • Separation of Contact Attempt vs Encounter vs Service Delivery.<br>• Appointment / Due Date Scheduling: Manually specified target due dates and canonical purpose codes.<br>• Follow-Up State Machine: Attempt keeps task open; only explicit encounter with complete action marks task completed.<br>• Adherence monitoring: Separate measurements for CD4 count, CD4 percentage, and viral load. |
+| **Novel Rich Editor** | Steven Tey / Vercel community | • Smooth micro-interactions, clean typography, responsive focus outlines (WCAG 2.2 AA).<br>• Streamlined field notes input with keyboard accessibility and zero layout shift. |
