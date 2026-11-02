@@ -1,0 +1,42 @@
+# Dependency directories
+node_modules/
+backend/target/
+.gradle/
+build/
+
+# Local Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# IDE / Editor Files
+.idea/
+.vscode/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Coverage
+coverage/
+lcov.info
