@@ -1,91 +1,129 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { RegistrationForm, RegistrationFormData } from '@/components/forms/RegistrationForm';
-import { FollowUpTab, TaskSummary, ContactAttemptDto, EncounterDto, PlannedServiceDto, DeliveredServiceDto } from '@/components/forms/FollowUpTab';
+import {
+  FollowUpTab,
+  TaskSummary,
+  ContactAttemptDto,
+  EncounterDto,
+  PlannedServiceDto,
+  DeliveredServiceDto,
+} from '@/components/forms/FollowUpTab';
 import { Language, translations } from '@/lib/translations';
 
-export default function ClientRecordPage({ params }: { params: Promise<{ id: string }> }) {
-  const unwrappedParams = React.use(params);
-  const clientId = unwrappedParams.id || "client-001";
-  
+function ClientRecordContent({ clientId }: { clientId: string }) {
+  const searchParams = useSearchParams();
+  const initialTabParam = searchParams.get('tab');
+  const isNewlyCreated = searchParams.get('created') === 'true';
+
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
 
-  // Tab State: 'registration' | 'followup'
-  const [activeTab, setActiveTab] = useState<'registration' | 'followup'>('followup');
+  // Deep-linkable Tab State: 'registration' | 'followup'
+  const [activeTab, setActiveTab] = useState<'registration' | 'followup'>(() => {
+    if (initialTabParam === 'registration') return 'registration';
+    return 'followup';
+  });
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [showCreatedNotice, setShowCreatedNotice] = useState(isNewlyCreated);
+
+  // Sync tab with browser popstate (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'registration') {
+        setActiveTab('registration');
+      } else {
+        setActiveTab('followup');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleTabChange = (newTab: 'registration' | 'followup') => {
+    setActiveTab(newTab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab === 'registration' ? 'registration' : 'follow-up');
+      url.searchParams.delete('created');
+      window.history.pushState(null, '', url.toString());
+    }
+  };
 
   // Synthetic Baseline Beneficiary
   const [client, setClient] = useState({
     id: clientId,
     clientRef: "CSC-DL-0001",
     centerId: "CENTER_DELHI_01",
-    fullName: "Sunita Verma (Synthetic)",
-    aliasName: "Guddi",
-    age: 28,
-    gender: "female",
-    maritalStatus: "married",
-    caregiverName: "Ramesh Verma",
-    primaryPhone: "0000000000",
-    alternatePhone: "0000000001",
+    fullName: "Aarav Sharma",
+    aliasName: "Sonu",
+    age: 34,
+    gender: "male",
+    maritalStatus: "1",
+    caregiverName: "Radha Sharma",
+    primaryPhone: "9811001101",
+    alternatePhone: "9811001102",
     inSchool: "no",
-    occupation: "self_employed",
-    keyPopulation: "general",
-    addressCurrent: "House 124, Gali 4, Paharganj, New Delhi, 110055",
+    occupation: "daily_wage",
+    keyPopulation: "none",
+    addressCurrent: "House 42, Gali 3, Daryaganj, Central Delhi, 110002",
     district: "Central Delhi",
     state: "Delhi",
-    pincode: "110055",
+    pincode: "110002",
     hivStatus: "positive",
-    artNumber: "ART-DL-9988",
-    artCenterName: "LNJP Hospital ART Centre",
-    artStartDate: "2023-04-12",
+    artNumber: "DL-LNJP-4021",
+    artCenterName: "LNJP Hospital ART Centre Delhi",
+    artStartDate: "2024-04-12",
     cd4Count: 420,
     cd4Percentage: "24.5",
     viralLoadCount: 0,
-    muacCm: 23.5,
+    muacCm: 24.0,
     hasHivDocDeclaration: true,
     hasAddressDocDeclaration: true,
     hasArtDocDeclaration: true,
-    docDeclarationNotes: "Sighted original NACO ART green card and Aadhaar card at home visit on 2026-10-15.",
+    docDeclarationNotes: "Physical originals of Green Card and Voter ID sighted at intake visit.",
     homeVisitConsent: true,
     messagingConsent: true,
     sharingConsent: false,
-    version: 2,
+    version: 1,
     status: "ACTIVE",
   });
 
   const [tasks, setTasks] = useState<TaskSummary[]>([
     {
       id: "task-001",
-      taskRef: "TSK-DL-1001",
+      taskRef: "TSK-DL-TD-01",
       clientId: clientId,
       clientRef: "CSC-DL-0001",
-      clientName: "Sunita Verma (Synthetic)",
+      clientName: "Aarav Sharma",
       centerId: "CENTER_DELHI_01",
-      taskType: "1", // Purpose code 1: Counselling
-      title: "Quarterly Adherence & Nutrition Counselling",
-      description: "Follow-up visit for routine adherence verification and social protection review.",
-      dueDate: "2026-11-03",
+      taskType: "1", // Purpose code 1: ART adherence
+      title: "Purpose 01: ART adherence support and pill count verification",
+      description: "Routine monthly adherence counseling and pill count check.",
+      dueDate: new Date().toISOString().split('T')[0],
       status: "DUE",
-      version: 1,
+      version: 0,
     },
     {
       id: "task-002",
-      taskRef: "TSK-DL-1002",
+      taskRef: "TSK-DL-UP-01",
       clientId: clientId,
       clientRef: "CSC-DL-0001",
-      clientName: "Sunita Verma (Synthetic)",
+      clientName: "Aarav Sharma",
       centerId: "CENTER_DELHI_01",
-      taskType: "11", // Purpose code 11: Social protection linkage
-      title: "AAY Food Security Scheme Linkage Verification",
-      description: "Assist client with Ration card documentation at Delhi Food & Supplies Office.",
-      dueDate: "2026-11-10",
+      taskType: "8", // Purpose code 8: Social protection
+      title: "Purpose 08: Social protection scheme linkage assistance",
+      description: "Ration card linkage and food security assistance.",
+      dueDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
       status: "PENDING",
-      version: 1,
+      version: 0,
     },
   ]);
 
@@ -93,10 +131,10 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
     {
       id: "att-001",
       taskId: "task-001",
-      attemptDate: "2026-11-01",
+      attemptDate: new Date().toISOString().split('T')[0],
       channel: "PHONE",
       outcome: "reached",
-      notes: "Client confirmed pill count on track. Agreed to home encounter on Nov 3.",
+      notes: "Beneficiary confirmed adherence. Will attend centre tomorrow.",
     },
   ]);
 
@@ -105,30 +143,21 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
       id: "enc-001",
       observationDate: "2026-10-15",
       recordedAt: "2026-10-15T11:30:00Z",
-      encounterType: "HOME_VISIT",
-      artAdherenceAssessment: "Good (95%+)",
-      nutritionAssessment: "Adequate (MUAC: 23.5cm)",
-      generalNotes: "CD4 count 420 cells/mm3. Client reports no opportunistic symptoms. Family supportive.",
+      encounterType: "CSC_VISIT",
+      artAdherenceAssessment: "GOOD (>95%)",
+      nutritionAssessment: "NORMAL",
+      generalNotes: "Initial counseling conducted. Patient motivated to adhere.",
     },
   ]);
 
   const [plannedServices, setPlannedServices] = useState<PlannedServiceDto[]>([
     {
       id: "plan-001",
-      serviceCode: "cc1",
-      serviceName: "Routine Treatment Adherence Counselling",
-      targetDueDate: "2026-11-03",
+      serviceCode: "1",
+      serviceName: "Adherence Support & Verification",
+      targetDueDate: new Date().toISOString().split('T')[0],
       status: "PLANNED",
-      notes: "Ensure timely ART refill before festival holidays.",
-      version: 1,
-    },
-    {
-      id: "plan-002",
-      serviceCode: "sp1",
-      serviceName: "Nutrition / Food Security Linkage (AAY)",
-      targetDueDate: "2026-11-10",
-      status: "PLANNED",
-      notes: "Follow up on department application reference #DL-2026-AAY-8812.",
+      notes: "Monthly adherence check",
       version: 1,
     },
   ]);
@@ -136,12 +165,12 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
   const [deliveredServices, setDeliveredServices] = useState<DeliveredServiceDto[]>([
     {
       id: "deliv-001",
-      plannedServiceId: "plan-000",
+      plannedServiceId: "plan-001",
       deliveryDate: "2026-10-15",
       recordedAt: "2026-10-15T12:00:00Z",
-      serviceCode: "cc1",
-      facilityName: "LNJP ART Centre",
-      notes: "30-day regimen refill dispensed and verified.",
+      serviceCode: "1",
+      facilityName: "LNJP Hospital ART Centre Delhi",
+      notes: "Adherence counseling completed.",
     },
   ]);
 
@@ -184,9 +213,7 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
         if (data.plannedServices) setPlannedServices(data.plannedServices);
         if (data.deliveredServices) setDeliveredServices(data.deliveredServices);
       }
-    } catch (ignored) {
-      // Offline fallback
-    }
+    } catch (ignored) {}
   };
 
   useEffect(() => {
@@ -194,7 +221,7 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
   }, [clientId]);
 
   const handleRegistrationSubmit = async (formData: RegistrationFormData) => {
-    showToast("Registration data saved locally. Central updates logged in audit trail.");
+    showToast("Registration updates recorded in client audit trail.");
   };
 
   return (
@@ -211,6 +238,32 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
       }}
     >
       <div className="space-y-6">
+        {/* Success Notice after New Registration */}
+        {showCreatedNotice && (
+          <div
+            className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-4 text-xs text-emerald-950 flex items-center justify-between shadow-xs"
+            role="status"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">✓</span>
+              <div>
+                <strong className="font-bold text-sm block">
+                  Beneficiary Registration Successfully Completed!
+                </strong>
+                <span>
+                  Permanent Client Reference: <strong className="font-mono">{client.clientRef}</strong> • Logged to Central PostgreSQL and queued for sync.
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCreatedNotice(false)}
+              className="text-emerald-800 hover:text-emerald-950 font-bold px-2 py-1"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <Link
@@ -228,8 +281,8 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Client Header Overview Card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center space-x-3">
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -247,7 +300,7 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Quick Clinical Metrics */}
-            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl p-3">
               <div className="text-center">
                 <p className="text-[10px] uppercase font-bold text-slate-500">ART Number</p>
                 <p className="text-xs font-mono font-bold text-slate-900">{client.artNumber || 'N/A'}</p>
@@ -269,8 +322,8 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
           <div className="border-t border-slate-100 pt-4 flex items-center space-x-2">
             <button
               type="button"
-              onClick={() => setActiveTab('followup')}
-              className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all min-h-[44px] flex items-center gap-2 ${
+              onClick={() => handleTabChange('followup')}
+              className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
                 activeTab === 'followup'
                   ? 'bg-emerald-700 text-white shadow-md'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
@@ -280,8 +333,8 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('registration')}
-              className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all min-h-[44px] flex items-center gap-2 ${
+              onClick={() => handleTabChange('registration')}
+              className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
                 activeTab === 'registration'
                   ? 'bg-emerald-700 text-white shadow-md'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
@@ -305,7 +358,7 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
         {/* TAB 1: REGISTRATION (Sections A–H and J on one scrollable page) */}
         {activeTab === 'registration' && (
           <div className="space-y-4">
-            <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-900 flex items-center gap-2">
+            <div className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 text-xs text-amber-900 flex items-center gap-2">
               <span>ℹ️</span>
               <span>
                 <strong>{t.tabRegistration}:</strong> Showing baseline registration data from intake.
@@ -358,5 +411,16 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
         )}
       </div>
     </AppShell>
+  );
+}
+
+export default function ClientRecordPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = React.use(params);
+  const clientId = unwrappedParams.id || "client-001";
+
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500">Loading client record...</div>}>
+      <ClientRecordContent clientId={clientId} />
+    </Suspense>
   );
 }

@@ -1,11 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Language, translations } from '@/lib/translations';
+import {
+  getStoredSession,
+  clearSessionPreservingDrafts,
+  checkHasUnsentDrafts,
+  isRouteAllowedForRole,
+  StoredUser,
+} from '@/lib/auth';
 
-export type UserRole = 'field_worker' | 'supervisor' | 'state_reviewer' | 'administrator' | 'leadership';
+export type UserRole =
+  | 'field_worker'
+  | 'supervisor'
+  | 'state_reviewer'
+  | 'administrator'
+  | 'leadership';
 
 export interface ActiveClientContext {
   clientRef?: string;
@@ -33,29 +45,87 @@ export const AppShell: React.FC<AppShellProps> = ({
   currentLang,
   onLanguageChange,
   activeClient,
-  currentRole = 'field_worker',
+  currentRole: propRole,
   onRoleChange,
   offlineCount = 0,
-  isOffline = false
+  isOffline = false,
 }) => {
   const t = translations[currentLang];
   const pathname = usePathname();
+  const router = useRouter();
+
+  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [hasUnsentDrafts, setHasUnsentDrafts] = useState(false);
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
+
+  // Authenticated session load & route guard
+  useEffect(() => {
+    setIsClientLoaded(true);
+    const session = getStoredSession();
+    if (!session) {
+      if (pathname !== '/sign-in') {
+        router.push('/sign-in');
+      }
+      return;
+    }
+
+    setCurrentUser(session);
+    const role = propRole || session.role;
+
+    // Guard route against unauthorized role
+    if (!isRouteAllowedForRole(role, pathname)) {
+      router.push('/not-permitted');
+    }
+
+    // Check draft status
+    setHasUnsentDrafts(checkHasUnsentDrafts());
+  }, [pathname, propRole, router]);
+
+  const effectiveRole: UserRole = propRole || currentUser?.role || 'field_worker';
 
   // Role Gating Logic
-  // field_worker: My Work, Clients
-  // supervisor: My Work, Clients, Reports
-  // state_reviewer: Clients, Reports
-  // leadership: My Work, Clients, Reports (leadership is NOT admin)
-  // administrator: My Work, Clients, Reports, Admin
   const navItems = [
-    { href: '/work', label: t.myWork, roles: ['field_worker', 'supervisor', 'leadership', 'administrator'] },
-    { href: '/clients', label: t.clients, roles: ['field_worker', 'supervisor', 'state_reviewer', 'leadership', 'administrator'] },
-    { href: '/reports', label: t.reports, roles: ['supervisor', 'state_reviewer', 'leadership', 'administrator'] },
-    { href: '/admin', label: t.admin, roles: ['administrator'] } // strictly admin only!
+    {
+      href: '/work',
+      label: t.myWork,
+      roles: ['field_worker', 'supervisor', 'leadership', 'administrator'],
+    },
+    {
+      href: '/clients',
+      label: t.clients,
+      roles: ['field_worker', 'supervisor', 'state_reviewer', 'leadership', 'administrator'],
+    },
+    {
+      href: '/reports',
+      label: t.reports,
+      roles: ['supervisor', 'state_reviewer', 'leadership', 'administrator'],
+    },
+    {
+      href: '/admin',
+      label: t.admin,
+      roles: ['administrator'], // strictly admin only!
+    },
   ];
 
-  const visibleNav = navItems.filter(item => item.roles.includes(currentRole));
+  const visibleNav = navItems.filter((item) => item.roles.includes(effectiveRole));
+
+  const handleSignOutClick = () => {
+    const hasDrafts = checkHasUnsentDrafts();
+    setHasUnsentDrafts(hasDrafts);
+    if (hasDrafts) {
+      setShowSignOutModal(true);
+    } else {
+      performSignOut();
+    }
+  };
+
+  const performSignOut = () => {
+    clearSessionPreservingDrafts();
+    setShowSignOutModal(false);
+    router.push('/sign-in');
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
@@ -83,8 +153,10 @@ export const AppShell: React.FC<AppShellProps> = ({
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center space-x-1" aria-label="Main Navigation">
-              {visibleNav.map(item => {
-                const isActive = pathname === item.href || (item.href !== '/work' && pathname?.startsWith(item.href));
+              {visibleNav.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== '/work' && pathname?.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
@@ -101,24 +173,31 @@ export const AppShell: React.FC<AppShellProps> = ({
               })}
             </nav>
 
-            {/* Controls: Role Selector, Offline Indicator, Language Toggle */}
-            <div className="flex items-center space-x-3">
-              {/* Role Switcher Pill */}
-              <div className="hidden lg:flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs">
-                <label htmlFor="role-select" className="sr-only">Role</label>
-                <select
-                  id="role-select"
-                  value={currentRole}
-                  onChange={(e) => onRoleChange && onRoleChange(e.target.value as UserRole)}
-                  className="bg-transparent text-xs font-semibold text-slate-700 px-2 py-1 rounded focus:outline-hidden"
+            {/* Controls: Quick Register, Role/User Chip, Language Toggle, Sign Out */}
+            <div className="flex items-center space-x-2.5">
+              {/* "+ New Registration" Quick Action Button (if not already on /clients/new) */}
+              {pathname !== '/clients/new' && effectiveRole !== 'leadership' && effectiveRole !== 'state_reviewer' && (
+                <Link
+                  href="/clients/new"
+                  className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs transition-colors"
                 >
-                  <option value="field_worker">Field Worker</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="state_reviewer">State Reviewer</option>
-                  <option value="leadership">Leadership (View Only)</option>
-                  <option value="administrator">Administrator</option>
-                </select>
-              </div>
+                  <span>+</span> {currentLang === 'hi' ? 'नया पंजीकरण' : 'New Registration'}
+                </Link>
+              )}
+
+              {/* Current User Chip with Role + Scope */}
+              {currentUser && (
+                <div className="hidden lg:flex items-center bg-slate-100 border border-slate-200 rounded-lg py-1 px-2.5 text-xs">
+                  <div className="flex flex-col text-right mr-2">
+                    <span className="font-bold text-slate-800 text-[11px] leading-tight">
+                      {currentUser.fullName}
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-700 font-semibold leading-tight">
+                      {effectiveRole} • {currentUser.scope}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Offline Queue Badge */}
               {offlineCount > 0 && (
@@ -128,11 +207,15 @@ export const AppShell: React.FC<AppShellProps> = ({
               )}
 
               {/* Bilingual Language Selector */}
-              <div className="inline-flex rounded-lg border border-slate-300 bg-white shadow-xs p-0.5" role="group" aria-label="Language Toggle">
+              <div
+                className="inline-flex rounded-lg border border-slate-300 bg-white shadow-xs p-0.5"
+                role="group"
+                aria-label="Language Toggle"
+              >
                 <button
                   type="button"
                   onClick={() => onLanguageChange('en')}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${
                     currentLang === 'en'
                       ? 'bg-emerald-800 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -144,7 +227,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                 <button
                   type="button"
                   onClick={() => onLanguageChange('hi')}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                  className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${
                     currentLang === 'hi'
                       ? 'bg-emerald-800 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -155,6 +238,20 @@ export const AppShell: React.FC<AppShellProps> = ({
                 </button>
               </div>
 
+              {/* Sign Out Button */}
+              <button
+                type="button"
+                onClick={handleSignOutClick}
+                title="Sign Out"
+                className="p-1.5 text-xs font-semibold text-slate-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-slate-200 transition-colors"
+                aria-label="Sign Out"
+              >
+                <span className="hidden sm:inline px-1">
+                  {currentLang === 'hi' ? 'लॉगआउट' : 'Sign Out'}
+                </span>
+                <span className="sm:hidden">⎋</span>
+              </button>
+
               {/* Mobile menu hamburger button */}
               <button
                 type="button"
@@ -164,9 +261,19 @@ export const AppShell: React.FC<AppShellProps> = ({
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   )}
                 </svg>
               </button>
@@ -176,8 +283,16 @@ export const AppShell: React.FC<AppShellProps> = ({
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1 shadow-md">
-            {visibleNav.map(item => (
+          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 shadow-md">
+            {currentUser && (
+              <div className="pb-2 border-b border-slate-100 text-xs">
+                <div className="font-bold text-slate-900">{currentUser.fullName}</div>
+                <div className="text-[11px] text-emerald-700 font-mono">
+                  {effectiveRole} • {currentUser.scope}
+                </div>
+              </div>
+            )}
+            {visibleNav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -191,6 +306,15 @@ export const AppShell: React.FC<AppShellProps> = ({
                 {item.label}
               </Link>
             ))}
+            {effectiveRole !== 'leadership' && effectiveRole !== 'state_reviewer' && (
+              <Link
+                href="/clients/new"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block text-center py-2 bg-emerald-700 text-white rounded-lg text-xs font-bold"
+              >
+                + {currentLang === 'hi' ? 'नया पंजीकरण' : 'New Registration'}
+              </Link>
+            )}
           </div>
         )}
       </header>
@@ -247,7 +371,10 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       {/* Offline Alert Strip */}
       {isOffline && (
-        <div className="bg-amber-500 text-white text-xs font-bold px-4 py-1.5 text-center shadow-xs" role="alert">
+        <div
+          className="bg-amber-500 text-white text-xs font-bold px-4 py-1.5 text-center shadow-xs"
+          role="alert"
+        >
           {t.offlineNotice}
         </div>
       )}
@@ -256,6 +383,45 @@ export const AppShell: React.FC<AppShellProps> = ({
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
+
+      {/* Sign Out Draft Warning Modal */}
+      {showSignOutModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-left border border-slate-200">
+            <div className="flex items-center gap-3 mb-3 text-amber-600">
+              <span className="text-2xl font-black">⚠️</span>
+              <h3 className="text-base font-bold text-slate-900">
+                {currentLang === 'hi' ? 'अपूर्ण ड्राफ्ट सूचना' : 'Unsaved Draft Registration Notice'}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {currentLang === 'hi'
+                ? 'आपके पास स्थानीय भंडारण में सहेजा गया अपूर्ण पंजीकरण ड्राफ्ट है। लॉगआउट करने पर यह ड्राफ्ट इस डिवाइस पर सुरक्षित रहेगा, लेकिन अभी तक केंद्रीय डेटाबेस में सबमिट नहीं हुआ है।'
+                : 'You have an unsaved client intake registration draft in local storage. Signing out will safely retain your draft on this device, but it has not yet been submitted to the central database.'}
+            </p>
+            <div className="mt-5 flex justify-end space-x-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowSignOutModal(false)}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px]"
+              >
+                {currentLang === 'hi' ? 'वापस जाएं' : 'Stay Signed In'}
+              </button>
+              <button
+                type="button"
+                onClick={performSignOut}
+                className="px-4 py-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-300 hover:bg-rose-100 rounded-lg min-h-[44px]"
+              >
+                {currentLang === 'hi' ? 'लॉगआउट (ड्राफ्ट सुरक्षित रखें)' : 'Sign Out (Retain Local Draft)'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

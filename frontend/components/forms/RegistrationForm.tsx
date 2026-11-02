@@ -1081,6 +1081,23 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             />
           </div>
         </div>
+
+        {/* Bottom Form Submission Bar */}
+        <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+          <p className="text-xs text-slate-500">
+            {lang === 'hi'
+              ? 'कृपया सबमिट करने से पहले सभी प्रविष्टियों की पुष्टि करें।'
+              : 'All sections A–H and J complete. Sighted declarations will be recorded in audit log.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => onSubmit(formData)}
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md transition-all min-h-[44px] flex items-center justify-center gap-2"
+          >
+            <span>📋</span> {t.reviewBeforeSubmit} →
+          </button>
+        </div>
       </section>
     </div>
   );

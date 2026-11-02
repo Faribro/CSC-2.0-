@@ -262,10 +262,10 @@ export default function NewClientRegistrationPage() {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       showToast(t.serverAccepted);
 
-      // Redirect to newly registered client's detail page
+      // Redirect to newly registered client's detail page with created notification
       setTimeout(() => {
-        router.push(`/clients/${receipt.resourceId || 'client-001'}`);
-      }, 1200);
+        router.push(`/clients/${receipt.resourceId || 'client-001'}?tab=registration&created=true`);
+      }, 1000);
     } catch (err: any) {
       alert(`Submission error: ${err.message}. Changes remain saved locally.`);
       setSaveStatus('saved_locally');
