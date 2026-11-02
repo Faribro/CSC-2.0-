@@ -10,8 +10,8 @@
 | **Document ID** | DOC-05 | `[PROPOSED]` |
 | **Document Title** | Feature Ticket List — CSC 2.0 | `[PROPOSED]` |
 | **Subtitle** | Community Support Centre Follow-Up Platform | `[PROPOSED]` |
-| **Version** | v0.1.0 | `[PROPOSED]` |
-| **Status** | **DRAFT** | `[PROPOSED]` |
+| **Version** | v1.1.0 | `[PROPOSED]` |
+| **Status** | **ACTIVE / DELIVERED IN BRANCHES** | `[PROPOSED]` |
 | **Classification** | Internal — Technical Specification & Implementation Plan | `[PROPOSED]` |
 | **Scope Covered in this Document** | Slices 0 through 5 (Full End-to-End Vertical Slice Catalog, 44 Tickets) | `[PROPOSED]` |
 | **Created Date** | 2026-11-02 | `[PROPOSED]` |
@@ -22,6 +22,7 @@
 
 | Version | Date | Author | Summary of Changes | Evidence Tag |
 |---|---|---|---|---|
+| v1.1.0 | 2026-11-02 | Lead Architect | Phase 2 delivery: Slices 0, 1, 2, 4 implemented across `feat/csc-vs1` and `feat/csc-form`. 19 PostgreSQL integration tests, 5 Playwright UI captures, single-page CRF, Two-Tab client record, Sheets mirror spec. | `[PROPOSED]` |
 | v0.1.0 | 2026-11-02 | Principal Technical Writer | Initial release covering Slices 0 through 5 with strict evidence tagging, zero invented clinical rules, and mandatory 10-point DoD. | `[PROPOSED]` |
 
 ---
