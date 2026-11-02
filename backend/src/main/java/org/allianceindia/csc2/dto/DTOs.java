@@ -144,6 +144,99 @@ public class DTOs {
             Integer expectedPlannedServiceVersion
     ) {}
 
+    public record RescheduleTaskRequest(
+            LocalDate newDueDate,
+            String reason, // Mandatory
+            Integer expectedTaskVersion
+    ) {}
+
+    public record CorrectRecordRequest(
+            String recordType, // "TASK", "CONTACT_ATTEMPT", "ENCOUNTER", "PLANNED_SERVICE", "DELIVERED_SERVICE"
+            UUID recordId,
+            String fieldName,
+            String newValue,
+            String reason, // Mandatory
+            Integer expectedVersion
+    ) {}
+
+    public record FamilyMemberInput(
+            String name,
+            String relationship,
+            Integer age,
+            String gender,
+            String hivStatus,
+            String artNumber
+    ) {}
+
+    public record ReferralRequestInput(
+            String serviceCategory,
+            String targetFacility,
+            String reason,
+            LocalDate referralDate
+    ) {}
+
+    public record RegisterClientRequest(
+            String clientRef,
+            String centerId,
+            LocalDate registrationDate,
+            String clientType,
+            String fullName,
+            String aliasName,
+            int age,
+            String gender,
+            String maritalStatus,
+            String caregiverName,
+            String primaryPhone,
+            String alternatePhone,
+            String inSchool,
+            String occupation,
+            String occupationOther,
+            String keyPopulation,
+            String addressCurrent,
+            String district,
+            String state,
+            String pincode,
+            String hivStatus,
+            String artNumber,
+            String artCenterName,
+            LocalDate artStartDate,
+            Integer cd4Count,
+            java.math.BigDecimal cd4Percentage,
+            Integer viralLoadCount,
+            java.math.BigDecimal muacCm,
+            boolean hasHivDocDeclaration,
+            boolean hasAddressDocDeclaration,
+            boolean hasArtDocDeclaration,
+            String docDeclarationNotes,
+            boolean homeVisitConsent,
+            boolean messagingConsent,
+            boolean sharingConsent,
+            List<FamilyMemberInput> familyMembers,
+            List<ReferralRequestInput> referralRequests
+    ) {}
+
+    public record ClientSummaryDto(
+            UUID id,
+            String clientRef,
+            String centerId,
+            String fullName,
+            int age,
+            String gender,
+            String primaryPhone,
+            String hivStatus,
+            String artNumber,
+            String status,
+            LocalDate registrationDate,
+            int openTaskCount
+    ) {}
+
+    public record ClientListResponse(
+            List<ClientSummaryDto> clients,
+            long totalElements,
+            int totalPages,
+            int currentPage
+    ) {}
+
     public record ActionReceipt(
             String idempotencyKey,
             String status,

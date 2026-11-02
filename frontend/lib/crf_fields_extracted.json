@@ -1,0 +1,2126 @@
+[
+  {
+    "type": "start",
+    "name": "start",
+    "label_en": "",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "end",
+    "name": "end",
+    "label_en": "",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "deviceid",
+    "name": "deviceid",
+    "label_en": "",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "intro",
+    "label_en": "<span style=\"font-size:1.3em;\">👋 <b>Client Registration Form – CSC 2.0</b></span>",
+    "label_hi": "<span style=\"font-size:1.3em;\">👋 <b>क्लाइंट पंजीकरण फॉर्म – CSC 2.0</b></span>",
+    "hint_en": "10 short sections on one page. Only the questions that apply to this client appear, so you never scroll past irrelevant ones. Red outline = required. Nothing is lost if you pause: save as draft.",
+    "hint_hi": "एक पेज पर 10 छोटे खंड। केवल इस क्लाइंट पर लागू प्रश्न ही दिखाई देंगे। लाल घेरा = आवश्यक। रुकने पर कुछ नहीं खोता: ड्राफ्ट के रूप में सेव करें।",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_a",
+    "label_en": "<span style=\"background-color:#E63946;color:#FFFFFF;\">&nbsp;🧾 Section A of 10 – Basic Profile&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#E63946;color:#FFFFFF;\">&nbsp;🧾 खंड A / 10 – मूल प्रोफाइल&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "a01_reg_date",
+    "label_en": "A1. Registration date",
+    "label_hi": "A1. पंजीकरण की तारीख",
+    "hint_en": "Pre-filled with today – change only if different.",
+    "hint_hi": "आज की तारीख भरी है – अलग हो तो बदलें।",
+    "required": true
+  },
+  {
+    "type": "select_one place",
+    "name": "a02_reg_place",
+    "label_en": "A2. Registration done at",
+    "label_hi": "A2. पंजीकरण किया गया",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a03_name",
+    "label_en": "A3. Full name",
+    "label_hi": "A3. पूरा नाम",
+    "hint_en": "true",
+    "hint_hi": "w3",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "a04_age",
+    "label_en": "A4. Age (years)",
+    "label_hi": "A4. आयु (वर्ष)",
+    "hint_en": "Enter 0 for babies under 1 year.",
+    "hint_hi": "1 वर्ष से कम के शिशु के लिए 0 लिखें।",
+    "required": true
+  },
+  {
+    "type": "select_one gender",
+    "name": "a05_gender",
+    "label_en": "A5. Gender",
+    "label_hi": "A5. लिंग",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "calculate",
+    "name": "ctx_banner",
+    "label_en": "concat(${a03_name}, '  ·  ', ${a04_age}, ' yrs  ·  ', jr:choice-name(${a05_gender}, '${a05_gender}'))",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a_child_note",
+    "label_en": "ℹ️ Child client (under 18): caregiver, orphan-status and school questions will appear below.",
+    "label_hi": "ℹ️ बच्चा क्लाइंट (18 वर्ष से कम): देखभालकर्ता, अनाथ स्थिति और स्कूल के प्रश्न नीचे दिखाई देंगे।",
+    "hint_en": "w4",
+    "hint_hi": "${a04_age}!='' and (${a04_age}<18)",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a06_abha",
+    "label_en": "A6. Patient ABHA ID (if any)",
+    "label_hi": "A6. रोगी ABHA आईडी (यदि हो)",
+    "hint_en": "Skip if the client has none.",
+    "hint_hi": "न हो तो छोड़ दें।",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a07_csc_id",
+    "label_en": "A7. Client CSC ID",
+    "label_hi": "A7. क्लाइंट CSC आईडी",
+    "hint_en": "Last five digits are assigned only by the CSC-PC.",
+    "hint_hi": "अंतिम पाँच अंक केवल CSC-PC द्वारा दिए जाते हैं।",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "a08_consent",
+    "label_en": "A8. Consent for home visit received?",
+    "label_hi": "A8. घर पर विज़िट के लिए सहमति मिली?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a_sub_centres",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;Centres&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;केंद्र&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a09_artc_name",
+    "label_en": "A9. ART Centre where client is registered",
+    "label_hi": "A9. ART केंद्र जहाँ क्लाइंट पंजीकृत है",
+    "hint_en": "w3",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a09_artc_code",
+    "label_en": "ARTC code",
+    "label_hi": "ARTC कोड",
+    "hint_en": "w1",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a10_csc_name",
+    "label_en": "A10. CSC where client is registered",
+    "label_hi": "A10. CSC जहाँ क्लाइंट पंजीकृत है",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a10_csc_code",
+    "label_en": "CSC code",
+    "label_hi": "CSC कोड",
+    "hint_en": "w1",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a10_clh_code",
+    "label_en": "CLH code",
+    "label_hi": "CLH कोड",
+    "hint_en": "w1",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a11_sub",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;A11. Present address (for a child: parent / caregiver address)&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;A11. वर्तमान पता (बच्चे के लिए: माता-पिता / देखभालकर्ता का पता)&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one res_type",
+    "name": "a11_res_type",
+    "label_en": "Type of residence",
+    "label_hi": "आवास का प्रकार",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_door",
+    "label_en": "House / door no., ward, colony, apartment",
+    "label_hi": "घर / दरवाजा संख्या, वार्ड, कॉलोनी, अपार्टमेंट",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_street",
+    "label_en": "Street",
+    "label_hi": "सड़क",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_village",
+    "label_en": "Village / City",
+    "label_hi": "गांव / शहर",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_block",
+    "label_en": "Taluk / Mandal / Block",
+    "label_hi": "तालुक / मंडल / ब्लॉक",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_landmark",
+    "label_en": "Landmark",
+    "label_hi": "पहचान चिह्न",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_district",
+    "label_en": "District",
+    "label_hi": "जिला",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_state",
+    "label_en": "State",
+    "label_hi": "राज्य",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_pin",
+    "label_en": "Pin code",
+    "label_hi": "पिन कोड",
+    "hint_en": "numbers w2",
+    "hint_hi": "regex(., '^[1-9][0-9]{5}$')",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a11_phone",
+    "label_en": "Contact number",
+    "label_hi": "संपर्क नंबर",
+    "hint_en": "numbers w2",
+    "hint_hi": "regex(., '^[6-9][0-9]{9}$')",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "a11_addr_verified",
+    "label_en": "Address verified on",
+    "label_hi": "पता सत्यापित (तारीख)",
+    "hint_en": "w2",
+    "hint_hi": ". <= today()",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "a11_phone_verified",
+    "label_en": "Contact number verified on",
+    "label_hi": "संपर्क नंबर सत्यापित (तारीख)",
+    "hint_en": "w2",
+    "hint_hi": "${a11_phone}!=''",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a12_hdr",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;Permanent / alternative address&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;स्थायी / वैकल्पिक पता&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "a12_same",
+    "label_en": "A12. Is the permanent / alternative address the same as the present address?",
+    "label_hi": "A12. क्या स्थायी / वैकल्पिक पता वर्तमान पते जैसा ही है?",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a12_sub",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;A12. Permanent / alternative address (caregiver / family member)&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;A12. स्थायी / वैकल्पिक पता (देखभालकर्ता / परिवार का सदस्य)&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "select_one res_type",
+    "name": "a12_res_type",
+    "label_en": "Type of residence",
+    "label_hi": "आवास का प्रकार",
+    "hint_en": "w4",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_door",
+    "label_en": "House / door no., ward, colony, apartment",
+    "label_hi": "घर / दरवाजा संख्या, वार्ड, कॉलोनी, अपार्टमेंट",
+    "hint_en": "w4",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_street",
+    "label_en": "Street",
+    "label_hi": "सड़क",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_village",
+    "label_en": "Village / City",
+    "label_hi": "गांव / शहर",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_block",
+    "label_en": "Taluk / Mandal / Block",
+    "label_hi": "तालुक / मंडल / ब्लॉक",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_landmark",
+    "label_en": "Landmark",
+    "label_hi": "पहचान चिह्न",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_district",
+    "label_en": "District",
+    "label_hi": "जिला",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_state",
+    "label_en": "State",
+    "label_hi": "राज्य",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_pin",
+    "label_en": "Pin code",
+    "label_hi": "पिन कोड",
+    "hint_en": "numbers w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a12_phone",
+    "label_en": "Contact number",
+    "label_hi": "संपर्क नंबर",
+    "hint_en": "numbers w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "a12_addr_verified",
+    "label_en": "Address verified on",
+    "label_hi": "पता सत्यापित (तारीख)",
+    "hint_en": "w2",
+    "hint_hi": "${a12_same}='no'",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "a12_phone_verified",
+    "label_en": "Contact number verified on",
+    "label_hi": "संपर्क नंबर सत्यापित (तारीख)",
+    "hint_en": "w2",
+    "hint_hi": "(${a12_same}='no') and ${a12_phone}!=''",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a_sub_cat",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;Client category&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;क्लाइंट श्रेणी&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one client_type",
+    "name": "a13_client_type",
+    "label_en": "A13. Type of client",
+    "label_hi": "A13. क्लाइंट का प्रकार",
+    "hint_en": "\"Follow up Client\" unlocks the follow-up sheet (Section I).",
+    "hint_hi": "\"फ़ॉलोअप क्लाइंट\" चुनने पर खंड I खुलता है।",
+    "required": true
+  },
+  {
+    "type": "select_one kp",
+    "name": "a14_kp",
+    "label_en": "A14. Typology (KP)",
+    "label_hi": "A14. वर्गीकरण (KP)",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "select_one typ_other",
+    "name": "a15_typ_other",
+    "label_en": "A15. Typology (others)",
+    "label_hi": "A15. वर्गीकरण (अन्य)",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one caretaker",
+    "name": "a16_caretaker",
+    "label_en": "A16. Who takes care of the child?",
+    "label_hi": "A16. बच्चे की देखभाल कौन करता है?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one orphan",
+    "name": "a17_orphan",
+    "label_en": "A17. Orphan status",
+    "label_hi": "A17. अनाथ स्थिति",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "a_sub_edu",
+    "label_en": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;Education, work & income&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFE5E8;color:#E63946;\">&nbsp;शिक्षा, व्यवसाय और आय&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one education",
+    "name": "a18_education",
+    "label_en": "A18. Education",
+    "label_hi": "A18. शिक्षा",
+    "hint_en": "minimal w2",
+    "hint_hi": "(${a04_age}<5 and .='7') or (${a04_age}>=5 and .!='7')",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "a18_in_school",
+    "label_en": "Currently going to school?",
+    "label_hi": "क्या अभी स्कूल जा रहा/रही है?",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=5 and (${a04_age}<18)",
+    "required": false
+  },
+  {
+    "type": "select_one occupation",
+    "name": "a19_occupation",
+    "label_en": "A19. Occupation",
+    "label_hi": "A19. व्यवसाय",
+    "hint_en": "Type to search.",
+    "hint_hi": "खोजने के लिए टाइप करें।",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "a19_occupation_other",
+    "label_en": "Specify other occupation",
+    "label_hi": "अन्य व्यवसाय बताएं",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one marital",
+    "name": "a20_marital",
+    "label_en": "A20. Marital status",
+    "label_hi": "A20. वैवाहिक स्थिति",
+    "hint_en": "minimal w2",
+    "hint_hi": "(${a04_age}<15 and .='6') or (${a04_age}>=15 and .!='6')",
+    "required": false
+  },
+  {
+    "type": "select_one income",
+    "name": "a21_income",
+    "label_en": "A21. Average monthly income",
+    "label_hi": "A21. औसत मासिक आय",
+    "hint_en": "For a child, give the household income.",
+    "hint_hi": "बच्चे के लिए परिवार की आय बताएं।",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_b",
+    "label_en": "<span style=\"background-color:#F4A261;color:#1E293B;\">&nbsp;👨‍👩‍👧 Section B of 10 – Family History&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#F4A261;color:#1E293B;\">&nbsp;👨‍👩‍👧 खंड B / 10 – परिवार का विवरण&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "b_p1",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "b_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "b1_family_id",
+    "label_en": "B1. Family ID",
+    "label_hi": "B1. परिवार की आईडी",
+    "hint_en": "One ID for everyone living together, e.g. ORW01-0001.",
+    "hint_hi": "साथ रहने वाले सभी के लिए एक आईडी, जैसे ORW01-0001।",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "b2_hdr",
+    "label_en": "<span style=\"background-color:#FFF1E6;color:#F4A261;\">&nbsp;B2. Family members – tap \"Add\" for each member&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFF1E6;color:#F4A261;\">&nbsp;B2. परिवार के सदस्य – प्रत्येक सदस्य के लिए \"जोड़ें\" दबाएं&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "b2_note",
+    "label_en": "ℹ️ Add father, mother, spouse, partner, each child and any non-traditional member (Transgender / Hijra / MSM living under one roof, other sexual partners).",
+    "label_hi": "ℹ️ पिता, माता, पति/पत्नी, साथी, प्रत्येक बच्चा और कोई गैर-पारंपरिक सदस्य (एक छत के नीचे रहने वाले ट्रांसजेंडर / हिजड़ा / MSM, अन्य यौन साथी) जोड़ें।",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_repeat",
+    "name": "b2_members",
+    "label_en": "Family member",
+    "label_hi": "परिवार का सदस्य",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "b2_in",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "b2_name",
+    "label_en": "Name",
+    "label_hi": "नाम",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one relation",
+    "name": "b2_relation",
+    "label_en": "Relationship to client",
+    "label_hi": "क्लाइंट से संबंध",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "b2_age",
+    "label_en": "Age (years)",
+    "label_hi": "आयु (वर्ष)",
+    "hint_en": "true",
+    "hint_hi": "w1",
+    "required": false
+  },
+  {
+    "type": "select_one gender",
+    "name": "b2_gender",
+    "label_en": "Gender",
+    "label_hi": "लिंग",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one living",
+    "name": "b2_living",
+    "label_en": "Living status",
+    "label_hi": "जीवित स्थिति",
+    "hint_en": "true",
+    "hint_hi": "w1",
+    "required": false
+  },
+  {
+    "type": "select_one hivstat",
+    "name": "b2_hiv",
+    "label_en": "HIV status",
+    "label_hi": "एचआईवी स्थिति",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "b2_hiv_date",
+    "label_en": "Date of most recent HIV test",
+    "label_hi": "सबसे हाल के एचआईवी परीक्षण की तारीख",
+    "hint_en": "w2",
+    "hint_hi": "${b2_hiv}='1' or ${b2_hiv}='2'",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "b2_cd4",
+    "label_en": "Latest CD4",
+    "label_hi": "नवीनतम CD4",
+    "hint_en": "w1",
+    "hint_hi": "${b2_hiv}='1' and ${b2_living}='1'",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "b2_vl",
+    "label_en": "Latest viral load",
+    "label_hi": "नवीनतम वायरल लोड",
+    "hint_en": "w1",
+    "hint_hi": "${b2_hiv}='1' and ${b2_living}='1'",
+    "required": false
+  },
+  {
+    "type": "select_one artstat",
+    "name": "b2_art",
+    "label_en": "ART status",
+    "label_hi": "एआरटी स्थिति",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one idtype",
+    "name": "b2_idtype",
+    "label_en": "Type of ID",
+    "label_hi": "आईडी का प्रकार",
+    "hint_en": "w2",
+    "hint_hi": "${b2_hiv}='1'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "b2_idno",
+    "label_en": "ID number",
+    "label_hi": "आईडी संख्या",
+    "hint_en": "w2",
+    "hint_hi": "${b2_idtype}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "b2_at_csc",
+    "label_en": "Registered at a CSC?",
+    "label_hi": "क्या CSC में पंजीकृत है?",
+    "hint_en": "w2",
+    "hint_hi": "${b2_hiv}='1'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "b2_csc_id",
+    "label_en": "Client CSC ID",
+    "label_hi": "क्लाइंट CSC आईडी",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "calculate",
+    "name": "b2_f_plhiv",
+    "label_en": "if(${b2_hiv}='1', 1, 0)",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "calculate",
+    "name": "b2_f_ictc",
+    "label_en": "if(${b2_living}='1' and (${b2_hiv}='3' or ${b2_hiv}='4'), 1, 0)",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "b_p2",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "calculate",
+    "name": "b3_total_plhiv",
+    "label_en": "sum(${b2_f_plhiv})",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "calculate",
+    "name": "b4_total_ictc",
+    "label_en": "sum(${b2_f_ictc})",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "b3_note",
+    "label_en": "<b>B3.</b> Family members who are PLHIV: <b>${b3_total_plhiv}</b>",
+    "label_hi": "<b>B3.</b> PLHIV परिवार के सदस्य: <b>${b3_total_plhiv}</b>",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "b4_note",
+    "label_en": "<b>B4.</b> Eligible for ICTC referral: <b>${b4_total_ictc}</b>",
+    "label_hi": "<b>B4.</b> ICTC रेफरल के लिए पात्र: <b>${b4_total_ictc}</b>",
+    "hint_en": "Alive and HIV status not tested / unknown.",
+    "hint_hi": "जीवित और एचआईवी स्थिति परीक्षण नहीं हुआ / अज्ञात।",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_c",
+    "label_en": "<span style=\"background-color:#3A86FF;color:#FFFFFF;\">&nbsp;🧪 Section C of 10 – Testing and Treatment&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#3A86FF;color:#FFFFFF;\">&nbsp;🧪 खंड C / 10 – परीक्षण और उपचार&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "c_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c1_hiv_confirmed",
+    "label_en": "C1. Is HIV-positive status confirmed (ICTC)?",
+    "label_hi": "C1. क्या एचआईवी पॉज़िटिव स्थिति की पुष्टि (ICTC) हो चुकी है?",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c2_confirm_date",
+    "label_en": "C2. Date of HIV confirmation",
+    "label_hi": "C2. एचआईवी पुष्टि की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c3_ictc_pid",
+    "label_en": "C3. ICTC PID number",
+    "label_hi": "C3. ICTC पीआईडी संख्या",
+    "hint_en": "w2",
+    "hint_hi": "${c1_hiv_confirmed}='yes'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c4_ictc_name",
+    "label_en": "C4. Name of ICTC (place of confirmation)",
+    "label_hi": "C4. ICTC का नाम (पुष्टि का स्थान)",
+    "hint_en": "w2",
+    "hint_hi": "${c1_hiv_confirmed}='yes'",
+    "required": false
+  },
+  {
+    "type": "select_one route",
+    "name": "c5_route",
+    "label_en": "C5. Route of transmission",
+    "label_hi": "C5. संक्रमण का तरीका",
+    "hint_en": "minimal w2",
+    "hint_hi": "${c1_hiv_confirmed}='yes'",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "c_sub_art",
+    "label_en": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;ART centre & registration&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;एआरटी केंद्र और पंजीकरण&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c6_artc_name",
+    "label_en": "C6. Name of ARTC",
+    "label_hi": "C6. एआरटीसी का नाम",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one artc_type",
+    "name": "c6_artc_type",
+    "label_en": "Type of ARTC",
+    "label_hi": "एआरटीसी का प्रकार",
+    "hint_en": "w2",
+    "hint_hi": "${c6_artc_name}!=''",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c7_preart_date",
+    "label_en": "C7. Date of Pre-ART registration",
+    "label_hi": "C7. प्री-एआरटी पंजीकरण की तारीख",
+    "hint_en": "w2",
+    "hint_hi": "${c1_hiv_confirmed}='yes'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c7a_preart_no",
+    "label_en": "C7a. Pre-ART registration number",
+    "label_hi": "C7a. प्री-एआरटी पंजीकरण संख्या",
+    "hint_en": "w2",
+    "hint_hi": "${c7_preart_date}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one art_init",
+    "name": "c8_art_status",
+    "label_en": "C8. Status of ART initiation",
+    "label_hi": "C8. एआरटी शुरू होने की स्थिति",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c9_art_date",
+    "label_en": "C9. Date of ART initiation",
+    "label_hi": "C9. एआरटी शुरू होने की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c9a_art_no",
+    "label_en": "C9a. ART registration number",
+    "label_hi": "C9a. एआरटी पंजीकरण संख्या",
+    "hint_en": "w2",
+    "hint_hi": "${c8_art_status}='1'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c9b_regimen_reg",
+    "label_en": "C9b. ART regimen at registration",
+    "label_hi": "C9b. पंजीकरण के समय एआरटी उपचार योजना",
+    "hint_en": "See \"Switch and Shift Record\".",
+    "hint_hi": "\"स्विच और शिफ्ट रिकॉर्ड\" देखें।",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "c9c_regimen_now",
+    "label_en": "C9c. Current ART regimen",
+    "label_hi": "C9c. वर्तमान एआरटी उपचार योजना",
+    "hint_en": "w2",
+    "hint_hi": "${c8_art_status}='1'",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "c_base",
+    "label_en": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;Baseline screening & investigations&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;प्रारंभिक जांच और परीक्षण&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "c10_height",
+    "label_en": "C10. Height (cm)",
+    "label_hi": "C10. ऊंचाई (सेमी)",
+    "hint_en": "w1",
+    "hint_hi": ". >= 30 and . <= 230",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "c11_weight",
+    "label_en": "C11. Weight (kg)",
+    "label_hi": "C11. वजन (किग्रा)",
+    "hint_en": "w1",
+    "hint_hi": ". >= 1 and . <= 200",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "c_muac",
+    "label_en": "MUAC (cm)",
+    "label_hi": "MUAC (सेमी)",
+    "hint_en": "Children below 5 years, if available.",
+    "hint_hi": "5 वर्ष से कम आयु के बच्चे, यदि उपलब्ध हो।",
+    "required": false
+  },
+  {
+    "type": "select_one who",
+    "name": "c_who",
+    "label_en": "WHO stage",
+    "label_hi": "डब्ल्यूएचओ चरण",
+    "hint_en": "w1",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c12_cd4_done",
+    "label_en": "C12. CD4 done at baseline?",
+    "label_hi": "C12. क्या प्रारंभिक सीडी4 परीक्षण हुआ?",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c12a_cd4_date",
+    "label_en": "C12a. Date of CD4 test",
+    "label_hi": "C12a. सीडी4 परीक्षण की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "c12b_cd4_count",
+    "label_en": "C12b. CD4 count",
+    "label_hi": "C12b. सीडी4 गणना",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "c12b_cd4_pct",
+    "label_en": "C12b. CD4 % (children)",
+    "label_hi": "C12b. सीडी4 % (बच्चे)",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c13_vl_done",
+    "label_en": "C13. Viral load done at baseline?",
+    "label_hi": "C13. क्या प्रारंभिक वायरल लोड परीक्षण हुआ?",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c13a_vl_date",
+    "label_en": "C13a. Date of viral load test",
+    "label_hi": "C13a. वायरल लोड परीक्षण की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "c13b_vl_count",
+    "label_en": "C13b. Viral load (copies/mL)",
+    "label_hi": "C13b. वायरल लोड (कॉपी/mL)",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "c_tb",
+    "label_en": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;TB history&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#EAF2FF;color:#3A86FF;\">&nbsp;टीबी का इतिहास&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c14_tb_history",
+    "label_en": "C14. History of TB",
+    "label_hi": "C14. टीबी का इतिहास",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c14a_tb_confirm",
+    "label_en": "Date of TB confirmation",
+    "label_hi": "टीबी पुष्टि की तारीख",
+    "hint_en": "w2",
+    "hint_hi": "${c14_tb_history}='yes'",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c14b_att_started",
+    "label_en": "Initiated on ATT?",
+    "label_hi": "क्या एटीटी शुरू किया गया?",
+    "hint_en": "w2",
+    "hint_hi": "${c14_tb_history}='yes'",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c14c_att_date",
+    "label_en": "Date of ATT initiation",
+    "label_hi": "एटीटी शुरू होने की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one tb_status",
+    "name": "c15_tb_status",
+    "label_en": "C15. TB treatment status at registration",
+    "label_hi": "C15. पंजीकरण के समय टीबी उपचार की स्थिति",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "c15a_tb_complete",
+    "label_en": "Date of treatment completion",
+    "label_hi": "उपचार पूर्ण होने की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "c16_tb_family",
+    "label_en": "C16. Family history of TB",
+    "label_hi": "C16. टीबी का पारिवारिक इतिहास",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_d",
+    "label_en": "<span style=\"background-color:#06D6A0;color:#1E293B;\">&nbsp;🤝 Section D of 10 – Social Protection Schemes & Entitlements&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#06D6A0;color:#1E293B;\">&nbsp;🤝 खंड D / 10 – सामाजिक सुरक्षा योजनाएं और अधिकार&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "d_p1",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "d_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "d1_linked",
+    "label_en": "D1. Ever linked with any welfare scheme?",
+    "label_hi": "D1. क्या कभी किसी कल्याणकारी योजना से जुड़े हैं?",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_multiple schemes_linked",
+    "name": "d1a_services",
+    "label_en": "Which services were availed?",
+    "label_hi": "कौन सी सेवाएं मिलीं?",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "d1b_other",
+    "label_en": "Other (specify)",
+    "label_hi": "अन्य (विवरण दें)",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "d2_has_ent",
+    "label_en": "D2. Does the client hold any social entitlement document?",
+    "label_hi": "D2. क्या क्लाइंट के पास कोई सामाजिक अधिकार दस्तावेज़ है?",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_multiple entitlements",
+    "name": "d2a_docs",
+    "label_en": "Which documents are available?",
+    "label_hi": "कौन से दस्तावेज़ उपलब्ध हैं?",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "d2b_other",
+    "label_en": "Other document (specify)",
+    "label_hi": "अन्य दस्तावेज़ (विवरण दें)",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "d3_assessed",
+    "label_en": "D3. In-depth individual & family need assessment done?",
+    "label_hi": "D3. क्या व्यक्तिगत एवं पारिवारिक आवश्यकताओं का विस्तृत मूल्यांकन किया गया?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "d4_willing",
+    "label_en": "D4. Willing to be referred to schemes / entitlements?",
+    "label_hi": "D4. क्या योजनाओं / अधिकारों के लिए रेफर होने को तैयार है?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_repeat",
+    "name": "d5_referrals",
+    "label_en": "D5. Scheme / entitlement for referral",
+    "label_hi": "D5. रेफरल के लिए योजना / अधिकार",
+    "hint_en": "${d4_willing}='yes'",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "d5_in",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "d5_scheme",
+    "label_en": "Scheme",
+    "label_hi": "योजना",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "d5_entitlement",
+    "label_en": "Entitlement",
+    "label_hi": "अधिकार",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_e",
+    "label_en": "<span style=\"background-color:#8338EC;color:#FFFFFF;\">&nbsp;⚠️ Section E of 10 – Risk Profile&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#8338EC;color:#FFFFFF;\">&nbsp;⚠️ खंड E / 10 – जोखिम प्रोफाइल&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "e_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "e_kp_note",
+    "label_en": "ℹ️ Questions E1–E4 appear only for key-population clients (FSW / MSM / TGH / PWID) selected in A14.",
+    "label_hi": "ℹ️ E1–E4 केवल A14 में चुने गए मुख्य समूह (FSW / MSM / TGH / PWID) के क्लाइंट के लिए दिखते हैं।",
+    "hint_en": "w4",
+    "hint_hi": "(${a14_kp}='fsw' or ${a14_kp}='msm' or ${a14_kp}='tgh') or (${a14_kp}='pwid')",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e1_sexwork",
+    "label_en": "E1. In sex work?",
+    "label_hi": "E1. क्या यौन कार्य में संलग्न हैं?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e2_ost",
+    "label_en": "E2. On Opioid Substitution Therapy (OST)?",
+    "label_hi": "E2. क्या ओपिओइड प्रतिस्थापन उपचार (OST) पर हैं?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e3_nsep",
+    "label_en": "E3. Registered with Needle Syringe Exchange Programme?",
+    "label_hi": "E3. क्या सुई-सिरिंज विनिमय कार्यक्रम में पंजीकृत हैं?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "e4_ost_type",
+    "label_en": "E4. Type of OST",
+    "label_hi": "E4. OST का प्रकार",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e5_condom_know",
+    "label_en": "E5. Knows how to use condoms?",
+    "label_hi": "E5. क्या कंडोम का उपयोग करना आता है?",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=15",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "e_sex",
+    "label_en": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;Condom use with partners&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;साथियों के साथ कंडोम का उपयोग&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "${a04_age}>=15",
+    "required": false
+  },
+  {
+    "type": "select_one condom",
+    "name": "e6_casual",
+    "label_en": "E6. Casual partner",
+    "label_hi": "E6. आकस्मिक साथी",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=15",
+    "required": false
+  },
+  {
+    "type": "select_one condom",
+    "name": "e7_regular",
+    "label_en": "E7. Regular partner",
+    "label_hi": "E7. नियमित साथी",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=15",
+    "required": false
+  },
+  {
+    "type": "select_one condom",
+    "name": "e8_paid",
+    "label_en": "E8. Paid partner",
+    "label_hi": "E8. भुगतान किए गए साथी",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=15",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "e_sub",
+    "label_en": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;E9. Substance use&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;E9. नशे का उपयोग&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "select_one subfreq",
+    "name": "e9a_sub",
+    "label_en": "E9a. Smoking",
+    "label_hi": "E9a. धूम्रपान",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "select_one subfreq",
+    "name": "e9b_sub",
+    "label_en": "E9b. Oral drug",
+    "label_hi": "E9b. मौखिक नशा",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "select_one subfreq",
+    "name": "e9c_sub",
+    "label_en": "E9c. Chewing drug",
+    "label_hi": "E9c. चबाने वाला नशा",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "select_one subfreq",
+    "name": "e9d_sub",
+    "label_en": "E9d. Alcohol",
+    "label_hi": "E9d. शराब",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "select_one subfreq",
+    "name": "e9e_sub",
+    "label_en": "E9e. Injecting drug",
+    "label_hi": "E9e. इंजेक्शन द्वारा नशा",
+    "hint_en": "w2",
+    "hint_hi": "${a04_age}>=10",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "e_ncd",
+    "label_en": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;Non-communicable diseases&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#F3E8FF;color:#8338EC;\">&nbsp;असंचारी रोग&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e10_diabetes",
+    "label_en": "E10. Diabetes",
+    "label_hi": "E10. मधुमेह",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "e10_details",
+    "label_en": "Details",
+    "label_hi": "विवरण",
+    "hint_en": "w2",
+    "hint_hi": "${e10_diabetes}='yes'",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "e11_htn",
+    "label_en": "E11. Hypertension",
+    "label_hi": "E11. उच्च रक्तचाप",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "e11_details",
+    "label_en": "Details",
+    "label_hi": "विवरण",
+    "hint_en": "w2",
+    "hint_hi": "${e11_htn}='yes'",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_f",
+    "label_en": "<span style=\"background-color:#EF476F;color:#FFFFFF;\">&nbsp;🗣️ Section F of 10 – Stigma and Discrimination&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#EF476F;color:#FFFFFF;\">&nbsp;🗣️ खंड F / 10 – कलंक और भेदभाव&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "f_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "f1_discrimination",
+    "label_en": "F1. Ever faced any discrimination?",
+    "label_hi": "F1. क्या कभी किसी प्रकार का भेदभाव झेला है?",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "select_multiple disc_from",
+    "name": "f2_from",
+    "label_en": "F2. From whom?",
+    "label_hi": "F2. किससे?",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_g",
+    "label_en": "<span style=\"background-color:#118AB2;color:#FFFFFF;\">&nbsp;♿ Section G of 10 – Disability Information&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#118AB2;color:#FFFFFF;\">&nbsp;♿ खंड G / 10 – दिव्यांगता संबंधी जानकारी&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "g_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "g1_disability",
+    "label_en": "G1. Does the client have any disability?",
+    "label_hi": "G1. क्या क्लाइंट को कोई दिव्यांगता है?",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "select_multiple disability",
+    "name": "g2_type",
+    "label_en": "G2. Which disability?",
+    "label_hi": "G2. कौन सी दिव्यांगता?",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "select_one yn_applied",
+    "name": "g3_certificate",
+    "label_en": "G3. Has a disability certificate?",
+    "label_hi": "G3. क्या दिव्यांगता प्रमाण पत्र है?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yndk",
+    "name": "g4_benefit",
+    "label_en": "G4. Receives any government disability benefit / scheme?",
+    "label_hi": "G4. क्या कोई सरकारी दिव्यांगता लाभ / योजना मिल रही है?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "g4_scheme",
+    "label_en": "Name of the scheme",
+    "label_hi": "योजना का नाम",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_h",
+    "label_en": "<span style=\"background-color:#495057;color:#FFFFFF;\">&nbsp;🕊️ Section H of 10 – Death Information&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#495057;color:#FFFFFF;\">&nbsp;🕊️ खंड H / 10 – मृत्यु संबंधी जानकारी&nbsp;</span>",
+    "hint_en": "field-list w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "h_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "h0_deceased",
+    "label_en": "H0. Has the client died?",
+    "label_hi": "H0. क्या क्लाइंट की मृत्यु हो चुकी है?",
+    "hint_en": "Answer \"No\" to skip this whole section.",
+    "hint_hi": "इस पूरे खंड को छोड़ने के लिए \"नहीं\" चुनें।",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "h1_death_date",
+    "label_en": "H1. Date of death",
+    "label_hi": "H1. मृत्यु की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one death_reason",
+    "name": "h2_reason",
+    "label_en": "H2. Reason for death",
+    "label_hi": "H2. मृत्यु के कारण",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "h2_reason_other",
+    "label_en": "Specify other reason",
+    "label_hi": "अन्य कारण बताएं",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "h3_info_date",
+    "label_en": "H3. Date information received",
+    "label_hi": "H3. सूचना प्राप्त होने की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "h4_reported",
+    "label_en": "H4. Reported to ARTC?",
+    "label_hi": "H4. क्या एआरटीसी को सूचित किया गया?",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "h5_artc_death_date",
+    "label_en": "H5. Date of death as per ARTC",
+    "label_hi": "H5. एआरटीसी में दर्ज मृत्यु की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one death_place",
+    "name": "h6_place",
+    "label_en": "H6. Death at",
+    "label_hi": "H6. मृत्यु का स्थान",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "h6_place_other",
+    "label_en": "Specify other place",
+    "label_hi": "अन्य स्थान बताएं",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one mis_lfu",
+    "name": "h7_lfu",
+    "label_en": "H7. Was the client in MIS / LFU line list?",
+    "label_hi": "H7. क्या क्लाइंट MIS / LFU सूची में था/थी?",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "h8_certificate",
+    "label_en": "H8. Death certificate / blood-relation letter available?",
+    "label_hi": "H8. मृत्यु प्रमाण पत्र / रक्त संबंध पत्र उपलब्ध है?",
+    "hint_en": "w2",
+    "hint_hi": "${h0_deceased}='yes'",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "h_remarks",
+    "label_en": "Remarks",
+    "label_hi": "टिप्पणी",
+    "hint_en": "multiline w4",
+    "hint_hi": "${h0_deceased}='yes'",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_i",
+    "label_en": "<span style=\"background-color:#FFBE0B;color:#1E293B;\">&nbsp;🔁 Section I of 10 – Follow-up Client Update Sheet&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#FFBE0B;color:#1E293B;\">&nbsp;🔁 खंड I / 10 – फ़ॉलोअप क्लाइंट अद्यतन शीट&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "${a13_client_type}='2'",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "i_p1",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "i_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "i_note",
+    "label_en": "ℹ️ Add one row for every follow-up visit.",
+    "label_hi": "ℹ️ प्रत्येक फ़ॉलोअप विज़िट के लिए एक पंक्ति जोड़ें।",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_repeat",
+    "name": "i_updates",
+    "label_en": "Follow-up visit",
+    "label_hi": "फ़ॉलोअप विज़िट",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "i_in",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "ia_visit_date",
+    "label_en": "Ia. Date of visit / follow-up",
+    "label_hi": "Ia. विज़िट / फ़ॉलोअप की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one place",
+    "name": "ib_place",
+    "label_en": "Ib. Place of contact",
+    "label_hi": "Ib. संपर्क का स्थान",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one art_status2",
+    "name": "ic_art_status",
+    "label_en": "Ic. ART status",
+    "label_hi": "Ic. एआरटी स्थिति",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one art_line",
+    "name": "ie_regimen",
+    "label_en": "Ie. ART regimen",
+    "label_hi": "Ie. एआरटी उपचार योजना",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "integer",
+    "name": "id_cd4",
+    "label_en": "Id. CD4 count",
+    "label_hi": "Id. सीडी4 गणना",
+    "hint_en": "w1",
+    "hint_hi": "${a04_age}>=18",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "id_cd4_pct",
+    "label_en": "Id. CD4 % (children)",
+    "label_hi": "Id. सीडी4 % (बच्चे)",
+    "hint_en": "w1",
+    "hint_hi": "(${a04_age}<18)",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "if_weight",
+    "label_en": "If. Weight (kg)",
+    "label_hi": "If. वजन (किग्रा)",
+    "hint_en": "w1",
+    "hint_hi": ". >= 1 and . <= 200",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "ig_height",
+    "label_en": "Ig. Height (cm)",
+    "label_hi": "Ig. ऊंचाई (सेमी)",
+    "hint_en": "w1",
+    "hint_hi": ". >= 30 and . <= 230",
+    "required": false
+  },
+  {
+    "type": "decimal",
+    "name": "ih_muac",
+    "label_en": "Ih. MUAC (cm)",
+    "label_hi": "Ih. MUAC (सेमी)",
+    "hint_en": "w1",
+    "hint_hi": "${a04_age}<5",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "ii_sws_any",
+    "label_en": "Ii. Linked to a social welfare scheme this period?",
+    "label_hi": "Ii. इस अवधि में किसी सामाजिक कल्याण योजना से जुड़ाव?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_multiple sws",
+    "name": "ii_sws",
+    "label_en": "Which schemes?",
+    "label_hi": "कौन सी योजनाएं?",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "select_multiple se_status",
+    "name": "ij_se",
+    "label_en": "Ij. Social entitlements held",
+    "label_hi": "Ij. उपलब्ध सामाजिक अधिकार",
+    "hint_en": "minimal w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "ik_stigma",
+    "label_en": "Ik. Faced stigma / discrimination?",
+    "label_hi": "Ik. कलंक / भेदभाव का सामना किया?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "il_att",
+    "label_en": "Il. Presently on ATT?",
+    "label_hi": "Il. वर्तमान में एटीटी पर?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_multiple disc_from_i",
+    "name": "ik_stigma_from",
+    "label_en": "Discrimination faced from",
+    "label_hi": "किससे भेदभाव का सामना किया",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "sec_j",
+    "label_en": "<span style=\"background-color:#1D3557;color:#FFFFFF;\">&nbsp;✅ Section J of 10 – CRF Verification & Service Plan&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#1D3557;color:#FFFFFF;\">&nbsp;✅ खंड J / 10 – सीआरएफ सत्यापन और सेवा योजना&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "j_p1",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "j_ctx",
+    "label_en": "👤 ${ctx_banner}",
+    "label_hi": "👤 ${ctx_banner}",
+    "hint_en": "w4",
+    "hint_hi": "${a03_name}!=''",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "j1_checked",
+    "label_en": "J1. CRF checked on",
+    "label_hi": "J1. सीआरएफ जाँचा गया (तारीख)",
+    "hint_en": "w2",
+    "hint_hi": ". <= today()",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "j2_clh",
+    "label_en": "J2. Name of CLH",
+    "label_hi": "J2. सीएलएच का नाम",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "j3_coord",
+    "label_en": "J3. Name of CSC Coordinator",
+    "label_hi": "J3. सीएससी समन्वयक का नाम",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "j4_comments",
+    "label_en": "J4. Comments / observations",
+    "label_hi": "J4. टिप्पणी / अवलोकन",
+    "hint_en": "multiline w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "j_docs",
+    "label_en": "<span style=\"background-color:#E4EAF2;color:#1D3557;\">&nbsp;Supporting documents&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#E4EAF2;color:#1D3557;\">&nbsp;समर्थन दस्तावेज़&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "j_doc_hiv",
+    "label_en": "A. HIV test report copy attached?",
+    "label_hi": "A. एचआईवी परीक्षण रिपोर्ट की प्रति संलग्न?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "j_doc_addr",
+    "label_en": "B. Address proof copy attached?",
+    "label_hi": "B. पते के प्रमाण की प्रति संलग्न?",
+    "hint_en": "Aadhaar / Voter ID / Ration card / Rent agreement / any valid ID.",
+    "hint_hi": "आधार / मतदाता पहचान पत्र / राशन कार्ड / किराया अनुबंध / कोई वैध पहचान।",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "j_doc_art",
+    "label_en": "C. ART green card / ART book copy attached?",
+    "label_hi": "C. एआरटी ग्रीन कार्ड / पुस्तक की प्रति संलग्न?",
+    "hint_en": "Only for clients already registered at ART.",
+    "hint_hi": "केवल एआरटी में पहले से पंजीकृत क्लाइंट के लिए।",
+    "required": false
+  },
+  {
+    "type": "select_one yn",
+    "name": "j_dln",
+    "label_en": "Registered in a District Level Network (DLN / CBO / TI)?",
+    "label_hi": "जिला स्तर नेटवर्क (DLN / CBO / TI) में पंजीकृत?",
+    "hint_en": "w2",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "text",
+    "name": "j_dln_name",
+    "label_en": "Name of the DLN / CBO / TI",
+    "label_hi": "DLN / CBO / TI का नाम",
+    "hint_en": "true",
+    "hint_hi": "w4",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "j5_hdr",
+    "label_en": "<span style=\"background-color:#E4EAF2;color:#1D3557;\">&nbsp;J5. Services planning sheet – tap \"Add\" for each planned follow-up&nbsp;</span>",
+    "label_hi": "<span style=\"background-color:#E4EAF2;color:#1D3557;\">&nbsp;J5. सेवा योजना शीट – प्रत्येक नियोजित फ़ॉलोअप के लिए \"जोड़ें\" दबाएं&nbsp;</span>",
+    "hint_en": "w4",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_repeat",
+    "name": "j5_plan",
+    "label_en": "Planned follow-up",
+    "label_hi": "नियोजित फ़ॉलोअप",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "j5_in",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "j5_planned_date",
+    "label_en": "Planned follow-up date",
+    "label_hi": "नियोजित फ़ॉलोअप की तारीख",
+    "hint_en": "true",
+    "hint_hi": "w2",
+    "required": false
+  },
+  {
+    "type": "select_one purpose",
+    "name": "j5_purpose",
+    "label_en": "Purpose (J.2)",
+    "label_hi": "उद्देश्य (J.2)",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "select_one svc_cat",
+    "name": "j5_cat",
+    "label_en": "Service category",
+    "label_hi": "सेवा श्रेणी",
+    "hint_en": "true",
+    "hint_hi": "minimal w2",
+    "required": false
+  },
+  {
+    "type": "select_multiple svc",
+    "name": "j5_service",
+    "label_en": "Service(s) needed",
+    "label_hi": "आवश्यक सेवा",
+    "hint_en": "true",
+    "hint_hi": "minimal w4",
+    "required": false
+  },
+  {
+    "type": "date",
+    "name": "j5_done_date",
+    "label_en": "Actual follow-up date (fill when done)",
+    "label_hi": "वास्तविक फ़ॉलोअप तारीख (पूरा होने पर भरें)",
+    "hint_en": "w2",
+    "hint_hi": ". <= today()",
+    "required": false
+  },
+  {
+    "type": "select_one purpose",
+    "name": "j5_done_purpose",
+    "label_en": "Actual purpose",
+    "label_hi": "वास्तविक उद्देश्य",
+    "hint_en": "minimal w2",
+    "hint_hi": "${j5_done_date}!=''",
+    "required": false
+  },
+  {
+    "type": "begin_group",
+    "name": "j_p3",
+    "label_en": "field-list w4",
+    "label_hi": "",
+    "hint_en": "",
+    "hint_hi": "",
+    "required": false
+  },
+  {
+    "type": "note",
+    "name": "closing_note",
+    "label_en": "<span style=\"font-size:1.2em;\">🎉 <b>All done, ${a03_name}'s CRF is ready.</b></span>",
+    "label_hi": "<span style=\"font-size:1.2em;\">🎉 <b>सब पूरा हुआ, ${a03_name} का सीआरएफ तैयार है।</b></span>",
+    "hint_en": "Check that any red-outlined fields are filled, then submit.",
+    "hint_hi": "जाँच लें कि लाल घेरे वाले सभी फ़ील्ड भरे हैं, फिर सबमिट करें।",
+    "required": false
+  }
+]

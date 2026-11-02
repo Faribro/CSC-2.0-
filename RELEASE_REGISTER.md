@@ -75,3 +75,78 @@ This register tracks all official milestone releases, baseline tags, and candida
 - **Backend Lead:** Confirmed PostgreSQL ACID transactional contract, idempotency receipts, and outbox isolation.
 - **Frontend Lead:** Confirmed responsive, bilingual, accessible UI operating cleanly against authority endpoints.
 - **Security Lead:** Confirmed zero secret leakage, RBAC role restrictions, and 100% synthetic data compliance.
+
+---
+
+## Release Entry: CSC-PHASE-2 (Single-Page Registration & Follow-Up Two-Tab Platform)
+
+| Attribute | Value |
+| :--- | :--- |
+| **Milestone** | **CSC Phase 2: Unified Two-Tab Client Platform & Follow-Up Engine** |
+| **Release Version** | `v1.1.0-csc-form` |
+| **Release Date** | 2026-11-02 |
+| **Target Branch** | `feat/csc-form` |
+| **Base Commit** | `8fda8d2` (Branch `feat/csc-vs1`) |
+| **Primary Workflow Answered** | Single-page intake registration + durable post-registration follow-up engine |
+| **Environment** | Local Development & Container Staging (PostgreSQL 16.15, OpenJDK 21, Node 24) |
+
+---
+
+### 1. Shipped Capabilities & Key Implementations
+
+1. **Parity Read & Architectural Inventory**:
+   - `docs/PARITY_INVENTORY.md` covering all 9 capabilities from Childcare Support Phase 3.
+   - `docs/BENCHMARK_ANALYSIS.md` benchmarking patterns from DIGIT (Health Campaign), MOTECH, Novel, CareTogetherCMS, and Twenty.
+2. **Defect Fixes (Committed on `feat/csc-vs1` & merged into `feat/csc-form`)**:
+   - Removed invented drivers (`ART_REFILL_DUE`, `VIRAL_LOAD_DUE`); enforced canonical J5 purpose codes ('1'..'13') and administrator labels.
+   - Task closure strictly requires encounter with explicit `action = "COMPLETE"`.
+   - Planned services transition to `DELIVERED` only via explicit DeliveredService entity.
+   - Canonical user roles standardized across backend, DB, and UI: `field_worker`, `supervisor`, `state_reviewer`, `administrator`, `leadership`.
+   - Google Apps Script 302 header stripping proven; in-body secret authentication implemented.
+3. **Frontend Two-Tab Client Record Architecture**:
+   - **Tab 1: Registration** (`RegistrationForm.tsx`): Sections A–H and J on one scrollable page, with repeat rows (`b2_members`, `d5_referrals`) and document sighted boolean declarations.
+   - **Tab 2: Follow-Up** (`FollowUpTab.tsx`): 6 sub-sections:
+     - Sub-section 1: Open Tasks with status badges (`badge-due`, `badge-overdue`, `badge-pending`, `badge-completed`) and action buttons.
+     - Sub-section 2: Chronological Timeline streaming encounters, attempts, service plans, and deliveries with expandable cards.
+     - Sub-section 3: Record Visit/Encounter using full Section I fields and mandatory action radio (`COMPLETE` vs `LEAVE_OPEN`).
+     - Sub-section 4: Plan Next Action using canonical J5 purpose codes ('1'..'13') and service categories/codes.
+     - Sub-section 5: Record Delivered Service linking to planned services and transitioning them to DELIVERED.
+     - Sub-section 6: Reschedule Task & Correct Record modals with **mandatory reasons** for audit integrity.
+4. **Linelist Directory & New Client Intake**:
+   - `/clients`: Beneficiary Linelist with search, center filtering, status badges, and "+ New Registration".
+   - `/clients/new`: Single-page intake with sticky `SectionIndexRunner` sidebar, progress meters, and offline draft autosaving.
+5. **Backend Client Registration API & Linelist**:
+   - `POST /api/v1/clients`: Atomic transaction writing `Client`, `FamilyMember`, `ReferralRequest`, `AuditEvent`, and `OutboxEvent`.
+   - `GET /api/v1/clients`: Center-scoped linelist with search and open task counters.
+   - `POST /api/v1/tasks/{id}/reschedule`: Task rescheduling with mandatory reason and optimistic locking.
+   - `POST /api/v1/records/correct`: Correction logging with mandatory reason into immutable audit trail.
+6. **Sheets Mirror & Outbox Integration**:
+   - `docs/SHEETS_MIRROR.md`: Comprehensive specification of tab structure, polling batch ingestion, failure handling, and RFC-proven in-body authentication.
+   - `OutboxWorker.java` and `MockGatewayController.java`: Updated for in-body authentication.
+
+---
+
+### 2. Test & Verification Evidence Summary
+
+| Test Domain | Target | Result | Evidence File / Proof |
+| :--- | :--- | :--- | :--- |
+| **Field Parity Verifier** | 236 XLSForm survey elements, 42 choice lists, 361 choices | **100% Validated** | `scripts/verify_field_parity.py` |
+| **Spring Boot Integration** | 19 Integration Tests on PostgreSQL 16.15 | **19/19 Passed (0 failures, 0 errors)** | `backend/src/test/CscVs1IntegrationTest.java` |
+| **Next.js Production Build** | Static generation & bundling for 5 routes | **Build Success (7/7 pages generated)** | `next build` command output |
+| **Synthetic UI Evidence** | 5 Playwright screenshots captured | **5/5 Captured** | `evidence/*.png` |
+
+---
+
+### 3. Release Approval Gates
+
+| Gate | Description | Status | Sign-off / Verification |
+| :---: | :--- | :---: | :--- |
+| **Gate 1** | Parity Inventory & Benchmark Analysis | **PASSED** | `docs/PARITY_INVENTORY.md`, `docs/BENCHMARK_ANALYSIS.md` |
+| **Gate 2** | VS1 Defect Fixes & PostgreSQL Tests | **PASSED** | 19/19 Integration Tests passing on PostgreSQL 16.15 |
+| **Gate 3** | App Shell, Two-Tab Client Record, Linelist & Intake Form | **PASSED** | Full Next.js production build (`✓ Ready`) |
+| **Gate 4** | Field-Mapping Parity & Playwright Synthetic Evidence | **PASSED** | 100% XLSForm parity, 5 screenshots in `evidence/` |
+| **Gate 5** | Sheets Mirror Specification & Outbox Worker Update | **PASSED** | `docs/SHEETS_MIRROR.md`, `OutboxWorker.java` |
+| **Gate 6 (STOP GATE)** | Push feature branch to GitHub (`feat/csc-form`) | **HOLD** | Stopped at gate; awaiting user approval |
+| **Gate 7 (STOP GATE)** | Merge to `main` | **HOLD** | Restricted; work strictly on branches |
+| **Gate 8 (STOP GATE)** | Production Deployments / Shared DB Migrations | **HOLD** | Restricted |
+

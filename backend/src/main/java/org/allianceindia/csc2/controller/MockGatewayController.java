@@ -23,10 +23,15 @@ public class MockGatewayController {
 
     @PostMapping("/apps-script-gateway")
     public ResponseEntity<Map<String, Object>> mockMirrorIngest(
-            @RequestHeader(value = "X-Gateway-Secret", required = false) String gatewaySecret,
+            @RequestHeader(value = "X-Gateway-Secret", required = false) String headerSecret,
             @RequestBody String body) {
-        if (gatewaySecret == null || !gatewaySecret.equals(expectedGatewaySecret)) {
-            log.warn("Mock Apps Script gateway rejected invalid secret: {}", gatewaySecret);
+        
+        // Accept secret in body (matching Apps Script V8 requirements) or header
+        boolean hasValidBodySecret = body != null && body.contains(expectedGatewaySecret);
+        boolean hasValidHeaderSecret = headerSecret != null && headerSecret.equals(expectedGatewaySecret);
+
+        if (!hasValidBodySecret && !hasValidHeaderSecret) {
+            log.warn("Mock Apps Script gateway rejected invalid secret");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("status", "UNAUTHORIZED", "message", "Invalid gateway secret"));
         }
 

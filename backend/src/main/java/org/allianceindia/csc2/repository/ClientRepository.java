@@ -12,5 +12,6 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
     Optional<Client> findByIdAndCenterIdIn(UUID id, Collection<String> centerIds);
     Optional<Client> findByClientRef(String clientRef);
     Page<Client> findByCenterIdIn(Collection<String> centerIds, Pageable pageable);
+    Page<Client> findByCenterIdInAndFullNameContainingIgnoreCase(Collection<String> centerIds, String fullName, Pageable pageable);
     long countByCenterIdIn(Collection<String> centerIds);
 }

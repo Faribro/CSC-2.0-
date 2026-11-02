@@ -40,3 +40,8 @@ playwright/.cache/
 # Coverage
 coverage/
 lcov.info
+
+# Python & TypeScript Build Caches
+__pycache__/
+*.pyc
+*.tsbuildinfo

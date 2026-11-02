@@ -364,6 +364,75 @@ public class FollowUpService {
         return receipt;
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public DTOs.ActionReceipt rescheduleTask(UUID taskId, DTOs.RescheduleTaskRequest req, UserPrincipal user, String idempotencyKey, String ipAddress) {
+        if (req.reason() == null || req.reason().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reschedule reason is mandatory");
+        }
+        if (req.newDueDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New due date is mandatory");
+        }
+        Task task = taskRepository.findByIdAndCenterIdInWithLock(taskId, user.getAuthorizedCenters())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside authorized center scope"));
+
+        if (req.expectedTaskVersion() != null && task.getVersion() != req.expectedTaskVersion()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Task version conflict: expected " + req.expectedTaskVersion() + " but was " + task.getVersion());
+        }
+
+        LocalDate previousDueDate = task.getDueDate();
+        task.setDueDate(req.newDueDate());
+        task.setUpdatedAt(Instant.now());
+        taskRepository.save(task);
+
+        AuditEvent audit = new AuditEvent(
+                user.getId(), user.getUsername(), task.getCenterId(),
+                "TASK_RESCHEDULED", "TASK", task.getId(),
+                ipAddress, String.format("{\"previousDueDate\":\"%s\",\"newDueDate\":\"%s\",\"reason\":\"%s\"}",
+                previousDueDate, req.newDueDate(), req.reason().replace("\"", "\\\""))
+        );
+        auditEventRepository.save(audit);
+
+        OutboxEvent outbox = new OutboxEvent(
+                "TASK_RESCHEDULED", "TASK", task.getId(),
+                String.format("{\"taskId\":\"%s\",\"newDueDate\":\"%s\",\"reason\":\"%s\"}",
+                task.getId(), req.newDueDate(), req.reason().replace("\"", "\\\""))
+        );
+        outboxRepository.save(outbox);
+
+        return new DTOs.ActionReceipt(idempotencyKey, "SUCCESS", "Task rescheduled successfully", task.getId(), task.getVersion());
+    }
+
+    @Transactional
+    public DTOs.ActionReceipt correctRecord(DTOs.CorrectRecordRequest req, UserPrincipal user, String idempotencyKey, String ipAddress) {
+        if (req.reason() == null || req.reason().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Correction reason is mandatory");
+        }
+        if (req.recordType() == null || req.recordId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Record type and ID are mandatory");
+        }
+
+        AuditEvent audit = new AuditEvent(
+                user.getId(), user.getUsername(), "GLOBAL",
+                "RECORD_CORRECTED", req.recordType(), req.recordId(),
+                ipAddress, String.format("{\"fieldName\":\"%s\",\"newValue\":\"%s\",\"reason\":\"%s\"}",
+                req.fieldName() != null ? req.fieldName().replace("\"", "\\\"") : "",
+                req.newValue() != null ? req.newValue().replace("\"", "\\\"") : "",
+                req.reason().replace("\"", "\\\""))
+        );
+        auditEventRepository.save(audit);
+
+        OutboxEvent outbox = new OutboxEvent(
+                "RECORD_CORRECTED", req.recordType(), req.recordId(),
+                String.format("{\"recordId\":\"%s\",\"fieldName\":\"%s\",\"reason\":\"%s\"}",
+                req.recordId(),
+                req.fieldName() != null ? req.fieldName().replace("\"", "\\\"") : "",
+                req.reason().replace("\"", "\\\""))
+        );
+        outboxRepository.save(outbox);
+
+        return new DTOs.ActionReceipt(idempotencyKey, "SUCCESS", "Record correction logged in immutable audit trail", req.recordId(), 0);
+    }
+
     private void saveReceipt(String key, UUID actorId, String endpoint, String hash, int status, DTOs.ActionReceipt receipt) {
         try {
             String body = objectMapper.writeValueAsString(receipt);

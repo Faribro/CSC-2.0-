@@ -65,4 +65,29 @@ public class FollowUpController {
         );
         return ResponseEntity.ok(receipt);
     }
+
+    @PostMapping("/tasks/{id}/reschedule")
+    public ResponseEntity<DTOs.ActionReceipt> rescheduleTask(
+            @PathVariable java.util.UUID id,
+            @RequestBody DTOs.RescheduleTaskRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @AuthenticationPrincipal UserPrincipal user,
+            HttpServletRequest httpRequest) {
+        DTOs.ActionReceipt receipt = followUpService.rescheduleTask(
+                id, request, user, idempotencyKey, httpRequest.getRemoteAddr()
+        );
+        return ResponseEntity.ok(receipt);
+    }
+
+    @PostMapping("/records/correct")
+    public ResponseEntity<DTOs.ActionReceipt> correctRecord(
+            @RequestBody DTOs.CorrectRecordRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @AuthenticationPrincipal UserPrincipal user,
+            HttpServletRequest httpRequest) {
+        DTOs.ActionReceipt receipt = followUpService.correctRecord(
+                request, user, idempotencyKey, httpRequest.getRemoteAddr()
+        );
+        return ResponseEntity.ok(receipt);
+    }
 }

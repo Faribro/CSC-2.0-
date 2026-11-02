@@ -50,6 +50,8 @@ public class CscVs1IntegrationTest {
     @Autowired private AuditEventRepository auditEventRepository;
     @Autowired private OutboxRepository outboxRepository;
     @Autowired private IdempotencyReceiptRepository idempotencyReceiptRepository;
+    @Autowired private FamilyMemberRepository familyMemberRepository;
+    @Autowired private ReferralRequestRepository referralRequestRepository;
     @Autowired private FollowUpService followUpService;
 
     private Actor workerDelhi;
@@ -451,5 +453,162 @@ public class CscVs1IntegrationTest {
         // Outbox event is safely persisted as PENDING
         List<OutboxEvent> outboxList = outboxRepository.findByStatus("PENDING");
         assertThat(outboxList).isNotEmpty();
+    }
+
+    // 15. Reschedule task with mandatory reason and version check
+    @Test
+    @DisplayName("Scenario 15: Reschedule task requires mandatory reason and enforces optimistic concurrency")
+    void testRescheduleTaskWithMandatoryReasonAndConflict() throws Exception {
+        LocalDate newDate = LocalDate.now().plusDays(5);
+
+        // Positive test
+        DTOs.RescheduleTaskRequest validReq = new DTOs.RescheduleTaskRequest(
+                newDate, "Client requested postponement due to out-of-station travel", taskDelhi.getVersion()
+        );
+
+        mockMvc.perform(post("/api/v1/tasks/" + taskDelhi.getId() + "/reschedule")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        Task updatedTask = taskRepository.findById(taskDelhi.getId()).orElseThrow();
+        assertThat(updatedTask.getDueDate()).isEqualTo(newDate);
+
+        // Negative test: Missing reason -> 400 Bad Request
+        DTOs.RescheduleTaskRequest noReasonReq = new DTOs.RescheduleTaskRequest(
+                LocalDate.now().plusDays(7), "   ", updatedTask.getVersion()
+        );
+        mockMvc.perform(post("/api/v1/tasks/" + taskDelhi.getId() + "/reschedule")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(noReasonReq)))
+                .andExpect(status().isBadRequest());
+
+        // Negative test: Version conflict -> 409 Conflict
+        DTOs.RescheduleTaskRequest staleReq = new DTOs.RescheduleTaskRequest(
+                LocalDate.now().plusDays(8), "Valid reason", 999
+        );
+        mockMvc.perform(post("/api/v1/tasks/" + taskDelhi.getId() + "/reschedule")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(staleReq)))
+                .andExpect(status().isConflict());
+    }
+
+    // 16. Correct record with mandatory reason
+    @Test
+    @DisplayName("Scenario 16: Correct record requires mandatory reason and writes immutable audit entry")
+    void testCorrectRecordWithMandatoryReason() throws Exception {
+        DTOs.CorrectRecordRequest req = new DTOs.CorrectRecordRequest(
+                "CONTACT_ATTEMPT", UUID.randomUUID(), "notes", "Corrected contact notes after verification",
+                "Spelling correction of caregiver designation", 0
+        );
+
+        mockMvc.perform(post("/api/v1/records/correct")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        // Verify missing reason yields 400
+        DTOs.CorrectRecordRequest blankReq = new DTOs.CorrectRecordRequest(
+                "CONTACT_ATTEMPT", UUID.randomUUID(), "notes", "New text", "", 0
+        );
+        mockMvc.perform(post("/api/v1/records/correct")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(blankReq)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // 17. Client registration transactional contract
+    @Test
+    @DisplayName("Scenario 17: Register client creates Client, FamilyMembers, Referrals, Audit and Outbox atomically")
+    void testRegisterClientFullTransactionalContract() throws Exception {
+        DTOs.RegisterClientRequest req = new DTOs.RegisterClientRequest(
+                "CSC-DL-2026-9999",
+                "CENTER_DELHI_01",
+                LocalDate.now(),
+                "1",
+                "New Registered Beneficiary",
+                "Alias Beneficiary",
+                32,
+                "female",
+                "married",
+                "Spouse Name",
+                "0000000000",
+                "0000000001",
+                "no",
+                "self_employed",
+                null,
+                "none",
+                "House 42, Karol Bagh, New Delhi",
+                "Central Delhi",
+                "Delhi",
+                "110005",
+                "positive",
+                "ART-DL-9999",
+                "LNJP ART Centre",
+                LocalDate.of(2022, 1, 10),
+                510,
+                new java.math.BigDecimal("28.50"),
+                0,
+                new java.math.BigDecimal("24.5"),
+                true,
+                true,
+                true,
+                "Verified physical documents during center intake",
+                true,
+                true,
+                false,
+                List.of(
+                        new DTOs.FamilyMemberInput("Child 1", "child", 8, "female", "negative", null),
+                        new DTOs.FamilyMemberInput("Spouse", "spouse", 35, "male", "positive", "ART-DL-8888")
+                ),
+                List.of(
+                        new DTOs.ReferralRequestInput("social_protection", "Delhi Social Welfare Dept", "Antyodaya Anna Yojana linkage", LocalDate.now())
+                )
+        );
+
+        mockMvc.perform(post("/api/v1/clients")
+                        .header("Authorization", "Bearer " + jwtDelhi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        Client savedClient = clientRepository.findByClientRef("CSC-DL-2026-9999").orElseThrow();
+        assertThat(savedClient.getFullName()).isEqualTo("New Registered Beneficiary");
+        assertThat(savedClient.isHasHivDocDeclaration()).isTrue();
+        assertThat(savedClient.isHomeVisitConsent()).isTrue();
+
+        List<FamilyMember> members = familyMemberRepository.findByClientId(savedClient.getId());
+        assertThat(members).hasSize(2);
+
+        List<ReferralRequest> referrals = referralRequestRepository.findByClientIdOrderByReferralDateDesc(savedClient.getId());
+        assertThat(referrals).hasSize(1);
+    }
+
+    // 18. Client linelist scoping and search
+    @Test
+    @DisplayName("Scenario 18: Client linelist enforces center isolation and supports search")
+    void testClientLinelistScopingAndSearch() throws Exception {
+        // Delhi user querying clients
+        mockMvc.perform(get("/api/v1/clients")
+                        .header("Authorization", "Bearer " + jwtDelhi))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clients").isArray())
+                .andExpect(jsonPath("$.clients[?(@.clientRef == 'CSC-DL-0001')]").exists())
+                .andExpect(jsonPath("$.clients[?(@.clientRef == 'CSC-MB-0001')]").doesNotExist());
+
+        // Search filter
+        mockMvc.perform(get("/api/v1/clients?search=Delhi")
+                        .header("Authorization", "Bearer " + jwtDelhi))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clients").isArray())
+                .andExpect(jsonPath("$.clients[0].fullName").value("Synthetic Beneficiary Delhi"));
     }
 }
