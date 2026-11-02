@@ -1,0 +1,37 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: csc2-backend-test
+  datasource:
+    url: ${SPRING_DATASOURCE_TEST_URL:jdbc:postgresql://localhost:5432/csc2_test?currentSchema=csc2}
+    username: csc2_app
+    password: csc2_app_secret_pass
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    url: ${FLYWAY_TEST_URL:jdbc:postgresql://localhost:5432/csc2_test?currentSchema=csc2}
+    user: csc2_migration
+    password: csc2_migration_secret_pass
+    schemas: csc2
+    default-schema: csc2
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: csc2
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  jwt:
+    secret: test_jwt_synthetic_signing_secret_key_1234567890_test
+    expiration-ms: 3600000
+  service:
+    credential: test_service_credential_token_123456
+  apps-script:
+    gateway-url: http://localhost:8080/api/mock/apps-script-gateway
+    gateway-secret: test_gateway_secret_token_12345

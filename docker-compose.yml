@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: csc2_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: csc2_dev
+      POSTGRES_USER: csc2_migration
+      POSTGRES_PASSWORD: ${DB_MIGRATION_PASSWORD:-csc2_migration_secret_pass}
+    volumes:
+      - csc2_pgdata:/var/lib/postgresql/data
+    # Isolated network without host port publishing in production mode
+    expose:
+      - "5432"
+    networks:
+      - csc2_internal_net
+
+  backend1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: csc2_backend_1
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/csc2_dev?currentSchema=csc2
+      SPRING_DATASOURCE_USERNAME: csc2_app
+      SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:-csc2_app_secret_pass}
+      FLYWAY_URL: jdbc:postgresql://db:5432/csc2_dev?currentSchema=csc2
+      FLYWAY_USER: csc2_migration
+      FLYWAY_PASSWORD: ${DB_MIGRATION_PASSWORD:-csc2_migration_secret_pass}
+      SERVER_PORT: 8080
+      INSTANCE_ID: api-node-1
+    depends_on:
+      - db
+    expose:
+      - "8080"
+    networks:
+      - csc2_internal_net
+
+  backend2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: csc2_backend_2
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/csc2_dev?currentSchema=csc2
+      SPRING_DATASOURCE_USERNAME: csc2_app
+      SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:-csc2_app_secret_pass}
+      FLYWAY_ENABLED: "false" # Only instance 1 or migration job runs flyway
+      SERVER_PORT: 8080
+      INSTANCE_ID: api-node-2
+    depends_on:
+      - db
+    expose:
+      - "8080"
+    networks:
+      - csc2_internal_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: csc2_frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_INTERNAL_URL: http://backend1:8080
+      NEXT_PUBLIC_APP_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend1
+      - backend2
+    networks:
+      - csc2_internal_net
+
+volumes:
+  csc2_pgdata:
+
+networks:
+  csc2_internal_net:
+    driver: bridge

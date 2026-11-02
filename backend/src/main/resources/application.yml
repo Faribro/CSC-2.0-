@@ -1,0 +1,53 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: csc2-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/csc2_dev?currentSchema=csc2}
+    username: ${SPRING_DATASOURCE_USERNAME:csc2_app}
+    password: ${DB_APP_PASSWORD:csc2_app_secret_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    url: ${FLYWAY_URL:jdbc:postgresql://localhost:5432/csc2_dev?currentSchema=csc2}
+    user: ${FLYWAY_USER:csc2_migration}
+    password: ${DB_MIGRATION_PASSWORD:csc2_migration_secret_pass}
+    schemas: csc2
+    default-schema: csc2
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: csc2
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    show-sql: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  jwt:
+    secret: ${JWT_SIGNING_SECRET:local_dev_only_synthetic_jwt_signing_key_never_used_in_prod_0123456789}
+    expiration-ms: 86400000
+  service:
+    credential: ${SERVICE_CREDENTIAL:local_dev_service_secret_token_abcdef123456789}
+  apps-script:
+    gateway-url: ${APPS_SCRIPT_GATEWAY_URL:http://localhost:8080/api/mock/apps-script-gateway}
+    gateway-secret: ${APPS_SCRIPT_GATEWAY_SECRET:local_gateway_synthetic_secret_token_12345}

@@ -1,0 +1,48 @@
+{
+  "milestone": "CSC-VS1",
+  "timestamp": "2026-11-02T09:18:45Z",
+  "environment": {
+    "os": "Windows 11 Enterprise (10.0.26100)",
+    "java_version": "Eclipse Temurin OpenJDK 21.0.13+9-LTS",
+    "spring_boot_version": "3.4.1",
+    "database": "PostgreSQL 16.15 (Native)",
+    "frontend": "Next.js 15.1.7 (React 19.0.0)"
+  },
+  "performance": {
+    "cold_start_seconds": 12.86,
+    "worklist_endpoint": {
+      "samples_count": 50,
+      "payload_bytes": 109,
+      "latency_ms": {
+        "p50": 20.86,
+        "p95": 32.05,
+        "min": 6.34,
+        "max": 38.64,
+        "avg": 20.3
+      },
+      "sample_response": {
+        "date": "2026-11-02",
+        "today": [],
+        "overdue": [],
+        "upcoming": [],
+        "totalToday": 0,
+        "totalOverdue": 0,
+        "totalUpcoming": 0
+      }
+    }
+  },
+  "journeys_verified": [
+    "Journey 1: Log in -> My Work -> Record Attempt (Reached) -> Verify Task Open -> Record Encounter -> Complete Task",
+    "Journey 2: Plan Next Service (Section J5) -> Explicit Delivered Service Status Transition",
+    "Journey 3: Bilingual Locale Toggle (English <-> Hindi) UI verification",
+    "Journey 4: Client Case Detail & Chronological Timeline + Cross-Scope 404 Access Guard"
+  ],
+  "screenshots_captured": [
+    "evidence/worklist_today.png",
+    "evidence/record_attempt_reached.png",
+    "evidence/record_encounter.png",
+    "evidence/plan_service.png",
+    "evidence/timeline.png",
+    "evidence/cross_scope_denied.png"
+  ]
+}
