@@ -58,7 +58,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
               required
             />
           </div>
@@ -68,7 +68,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
             <select
               value={channel}
               onChange={(e) => setChannel(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-plum focus:outline-none"
             >
               <option value="PHONE">Phone Call (दूरभाष)</option>
               <option value="HOME_VISIT">Home Visit (गृह भेंट)</option>
@@ -81,7 +81,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
             <label className="block text-xs font-semibold text-slate-700 mb-1">{t.outcome}</label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { val: 'reached', label: t.reached, color: 'border-emerald-500 bg-emerald-50 text-emerald-900' },
+                { val: 'reached', label: t.reached, color: 'border-mint bg-mint/50 text-success-ink' },
                 { val: 'not_reached', label: t.not_reached, color: 'border-amber-500 bg-amber-50 text-amber-900' },
                 { val: 'refused', label: t.refused, color: 'border-rose-500 bg-rose-50 text-rose-900' }
               ].map(opt => (
@@ -90,7 +90,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
                   type="button"
                   onClick={() => setOutcome(opt.val)}
                   className={`py-2 px-3 text-xs font-bold rounded-lg border text-center transition-all ${
-                    outcome === opt.val ? opt.color + ' ring-2 ring-blue-500' : 'border-slate-200 bg-slate-50 text-slate-700'
+                    outcome === opt.val ? opt.color + ' ring-2 ring-plum' : 'border-slate-200 bg-slate-50 text-slate-700'
                   }`}
                   aria-pressed={outcome === opt.val}
                 >
@@ -110,7 +110,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Record beneficiary response, next suggested time, or barriers..."
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
             />
           </div>
 
@@ -124,7 +124,7 @@ export const ContactAttemptModal: React.FC<ContactAttemptModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-md shadow-sm"
+              className="px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-md shadow-sm"
             >
               {t.submitToServer}
             </button>

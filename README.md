@@ -8,11 +8,12 @@
 ## 1. System Architecture
 
 CSC 2.0 is designed as a secure, role-governed follow-up engine for Care & Support Centres:
-- **Frontend:** Next.js 15 (App Router, React 19, Tailwind CSS) operating as a thin BFF with client-side state caching, IndexedDB draft recovery, and bilingual UI (English / Hindi).
-  - **Enketo-Style Centered CRF Form:** Complete 187-field intake instrument across Sections A through J, full XLSForm relevance and skipping engine (`lib/crfLogic.ts`), repeat groups for Family Members (B2), Referral Requests (D5), and Planned Services (J5), horizontal progress navigation tabs with error counters, and clean paper layout (`max-w-4xl mx-auto`) without distracting sidebars.
-  - **Zero-Emoji Architecture:** 100% of emojis eliminated from source code, translations, and rendered DOM, replaced with pinned, verified `lucide-react@0.475.0` iconography. Enforced via `scripts/lint_no_emoji.js` and automated browser DOM assertions (`scripts/verify_controls_and_emoji.js`).
-  - **Record View / Edit & Audit History:** Dual-mode single-page CRF supporting read-only View and permission-gated Edit with optimistic concurrency (`expectedVersion`), client-side diff preview, and revision history timeline.
-- **Backend API:** Java 21 with Spring Boot 3.4, Spring Security stateless JWT authentication, and transactional integrity.
+- **Three Top-Level Tabs:** Forms (`/work`), Records & Follow-ups (`/clients`), and Evaluation (`/admin`).
+- **Field Worker Verification:** First-time 6-digit phone OTP with persistent 30-day sliding cookie session (`csc2_device_session`), roster-gated access, and dev test code `123456`.
+- **SMS Gateway Architecture:** `SmsProvider` interface supporting TextBee Android gateway, mock sink, and carrier stub.
+- **Calm Comic Theme:** Zero blue/dark-green colors outside logo, 100% WCAG 2.2 AA compliant.
+- **Single-Page CRF Form:** Sections A–J, horizontal slider navigation, GPS Live Address Fetch (`LocationFetchButton.tsx`).
+- **Backend API:** Java 21 with Spring Boot 3.4, Spring Security, Flyway V5 schema.
   - **Legacy Onboarding & Session Engine (Rebuilt):** Flyway migrations `V2` (profile revisions), `V3` (onboarding & session persistence), and `V4` (audit alignment).
   - **State Manager Flow:** Work email signup, domain allowlist, HMAC-SHA256 state code generation (`ALN-<STATE>-XXXX-XXXX`), 6-digit OTP (10 min expiry, 5 attempt lockout), authenticated POST admin approval.
   - **Field Worker Flow:** Minimal-scope Google sign-in, atomic single-use state code redemption with pessimistic locking `findByCodeVerifierForUpdate`.

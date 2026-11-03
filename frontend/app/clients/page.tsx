@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Language, translations } from '@/lib/translations';
 import { Icon } from '@/components/ui/Icon';
@@ -21,231 +22,152 @@ interface ClientSummary {
   openTaskCount: number;
 }
 
-export default function ClientsDirectoryPage() {
+export default function SubmittedSurveysDirectoryPage() {
+  const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
 
-  const [clients, setClients] = useState<ClientSummary[]>([
-    {
-      id: "client-001",
-      clientRef: "CSC-DL-0001",
-      centerId: "CENTER_DELHI_01",
-      fullName: "Sunita Verma (Synthetic)",
-      age: 28,
-      gender: "female",
-      primaryPhone: "0000000000",
-      hivStatus: "positive",
-      artNumber: "ART-DL-9988",
-      status: "ACTIVE",
-      registrationDate: "2026-04-12",
-      openTaskCount: 1,
-    },
-    {
-      id: "client-002",
-      clientRef: "CSC-DL-0002",
-      centerId: "CENTER_DELHI_01",
-      fullName: "Rajesh Kumar (Synthetic)",
-      age: 35,
-      gender: "male",
-      primaryPhone: "0000000001",
-      hivStatus: "positive",
-      artNumber: "ART-DL-9989",
-      status: "ACTIVE",
-      registrationDate: "2026-05-18",
-      openTaskCount: 2,
-    },
-    {
-      id: "client-003",
-      clientRef: "CSC-MB-0001",
-      centerId: "CENTER_MUMBAI_01",
-      fullName: "Anita Patil (Synthetic)",
-      age: 42,
-      gender: "female",
-      primaryPhone: "0000000002",
-      hivStatus: "positive",
-      artNumber: "ART-MB-5544",
-      status: "ACTIVE",
-      registrationDate: "2026-06-20",
-      openTaskCount: 0,
-    },
-  ]);
-
+  const [clients, setClients] = useState<ClientSummary[]>([]);
   const [search, setSearch] = useState('');
-  const [centerFilter, setCenterFilter] = useState('ALL');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [totalElements, setTotalElements] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 15;
+
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const url = `/api/v1/clients?page=${currentPage}&size=${pageSize}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data.clients || []);
+        setTotalElements(data.totalElements || 0);
+      } else {
+        setClients([]);
+      }
+    } catch {
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Attempt live fetch if available
-    const fetchClients = async () => {
-      try {
-        const token = localStorage.getItem('csc_token');
-        const res = await fetch(`/api/v1/clients${search ? `?search=${encodeURIComponent(search)}` : ''}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.clients && data.clients.length > 0) {
-            setClients(data.clients);
-          }
-        }
-      } catch (ignored) {
-        // Fallback to initial synthetic data for offline/demo
-      }
-    };
     fetchClients();
-  }, [search]);
-
-  const filteredClients = clients.filter((c) => {
-    const matchesSearch =
-      c.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      c.clientRef.toLowerCase().includes(search.toLowerCase()) ||
-      (c.artNumber && c.artNumber.toLowerCase().includes(search.toLowerCase()));
-    const matchesCenter = centerFilter === 'ALL' || c.centerId === centerFilter;
-    return matchesSearch && matchesCenter;
-  });
+  }, [search, currentPage]);
 
   return (
     <AppShell
       currentLang={lang}
       onLanguageChange={setLang}
     >
-      <div className="space-y-6">
-        {/* Top Header & Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Icon name="Users" className="w-5 h-5 text-emerald-800" />
-              <span>{t.clients} ({filteredClients.length})</span>
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Care & Support Centre Linelist and Beneficiary Directory
-            </p>
-          </div>
-
-          <Link
-            href="/clients/new"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all min-h-[44px]"
-          >
-            <Icon name="add" className="w-4 h-4" />
-            <span>{lang === 'hi' ? 'नया लाभार्थी पंजीकरण (CRF)' : 'New Registration (CRF)'}</span>
-          </Link>
-        </div>
-
+      <div className="space-y-6 max-w-6xl mx-auto">
         {/* Filter and Search Bar */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="bg-surface rounded-[16px] border-2 border-border/40 shadow-comic p-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative w-full md:w-96">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-              <Icon name="search" className="w-4 h-4 text-slate-400" />
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-ink-muted">
+              <Icon name="Search" className="w-4 h-4" />
             </span>
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t.searchPlaceholder}
-              className="w-full text-xs pl-9 pr-4 py-2 border border-slate-300 rounded-lg min-h-[44px] focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(0);
+              }}
+              placeholder={lang === 'hi' ? 'नाम, संदर्भ आईडी या एआरटी नंबर से खोजें...' : 'Search by name, reference ID, or ART number...'}
+              className="w-full text-xs pl-9 pr-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink min-h-[44px] focus:outline-hidden focus:border-plum focus:ring-2 focus:ring-plum/20"
             />
           </div>
 
-          <div className="flex items-center space-x-3 w-full md:w-auto">
-            <label className="text-xs font-semibold text-slate-600 whitespace-nowrap">
-              {t.center}:
-            </label>
-            <select
-              value={centerFilter}
-              onChange={(e) => setCenterFilter(e.target.value)}
-              className="text-xs border border-slate-300 rounded-lg px-3 py-2 min-h-[44px] bg-white w-full md:w-48 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-            >
-              <option value="ALL">All Authorized Centers</option>
-              <option value="CENTER_DELHI_01">CENTER_DELHI_01</option>
-              <option value="CENTER_MUMBAI_01">CENTER_MUMBAI_01</option>
-            </select>
+          <div className="text-xs font-mono font-bold text-ink-muted self-end md:self-center">
+            {lang === 'hi' ? `कुल रिकॉर्ड: ${totalElements}` : `Total verified: ${totalElements}`}
           </div>
         </div>
 
-        {/* Client Linelist Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Surveys Linelist Table */}
+        <div className="bg-surface rounded-[16px] border-2 border-border/40 shadow-comic overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase text-[11px] tracking-wider">
-                  <th className="py-3 px-4">{t.clientRef}</th>
-                  <th className="py-3 px-4">Beneficiary Name</th>
-                  <th className="py-3 px-4">Age / Gender</th>
-                  <th className="py-3 px-4">{t.center}</th>
-                  <th className="py-3 px-4">ART Info</th>
-                  <th className="py-3 px-4">Open Tasks</th>
-                  <th className="py-3 px-4">{t.status}</th>
-                  <th className="py-3 px-4 text-right">{t.actions}</th>
+                <tr className="bg-canvas border-b-2 border-border/40 text-ink font-black uppercase text-[10.5px] tracking-wider">
+                  <th scope="col" className="py-3.5 px-4">{lang === 'hi' ? 'संदर्भ आईडी' : 'Client Ref'}</th>
+                  <th scope="col" className="py-3.5 px-4">{lang === 'hi' ? 'लाभार्थी का नाम' : 'Beneficiary Name'}</th>
+                  <th scope="col" className="py-3.5 px-4">{lang === 'hi' ? 'आयु / लिंग' : 'Age / Gender'}</th>
+                  <th scope="col" className="py-3.5 px-4">{lang === 'hi' ? 'एचआईवी / एआरटी स्थिति' : 'HIV / ART Status'}</th>
+                  <th scope="col" className="py-3.5 px-4">{lang === 'hi' ? 'पंजीकरण तिथि' : 'Registration Date'}</th>
+                  <th scope="col" className="py-3.5 px-4 text-center">{lang === 'hi' ? 'क्रियाएं' : 'Actions'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredClients.length === 0 ? (
+              <tbody className="divide-y divide-border/30">
+                {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500">
-                      No registered clients match your query.
+                    <td colSpan={6} className="py-12 text-center text-ink-muted">
+                      <div className="inline-flex items-center gap-2">
+                        <Icon name="RefreshCw" className="w-4 h-4 animate-spin text-plum" />
+                        <span>{lang === 'hi' ? 'लोड हो रहा है...' : 'Loading submitted records...'}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : clients.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-ink-muted">
+                      <Icon name="FileText" className="w-8 h-8 mx-auto text-ink-muted/40 mb-2" />
+                      <p className="font-bold text-xs">{lang === 'hi' ? 'कोई रिकॉर्ड नहीं मिला।' : 'No records found.'}</p>
+                      <p className="text-[11px] text-ink-muted/80 mt-1">
+                        {lang === 'hi' ? 'आपके द्वारा सबमिट किए गए रिकॉर्ड और फॉलो-अप यहां दिखाई देंगे।' : 'Records and follow-ups you complete and submit to the server will appear here.'}
+                      </p>
                     </td>
                   </tr>
                 ) : (
-                  filteredClients.map((client) => (
-                    <tr key={client.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
-                        {client.clientRef}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900">
-                        <Link
-                          href={`/clients/${client.id}`}
-                          className="hover:text-emerald-700 hover:underline"
-                        >
-                          {client.fullName}
+                  clients.map((c) => (
+                    <tr key={c.id} className="hover:bg-canvas/50 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-plum">
+                        <Link href={`/clients/${c.id}?mode=view`} className="hover:underline">
+                          {c.clientRef}
                         </Link>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {client.age} yrs • {client.gender.toUpperCase()}
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-ink">{c.fullName}</div>
+                        {c.primaryPhone && <div className="text-[11px] font-mono text-ink-muted">{c.primaryPhone}</div>}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
-                        {client.centerId}
+                      <td className="py-3.5 px-4 font-medium capitalize">
+                        {c.age} yrs • {c.gender}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-xs font-bold text-slate-800">
-                            {client.artNumber || 'Pending'}
-                          </span>
-                          <span className="text-[10px] text-slate-500">
-                            {client.hivStatus?.toUpperCase() || 'POSITIVE'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {client.openTaskCount > 0 ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                            {client.openTaskCount} Due
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                            0 Tasks
-                          </span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-mint/50 text-success-ink border border-mint">
+                          {c.hivStatus || 'Recorded'}
+                        </span>
+                        {c.artNumber && (
+                          <div className="text-[10.5px] font-mono text-ink-muted mt-0.5">
+                            {c.artNumber}
+                          </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          {client.status}
-                        </span>
+                      <td className="py-3.5 px-4 text-ink-muted font-medium">
+                        {c.registrationDate || 'Recent'}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="inline-flex items-center gap-1.5">
+                          {/* View Button */}
                           <Link
-                            href={`/clients/${client.id}?tab=registration&view=true`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg border border-slate-300 transition-colors text-xs"
+                            href={`/clients/${c.id}?mode=view`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-canvas hover:bg-border/30 text-ink font-bold rounded-[8px] border border-border/40 transition-colors text-[11px]"
+                            title={lang === 'hi' ? 'विवरण देखें' : 'View record'}
                           >
-                            <Icon name="view" className="w-3.5 h-3.5" />
+                            <Icon name="Eye" className="w-3.5 h-3.5 text-plum" />
                             <span>{lang === 'hi' ? 'देखें' : 'View'}</span>
                           </Link>
+
+                          {/* Edit Button */}
                           <Link
-                            href={`/clients/${client.id}?tab=registration&edit=true`}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-lg border border-emerald-300 transition-colors text-xs"
+                            href={`/clients/${c.id}?mode=edit`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-plum hover:bg-[#682e77] text-white font-bold rounded-[8px] transition-colors text-[11px] shadow-2xs"
+                            title={lang === 'hi' ? 'संशोधन संपादित करें' : 'Edit with revision reason'}
                           >
-                            <Icon name="edit" className="w-3.5 h-3.5" />
-                            <span>{lang === 'hi' ? 'संशोधन' : 'Edit'}</span>
+                            <Icon name="Edit3" className="w-3.5 h-3.5" />
+                            <span>{lang === 'hi' ? 'संपादित करें' : 'Edit'}</span>
                           </Link>
                         </div>
                       </td>
@@ -255,6 +177,33 @@ export default function ClientsDirectoryPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Bounded Pagination Controls */}
+          {totalElements > pageSize && (
+            <div className="p-3 bg-canvas border-t-2 border-border/40 flex items-center justify-between text-xs">
+              <span className="text-ink-muted">
+                Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, totalElements)} of {totalElements}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage === 0}
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  className="px-3 py-1.5 rounded-[8px] bg-surface border border-border/50 text-ink font-bold disabled:opacity-40 cursor-pointer"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={(currentPage + 1) * pageSize >= totalElements}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="px-3 py-1.5 rounded-[8px] bg-surface border border-border/50 text-ink font-bold disabled:opacity-40 cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </AppShell>

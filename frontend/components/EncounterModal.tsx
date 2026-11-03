@@ -77,7 +77,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
               type="date"
               value={observationDate}
               onChange={(e) => setObservationDate(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
               required
             />
             <p className="text-[11px] text-slate-400 mt-0.5">Note: System automatically records clock_timestamp separately as entry timestamp.</p>
@@ -88,7 +88,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
             <select
               value={encounterType}
               onChange={(e) => setEncounterType(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-plum focus:outline-none"
             >
               <option value="HOME_VISIT">{t.homeVisit}</option>
               <option value="CSC_VISIT">{t.cscVisit}</option>
@@ -102,7 +102,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
               <select
                 value={artAdherence}
                 onChange={(e) => setArtAdherence(e.target.value)}
-                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-plum focus:outline-none"
               >
                 <option value="Good (95%+)">Good (95%+ adherence)</option>
                 <option value="Moderate (85-94%)">Moderate (85-94%)</option>
@@ -114,7 +114,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
               <select
                 value={nutrition}
                 onChange={(e) => setNutrition(e.target.value)}
-                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-plum focus:outline-none"
               >
                 <option value="Adequate">Adequate / Normal</option>
                 <option value="Mild Malnutrition">Mild Underweight</option>
@@ -133,7 +133,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                 value={cd4}
                 onChange={(e) => setCd4(e.target.value)}
                 placeholder="e.g. 450"
-                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-plum focus:outline-none"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
                 value={viralLoad}
                 onChange={(e) => setViralLoad(e.target.value)}
                 placeholder="e.g. 0 (Undetectable)"
-                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 focus:ring-2 focus:ring-plum focus:outline-none"
               />
             </div>
           </div>
@@ -156,7 +156,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Clinical observation summary, family support, barriers identified..."
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
             />
           </div>
 
@@ -170,7 +170,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-md shadow-sm"
+              className="px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-md shadow-sm"
             >
               {t.submitToServer}
             </button>

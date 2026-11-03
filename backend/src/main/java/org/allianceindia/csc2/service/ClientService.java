@@ -41,27 +41,31 @@ public class ClientService {
 
     @Transactional
     public DTOs.ActionReceipt registerClient(DTOs.RegisterClientRequest req, UserPrincipal user, String idempotencyKey, String ipAddress) {
+        if ("PENDING_FIELD_USER".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Waiting for your state team to approve your phone number before submitting surveys to server.");
+        }
         if (req.fullName() == null || req.fullName().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Full name is required");
         }
-        if (req.centerId() == null || req.centerId().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Center ID is required");
-        }
-        if (!user.getAuthorizedCenters().contains(req.centerId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized center ID: " + req.centerId());
+        String centerId = (req.centerId() != null && !req.centerId().trim().isEmpty()) ? req.centerId().trim() : "CENTER_MAIN";
+        if (!user.hasCenterAccess(centerId) && !user.getAuthorizedCenters().contains(centerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized center ID: " + centerId);
         }
 
         // Generate clientRef if not provided
         String clientRef = req.clientRef();
         if (clientRef == null || clientRef.trim().isEmpty()) {
-            String prefix = req.centerId().replace("CENTER_", "").substring(0, Math.min(2, req.centerId().length()));
+            String prefix = centerId.replace("CENTER_", "").substring(0, Math.min(2, centerId.length()));
             clientRef = "CSC-" + prefix + "-" + LocalDate.now().getYear() + "-" + String.format("%04d", (int)(Math.random() * 9000 + 1000));
         }
 
         Client client = new Client();
         client.setClientRef(clientRef);
-        client.setCenterId(req.centerId());
+        client.setCenterId(centerId);
         client.setAssignedWorkerId(user.getId());
+        if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
+            client.setFieldUserId(user.getId());
+        }
         client.setRegistrationDate(req.registrationDate() != null ? req.registrationDate() : LocalDate.now());
         client.setClientType(req.clientType() != null ? req.clientType() : "1");
         client.setFullName(req.fullName().trim());
@@ -164,17 +168,34 @@ public class ClientService {
 
     @Transactional(readOnly = true)
     public DTOs.ClientListResponse listClients(UserPrincipal user, String search, int page, int size) {
-        List<String> authorizedCenters = user.getAuthorizedCenters();
-        if (authorizedCenters == null || authorizedCenters.isEmpty()) {
-            return new DTOs.ClientListResponse(List.of(), 0, 0, page);
-        }
-
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Client> pageResult;
-        if (search != null && !search.trim().isEmpty()) {
-            pageResult = clientRepository.findByCenterIdInAndFullNameContainingIgnoreCase(authorizedCenters, search.trim(), pageable);
+
+        if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
+            // A field user sees ONLY records they submitted
+            if (search != null && !search.trim().isEmpty()) {
+                pageResult = clientRepository.findByFieldUserIdAndFullNameContainingIgnoreCase(user.getId(), search.trim(), pageable);
+            } else {
+                pageResult = clientRepository.findByFieldUserId(user.getId(), pageable);
+            }
         } else {
-            pageResult = clientRepository.findByCenterIdIn(authorizedCenters, pageable);
+            List<String> authorizedCenters = user.getAuthorizedCenters();
+            if (authorizedCenters == null || authorizedCenters.isEmpty()) {
+                return new DTOs.ClientListResponse(List.of(), 0, 0, page);
+            }
+            if (authorizedCenters.contains("ALL")) {
+                if (search != null && !search.trim().isEmpty()) {
+                    pageResult = clientRepository.findByFullNameContainingIgnoreCase(search.trim(), pageable);
+                } else {
+                    pageResult = clientRepository.findAll(pageable);
+                }
+            } else {
+                if (search != null && !search.trim().isEmpty()) {
+                    pageResult = clientRepository.findByCenterIdInAndFullNameContainingIgnoreCase(authorizedCenters, search.trim(), pageable);
+                } else {
+                    pageResult = clientRepository.findByCenterIdIn(authorizedCenters, pageable);
+                }
+            }
         }
 
         List<DTOs.ClientSummaryDto> dtoList = pageResult.getContent().stream().map(c -> {

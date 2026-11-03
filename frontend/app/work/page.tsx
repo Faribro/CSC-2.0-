@@ -1,534 +1,364 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
-import { ContactAttemptModal } from '@/components/ContactAttemptModal';
-import { EncounterModal } from '@/components/EncounterModal';
-import { ServicePlanModal } from '@/components/ServicePlanModal';
-import { Language, translations } from '@/lib/translations';
-import { getStoredSession } from '@/lib/auth';
 import { Icon } from '@/components/ui/Icon';
+import { Language, translations } from '@/lib/translations';
 
-interface TaskItem {
+interface DraftRecord {
   id: string;
-  taskRef: string;
-  clientId: string;
-  clientRef: string;
-  clientName: string;
-  centerId: string;
-  taskType: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  status: 'PENDING' | 'DUE' | 'OVERDUE' | 'DELIVERED';
-  version: number;
+  clientRef?: string;
+  fullName: string;
+  age?: number;
+  gender?: string;
+  lastSavedAt: string;
+  progressPercent: number;
 }
 
-export default function WorklistPage() {
+export default function FormsWorkspacePage() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
 
-  const [activeTab, setActiveTab] = useState<'today' | 'overdue' | 'upcoming'>('today');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isOffline, setIsOffline] = useState(false);
-  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  // Local draft states
+  const [drafts, setDrafts] = useState<DraftRecord[]>([]);
+  const [waitingSyncCount, setWaitingSyncCount] = useState(0);
+  const [submittedCount, setSubmittedCount] = useState(0);
 
-  // Modal states
-  const [activeModal, setActiveModal] = useState<'attempt' | 'encounter' | 'plan' | null>(null);
-  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [conflictError, setConflictError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Active user state
+  const [fieldUser, setFieldUser] = useState<{ id: string; firstName: string; phone: string; status: string } | null>(null);
 
-  const [tasks, setTasks] = useState<{
-    today: TaskItem[];
-    overdue: TaskItem[];
-    upcoming: TaskItem[];
-  }>({
-    today: [],
-    overdue: [],
-    upcoming: [],
-  });
+  // Load drafts and counts from local storage & server
+  const loadWorkspaceData = useCallback(() => {
+    if (typeof window === 'undefined') return;
 
-  const fetchWorklist = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
-      if (!token) {
-        router.push('/sign-in');
-        return;
-      }
-
-      const res = await fetch('/api/v1/work', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401) {
-        router.push('/sign-in');
-        return;
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-        setTasks({
-          today: (data.today || []).map((t: any) => ({
-            id: t.id,
-            taskRef: t.taskRef,
-            clientId: t.clientId,
-            clientRef: t.clientRef,
-            clientName: t.clientName,
-            centerId: t.centerId,
-            taskType: t.taskType,
-            title: t.title,
-            description: t.description || '',
-            dueDate: t.dueDate,
-            status: t.status,
-            version: t.version || 0,
-          })),
-          overdue: (data.overdue || []).map((t: any) => ({
-            id: t.id,
-            taskRef: t.taskRef,
-            clientId: t.clientId,
-            clientRef: t.clientRef,
-            clientName: t.clientName,
-            centerId: t.centerId,
-            taskType: t.taskType,
-            title: t.title,
-            description: t.description || '',
-            dueDate: t.dueDate,
-            status: t.status,
-            version: t.version || 0,
-          })),
-          upcoming: (data.upcoming || []).map((t: any) => ({
-            id: t.id,
-            taskRef: t.taskRef,
-            clientId: t.clientId,
-            clientRef: t.clientRef,
-            clientName: t.clientName,
-            centerId: t.centerId,
-            taskType: t.taskType,
-            title: t.title,
-            description: t.description || '',
-            dueDate: t.dueDate,
-            status: t.status,
-            version: t.version || 0,
-          })),
-        });
-      }
-    } catch (err) {
-      console.error('Failed to load worklist:', err);
-    } finally {
-      setIsLoading(false);
+    // Load local field user
+    const storedUser = localStorage.getItem('csc2_field_user');
+    if (storedUser) {
+      try {
+        setFieldUser(JSON.parse(storedUser));
+      } catch {}
     }
-  }, [router]);
+
+    // Load local drafts
+    try {
+      const storedDrafts = localStorage.getItem('csc2_local_drafts');
+      if (storedDrafts) {
+        const parsed = JSON.parse(storedDrafts);
+        if (Array.isArray(parsed)) {
+          setDrafts(parsed);
+        }
+      }
+    } catch {}
+
+    // Load local waiting queue
+    try {
+      const queue = localStorage.getItem('csc2_sync_outbox');
+      if (queue) {
+        const parsedQueue = JSON.parse(queue);
+        setWaitingSyncCount(Array.isArray(parsedQueue) ? parsedQueue.length : 0);
+      }
+    } catch {}
+
+    // Fetch authoritative counts from server
+    fetch('/api/v1/clients?page=0&size=1')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.totalElements === 'number') {
+          setSubmittedCount(data.totalElements);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
-    fetchWorklist();
-  }, [fetchWorklist]);
+    loadWorkspaceData();
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setFieldUser(customEvent.detail);
+      }
+    };
+    window.addEventListener('csc2:field_user_updated', handleUserUpdated);
+    return () => {
+      window.removeEventListener('csc2:field_user_updated', handleUserUpdated);
+    };
+  }, [loadWorkspaceData]);
+
+  // Handle Primary "Start New Registration" Action
+  const handleStartNewRegistration = () => {
+    let currentUser = fieldUser;
+    if (!currentUser && typeof window !== 'undefined') {
+      const stored = localStorage.getItem('csc2_field_user');
+      if (stored) {
+        try {
+          currentUser = JSON.parse(stored);
+          setFieldUser(currentUser);
+        } catch {}
+      }
+    }
+
+    if (!currentUser) {
+      // Trigger phone verification modal via custom window event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('csc2:open_phone_verification', {
+            detail: { targetUrl: '/clients/new' },
+          })
+        );
+      }
+      return;
+    }
+    router.push('/clients/new');
   };
 
-  const currentList = tasks[activeTab].filter(
-    (item) =>
-      item.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.clientRef.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleContactAttemptSubmit = async (data: any) => {
-    if (!selectedTask) return;
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
-      const res = await fetch('/api/v1/tasks/attempt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          taskId: selectedTask.id,
-          attemptDate: data.attemptDate || new Date().toISOString().split('T')[0],
-          attemptTime: '10:00:00',
-          channel: data.channel || 'PHONE',
-          outcome: data.outcome || 'reached',
-          notes: data.notes || '',
-          expectedTaskVersion: selectedTask.version,
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 409) {
-          setConflictError('Task was modified concurrently. Refreshing worklist.');
-          await fetchWorklist();
-          return;
-        }
-        throw new Error(await res.text());
-      }
-
-      showToast(`${t.recordContactAttempt}: ${data.outcome?.toUpperCase()}. ${t.serverAccepted}`);
-      setActiveModal(null);
-      await fetchWorklist();
-    } catch (e: any) {
-      alert(`Contact attempt failed: ${e.message}`);
-    }
-  };
-
-  const handleEncounterSubmit = async (data: any) => {
-    if (!selectedTask) return;
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
-      const res = await fetch('/api/v1/tasks/encounter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          clientId: selectedTask.clientId,
-          taskId: selectedTask.id,
-          observationDate: data.observationDate || new Date().toISOString().split('T')[0],
-          encounterType: data.encounterType || 'CSC_VISIT',
-          artAdherenceAssessment: data.artAdherence || 'GOOD (>95%)',
-          nutritionAssessment: data.nutrition || 'NORMAL',
-          mentalHealthNotes: data.mentalHealthNotes || null,
-          generalNotes: data.generalNotes || 'Follow-up encounter conducted.',
-          expectedTaskVersion: selectedTask.version,
-          action: 'COMPLETE', // Explicit COMPLETE action
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 409) {
-          setConflictError('Version conflict on task. Please refresh.');
-          await fetchWorklist();
-          return;
-        }
-        throw new Error(await res.text());
-      }
-
-      showToast(`${t.recordEncounter}: Task COMPLETED. ${t.serverAccepted}`);
-      setActiveModal(null);
-      await fetchWorklist();
-    } catch (e: any) {
-      alert(`Encounter submission failed: ${e.message}`);
-    }
-  };
-
-  const handlePlanSubmit = async (data: any) => {
-    if (!selectedTask) return;
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
-      const res = await fetch('/api/v1/tasks/plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          clientId: selectedTask.clientId,
-          taskId: selectedTask.id,
-          serviceCode: data.serviceCode || '1',
-          purposeCode: data.purposeCode || '1',
-          serviceName: data.serviceName || 'Follow-up Consultation',
-          targetDueDate: data.targetDueDate || new Date().toISOString().split('T')[0],
-          notes: data.notes || '',
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
-
-      showToast(`${t.planService}: ${data.serviceName} registered as PLANNED.`);
-      setActiveModal(null);
-      await fetchWorklist();
-    } catch (e: any) {
-      alert(`Plan creation failed: ${e.message}`);
-    }
+  // Delete a local draft
+  const handleDeleteDraft = (draftId: string) => {
+    if (typeof window === 'undefined') return;
+    const updated = drafts.filter((d) => d.id !== draftId);
+    setDrafts(updated);
+    localStorage.setItem('csc2_local_drafts', JSON.stringify(updated));
   };
 
   return (
     <AppShell
       currentLang={lang}
       onLanguageChange={setLang}
-      offlineCount={offlineQueueCount}
-      isOffline={isOffline}
     >
-      <div className="space-y-6">
-        {/* Conflict Error Banner */}
-        {conflictError && (
-          <div
-            className="bg-rose-50 border border-rose-300 text-rose-800 p-4 rounded-xl text-xs flex items-center justify-between shadow-xs"
-            role="alert"
-          >
+      <div className="space-y-6 max-w-5xl mx-auto">
+        {/* Playful Hero Illustration Banner */}
+        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-r from-mint/40 via-lavender/30 to-peach/40 border-2 border-border/40 p-6 sm:p-8 shadow-comic">
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <strong className="font-bold">HTTP 409 Conflict: </strong> {conflictError}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface text-plum text-[11px] font-black border border-border/40 mb-2 shadow-2xs">
+                <Icon name="Heart" className="w-3.5 h-3.5 text-primary" />
+                <span>{lang === 'hi' ? 'केयर एंड सपोर्ट सेंटर मिशन' : 'Care & Support Mission'}</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight font-comic">
+                CSC 2.0
+              </h1>
+              <p className="text-xs sm:text-sm text-ink-muted mt-1 max-w-xl">
+                {lang === 'hi'
+                  ? 'दैनिक फील्ड विज़िट, पोषण मूल्यांकन, और कल्याणकारी सेवाओं की ट्रैकिंग के लिए अधिकृत पोर्टल।'
+                  : 'Fast, offline-ready intake and follow-up platform for community outreach workers.'}
+              </p>
             </div>
+
+            {/* Primary CTA Button (48px Touch Target) */}
             <button
-              onClick={() => setConflictError(null)}
-              className="text-xs font-bold text-rose-700 underline hover:text-rose-950"
+              type="button"
+              onClick={handleStartNewRegistration}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-sm font-black rounded-[14px] shadow-comic transition-all active:scale-[0.98] min-h-[48px] shrink-0 cursor-pointer"
             >
-              Dismiss
+              <Icon name="Plus" className="w-5 h-5 stroke-[2.5]" />
+              <span>{lang === 'hi' ? '+ नया पंजीकरण शुरू करें' : '+ Start New Registration'}</span>
             </button>
+          </div>
+
+          {/* Decorative Comic Garden Graphics (Accessible aria-hidden) */}
+          <div className="absolute right-4 bottom-2 opacity-25 pointer-events-none hidden md:block" aria-hidden="true">
+            <svg width="180" height="70" viewBox="0 0 180 70" fill="none">
+              <circle cx="30" cy="50" r="20" fill="#BFEBDD" />
+              <circle cx="80" cy="45" r="25" fill="#FFD166" />
+              <circle cx="140" cy="48" r="22" fill="#E4D8F7" />
+              <path d="M10 65 Q 90 40 170 65" stroke="#7B3F8C" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Status / Needs Attention Banner */}
+        {fieldUser && fieldUser.status === 'PENDING' && (
+          <div className="p-4 bg-sun/30 border-2 border-sun rounded-[16px] text-warning-ink shadow-comic flex items-start gap-3">
+            <div className="p-2 bg-surface rounded-full text-warning-ink shrink-0 mt-0.5">
+              <Icon name="AlertTriangle" className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider">
+                {lang === 'hi' ? 'राज्य टीम अनुमोदन लंबित है' : 'State Team Approval Pending'}
+              </h3>
+              <p className="text-xs mt-0.5 leading-relaxed">
+                {lang === 'hi'
+                  ? `आपका नंबर (${fieldUser.phone}) सत्यापित है। आप स्थानीय ड्राफ्ट बना सकते हैं। अनुमोदन के बाद सर्वर सबमिशन सक्रिय हो जाएगा।`
+                  : `Your phone number (${fieldUser.phone}) is verified. You can create and save local drafts on this device now; server submissions will activate automatically once your State Team approves your number.`}
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Worklist Masthead */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+        {/* 3 Summary Cards (Comic Style Tints, Rounded Corners, Soft Shadows) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1: Unfinished Forms (Local Drafts) */}
+          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-full bg-mint flex items-center justify-center text-ink border border-border/30">
+                  <Icon name="FileText" className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-mint/50 text-ink px-2 py-0.5 rounded-full border border-mint">
+                  local
+                </span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
+                {lang === 'hi' ? 'अधूरे फॉर्म (ड्राफ्ट)' : 'Unfinished Forms'}
+              </h3>
+              <div className="text-3xl font-black text-ink font-mono mb-2">
+                {drafts.length}
+              </div>
+              <p className="text-[11px] text-ink-muted leading-relaxed">
+                {lang === 'hi'
+                  ? 'इस डिवाइस पर सहेजे गए ड्राफ्ट पूर्ण होने की प्रतीक्षा कर रहे हैं।'
+                  : 'Drafts saved on this device awaiting completion.'}
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border/30">
+              <button
+                type="button"
+                onClick={() => {
+                  const elem = document.getElementById('in-progress-drafts-section');
+                  if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-xs font-bold text-plum hover:text-primary flex items-center gap-1 cursor-pointer"
+              >
+                <span>{lang === 'hi' ? 'ड्राफ्ट देखें' : 'Resume drafts'}</span>
+                <Icon name="ChevronRight" className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Queued / Retryable Sync (Local Outbox) */}
+          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-full bg-lavender flex items-center justify-center text-plum border border-border/30">
+                  <Icon name="Clock" className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-lavender text-plum px-2 py-0.5 rounded-full border border-lavender">
+                  outbox
+                </span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
+                {lang === 'hi' ? 'सिंक कतार' : 'Queued Sync'}
+              </h3>
+              <div className="text-3xl font-black text-ink font-mono mb-2">
+                {waitingSyncCount}
+              </div>
+              <p className="text-[11px] text-ink-muted leading-relaxed">
+                {lang === 'hi'
+                  ? 'सर्वर कनेक्शन की प्रतीक्षा में कतारबद्ध रिकॉर्ड।'
+                  : 'Surveys queued to dispatch once online reconnection occurs.'}
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border/30">
+              <span className="text-xs font-bold text-ink-muted">
+                {waitingSyncCount === 0 ? (lang === 'hi' ? 'सब सिंक है' : 'All synced') : (lang === 'hi' ? 'कतार सक्रिय है' : 'Outbox active')}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Submitted (Server Confirmed) */}
+          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-full bg-peach flex items-center justify-center text-ink border border-border/30">
+                  <Icon name="CheckCircle" className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-peach/60 text-ink px-2 py-0.5 rounded-full border border-peach">
+                  confirmed
+                </span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
+                {lang === 'hi' ? 'रिकॉर्ड और फॉलो-अप' : 'Records & Follow-ups'}
+              </h3>
+              <div className="text-3xl font-black text-ink font-mono mb-2">
+                {submittedCount}
+              </div>
+              <p className="text-[11px] text-ink-muted leading-relaxed">
+                {lang === 'hi'
+                  ? 'सर्वर द्वारा पुष्ट किए गए आपके रिकॉर्ड और फॉलो-अप।'
+                  : 'Authoritative beneficiary records verified on server.'}
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border/30">
+              <Link
+                href="/clients"
+                className="text-xs font-bold text-plum hover:text-primary flex items-center gap-1 cursor-pointer"
+              >
+                <span>{lang === 'hi' ? 'रिकॉर्ड और फॉलो-अप खोलें' : 'View records & follow-ups'}</span>
+                <Icon name="ChevronRight" className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Section: My In-Progress Drafts */}
+        <section id="in-progress-drafts-section" className="bg-surface border-2 border-border/40 rounded-[16px] p-6 shadow-comic">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                {t.myWork}
+              <Icon name="FileText" className="w-5 h-5 text-plum" />
+              <h2 className="text-base font-black text-ink font-comic">
+                {lang === 'hi' ? `मेरे प्रगतिशील ड्राफ्ट (${drafts.length})` : `My In-Progress Drafts (${drafts.length})`}
               </h2>
             </div>
-            <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-              Primary Workflow:{' '}
-              <span className="font-semibold text-emerald-900 italic">
-                &ldquo;Who needs action today, why, who owns it, and what completes it?&rdquo;
-              </span>
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link
-              href="/clients/new"
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
-            >
-              <span>+</span> {lang === 'hi' ? 'नया पंजीकरण (सीआरएफ)' : 'New Registration (CRF)'}
-            </Link>
-            <Link
-              href="/clients"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
-            >
-              {lang === 'hi' ? 'सभी लाभार्थी देखें →' : 'All Beneficiaries →'}
-            </Link>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div
-          className="flex border-b border-slate-200 bg-white rounded-xl px-2 shadow-xs"
-          role="tablist"
-          aria-label="Worklist Categories"
-        >
-          {[
-            {
-              id: 'today',
-              label: t.today,
-              count: tasks.today.length,
-              badge: 'bg-emerald-100 text-emerald-800',
-            },
-            {
-              id: 'overdue',
-              label: t.overdue,
-              count: tasks.overdue.length,
-              badge: 'bg-rose-100 text-rose-800',
-            },
-            {
-              id: 'upcoming',
-              label: t.upcoming,
-              count: tasks.upcoming.length,
-              badge: 'bg-slate-100 text-slate-800',
-            },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              id={`tab-${tab.id}`}
-              aria-selected={activeTab === tab.id}
-              aria-controls={`panel-${tab.id}`}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 py-3.5 px-5 text-xs font-bold border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-emerald-700 text-emerald-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${tab.badge}`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="w-full sm:w-80">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t.searchPlaceholder}
-              className="w-full text-xs border border-slate-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-emerald-600 focus:outline-hidden bg-white shadow-xs"
-              aria-label={t.searchPlaceholder}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span>Showing:</span>
-            <strong className="text-slate-800">{currentList.length} tasks</strong>
-          </div>
-        </div>
-
-        {/* Task List Panel */}
-        <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
-          {isLoading ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 text-xs">
-              Loading follow-up worklist from server...
-            </div>
-          ) : currentList.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
-              <p className="text-slate-500 text-xs font-medium">{t.noTasks}</p>
+          {drafts.length === 0 ? (
+            <div className="py-10 text-center text-ink-muted border-2 border-dashed border-border/40 rounded-[14px]">
+              <Icon name="FileText" className="w-8 h-8 mx-auto text-ink-muted/50 mb-2" />
+              <p className="text-xs font-bold">
+                {lang === 'hi' ? 'वर्तमान में इस डिवाइस पर कोई ड्राफ्ट नहीं है।' : 'No drafts saved on this device.'}
+              </p>
+              <p className="text-[11px] text-ink-muted/80 mt-1">
+                {lang === 'hi'
+                  ? 'नया फॉर्म शुरू करने के बाद आप किसी भी समय प्रगति सहेज सकते हैं।'
+                  : 'Forms auto-save locally so you never lose beneficiary responses.'}
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3.5">
-              {currentList.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-                >
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center flex-wrap gap-2">
-                      {/* Deep-link to Follow-up Tab */}
-                      <Link
-                        href={`/clients/${item.clientId}?tab=follow-up`}
-                        className="text-sm font-bold text-emerald-800 hover:text-emerald-950 hover:underline"
-                        title="Open Client Follow-up Tab"
-                      >
-                        {item.clientName}
-                      </Link>
-                      <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
-                        {item.clientRef}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        • {item.centerId}
-                      </span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          item.status === 'OVERDUE'
-                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                            : item.status === 'DELIVERED'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : item.status === 'DUE'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
-
-                    <p className="text-xs font-bold text-slate-800">{item.title}</p>
-                    <p className="text-xs text-slate-600 line-clamp-2">{item.description}</p>
-                    <div className="flex items-center space-x-4 text-[11px] text-slate-500 pt-0.5">
+            <div className="divide-y divide-border/30">
+              {drafts.map((draft) => (
+                <div key={draft.id} className="py-3.5 flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-black text-ink">
+                      {draft.fullName || (lang === 'hi' ? 'अनाम लाभार्थी' : 'Unnamed Beneficiary')}
+                    </h4>
+                    <div className="flex items-center gap-2 text-[11px] text-ink-muted mt-0.5">
+                      {draft.clientRef && <span className="font-mono">{draft.clientRef}</span>}
+                      <span>•</span>
                       <span>
-                        {t.dueDate}: <strong className="text-slate-700">{item.dueDate}</strong>
+                        {lang === 'hi' ? 'सहेजा गया: ' : 'Saved: '}
+                        {new Date(draft.lastSavedAt).toLocaleDateString()}
                       </span>
-                      <span>
-                        Ref: <strong className="text-slate-700">{item.taskRef}</strong>
-                      </span>
-                      <span>v{item.version}</span>
                     </div>
                   </div>
 
-                  {/* Actions Toolbar */}
-                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedTask(item);
-                        setActiveModal('attempt');
-                      }}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg min-h-[38px]"
+                      onClick={() => router.push(`/clients/new?draftId=${draft.id}`)}
+                      className="px-3 py-1.5 bg-mint hover:bg-mint/80 text-success-ink text-xs font-bold rounded-[10px] transition-colors flex items-center gap-1 cursor-pointer"
                     >
-                      {t.recordContactAttempt}
+                      <Icon name="Edit3" className="w-3.5 h-3.5" />
+                      <span>{lang === 'hi' ? 'जारी रखें' : 'Resume'}</span>
                     </button>
-
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedTask(item);
-                        setActiveModal('encounter');
-                      }}
-                      className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs min-h-[38px]"
+                      onClick={() => handleDeleteDraft(draft.id)}
+                      className="p-1.5 text-ink-muted hover:text-primary hover:bg-pink/30 rounded-[10px] transition-colors cursor-pointer"
+                      title={lang === 'hi' ? 'ड्राफ्ट हटाएं' : 'Delete draft'}
+                      aria-label="Delete draft"
                     >
-                      {t.recordEncounter}
+                      <Icon name="Trash2" className="w-4 h-4" />
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedTask(item);
-                        setActiveModal('plan');
-                      }}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg min-h-[38px]"
-                    >
-                      {t.planService}
-                    </button>
-
-                    {/* Follow-up Tab Direct Deep-link */}
-                    <Link
-                      href={`/clients/${item.clientId}?tab=follow-up`}
-                      className="px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center min-h-[38px]"
-                    >
-                      {lang === 'hi' ? 'फॉलो-अप खोलें →' : 'Open Follow-up →'}
-                    </Link>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        {/* Toast Notification */}
-        {toastMessage && (
-          <div
-            className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-lg shadow-2xl border border-slate-700 flex items-center gap-2"
-            role="status"
-          >
-            <Icon name="check" className="w-4 h-4 text-emerald-400" /> {toastMessage}
-          </div>
-        )}
+        </section>
       </div>
-
-      {/* Modals */}
-      {selectedTask && (
-        <>
-          <ContactAttemptModal
-            isOpen={activeModal === 'attempt'}
-            onClose={() => setActiveModal(null)}
-            onSubmit={handleContactAttemptSubmit}
-            lang={lang}
-            clientName={selectedTask.clientName}
-            clientRef={selectedTask.clientRef}
-          />
-          <EncounterModal
-            isOpen={activeModal === 'encounter'}
-            onClose={() => setActiveModal(null)}
-            onSubmit={handleEncounterSubmit}
-            lang={lang}
-            clientName={selectedTask.clientName}
-            clientRef={selectedTask.clientRef}
-          />
-          <ServicePlanModal
-            isOpen={activeModal === 'plan'}
-            onClose={() => setActiveModal(null)}
-            onSubmit={handlePlanSubmit}
-            lang={lang}
-            clientName={selectedTask.clientName}
-            clientRef={selectedTask.clientRef}
-          />
-        </>
-      )}
     </AppShell>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from '@/lib/crfDefinitions';
 import { isFieldRelevant, validateField } from '@/lib/crfLogic';
 import { Icon } from '@/components/ui/Icon';
+import { LocationFetchButton, LocationResult } from '@/components/ui/LocationFetchButton';
 
 export interface FamilyMemberRow {
   id: string;
@@ -396,6 +397,36 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const totalErrors = Object.keys(fieldValidationMap).length;
   const overallPercentage = totalRelevant > 0 ? Math.min(100, Math.round((totalCompleted / totalRelevant) * 100)) : 100;
 
+  // Horizontal Section Slider Controls
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const handleSlideLeft = () => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollBy({ left: -260, behavior: 'smooth' });
+    }
+  };
+  const handleSlideRight = () => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollBy({ left: 260, behavior: 'smooth' });
+    }
+  };
+
+  // Handle GPS Auto-Fetched Address
+  const handleLocationFetched = (loc: LocationResult) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setFormData((prev) => ({
+      ...prev,
+      a11_door: loc.houseNumber || (loc.fullAddress ? loc.fullAddress.split(',')[0] : prev.a11_door),
+      a11_street: loc.road || prev.a11_street,
+      a11_village: loc.locality || prev.a11_village,
+      a11_block: loc.subLocality || loc.locality || prev.a11_block,
+      a11_landmark: loc.colony || prev.a11_landmark,
+      a11_district: loc.district || prev.a11_district,
+      a11_state: loc.state || prev.a11_state,
+      a11_pin: loc.pincode || prev.a11_pin,
+      a11_addr_verified: todayStr,
+    }));
+  };
+
   // Jump smoothly to a section
   const scrollToSection = (secId: string) => {
     setActiveSection(secId);
@@ -472,12 +503,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       return (
         <div
           key={field.name}
-          className="col-span-full bg-slate-50 border border-slate-200 rounded-xl p-4 my-2 text-xs text-slate-700 flex items-start gap-2.5"
+          className="col-span-full bg-canvas border border-border/40 rounded-xl p-4 my-2 text-xs text-ink flex items-start gap-2.5"
         >
-          <Icon name="help" className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+          <Icon name="help" className="w-4 h-4 text-plum shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">{label}</p>
-            {hint && <p className="text-slate-500 mt-0.5">{hint}</p>}
+            {hint && <p className="text-ink-muted mt-0.5">{hint}</p>}
           </div>
         </div>
       );
@@ -517,7 +548,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
 
     // Interactive Edit / Create Mode Rendering
-    return (
+    const fieldElement = (
       <div key={field.name} className="space-y-1.5" id={`wrapper-${field.name}`}>
         <label htmlFor={fieldId} className="block text-xs font-bold text-slate-800">
           {label} {field.required && <span className="text-rose-500">*</span>}
@@ -537,7 +568,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     onClick={() => handleFieldChange(field.name, opt.code)}
                     className={`py-2 px-3 text-xs font-semibold rounded-lg border text-center transition-all min-h-[44px] flex items-center justify-center ${
                       isSelected
-                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                        ? 'bg-primary text-white border-primary shadow-xs'
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                     }`}
                   >
@@ -551,7 +582,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               id={fieldId}
               value={value ?? ''}
               onChange={(e) => handleFieldChange(field.name, e.target.value)}
-              className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px] bg-white ${
+              className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px] bg-white ${
                 error ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300'
               }`}
             >
@@ -573,7 +604,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   key={opt.code}
                   className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
                     isChecked
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                      ? 'bg-mint/40 border-mint text-success-ink'
                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -590,7 +621,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                         );
                       }
                     }}
-                    className="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 border-slate-300"
+                    className="w-4 h-4 rounded text-plum focus:ring-plum border-slate-300"
                   />
                   <span>{isHi ? opt.labelHi : opt.labelEn}</span>
                 </label>
@@ -603,7 +634,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             type="date"
             value={value ?? ''}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
-            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px] bg-white ${
+            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px] bg-white ${
               error ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300'
             }`}
           />
@@ -615,7 +646,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             value={value ?? ''}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
             placeholder="0"
-            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px] bg-white ${
+            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px] bg-white ${
               error ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300'
             }`}
           />
@@ -626,7 +657,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             value={value ?? ''}
             onChange={(e) => handleFieldChange(field.name, e.target.value)}
             placeholder={isHi ? 'उत्तर दर्ज करें...' : 'Enter answer...'}
-            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px] bg-white ${
+            className={`w-full px-3 py-2 text-xs font-medium border rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px] bg-white ${
               error ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300'
             }`}
           />
@@ -641,6 +672,28 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         )}
       </div>
     );
+
+    // If this is the "Address verified on" field, insert the LocationFetchButton right beside it
+    if (field.name === 'a11_addr_verified') {
+      return (
+        <React.Fragment key={field.name}>
+          {fieldElement}
+          {!isReadOnly && (
+            <div className="flex flex-col justify-end space-y-1.5" id="wrapper-fetch-address-btn">
+              <span className="block text-xs font-bold text-slate-800 invisible select-none">
+                {isHi ? 'पता खोजें' : 'Fetch Address'}
+              </span>
+              <LocationFetchButton
+                onLocationFetched={handleLocationFetched}
+                lang={lang}
+              />
+            </div>
+          )}
+        </React.Fragment>
+      );
+    }
+
+    return fieldElement;
   };
 
   return (
@@ -651,29 +704,30 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                CRF v2.0 • KOBOTOOLBOX FORM
-              </span>
-              {mode === 'view' && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                  READ ONLY
-                </span>
-              )}
-              {mode === 'edit' && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                  EDITING v{version}
-                </span>
-              )}
-            </div>
+            {(mode === 'view' || mode === 'edit') && (
+              <div className="flex items-center gap-2 mb-1">
+                {mode === 'view' && (
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-lavender text-plum border border-border/40">
+                    {isHi ? 'केवल दृश्य (Read Only)' : 'Read Only'}
+                  </span>
+                )}
+                {mode === 'edit' && (
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                    {isHi ? `संशोधन v${version}` : `Editing v${version}`}
+                  </span>
+                )}
+              </div>
+            )}
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1.5">
               {isHi
                 ? 'CSC 2.0 देखभाल और सहायता केंद्र पंजीकरण एवं फॉलो-अप प्रपत्र'
                 : 'CSC 2.0 Care & Support Centre Intake and Follow-Up Form'}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Ref: <strong className="font-mono text-slate-800">{clientRef}</strong> • NACO & Alliance India Standard Clinical & Social Intake Protocol
-            </p>
+            {clientRef && clientRef !== 'NEW' && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                Ref: <strong className="font-mono text-slate-800">{clientRef}</strong>
+              </p>
+            )}
           </div>
 
           {/* Action Button for View Mode */}
@@ -681,7 +735,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <button
               type="button"
               onClick={onSwitchToEdit}
-              className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-colors shrink-0 min-h-[44px]"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-colors shrink-0 min-h-[44px]"
             >
               <Icon name="edit" className="w-4 h-4" />
               <span>{isHi ? 'संशोधन करें (Edit)' : 'Edit Beneficiary Record'}</span>
@@ -692,34 +746,60 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* ------------------------------------------------------------------ */}
         {/* 2. HORIZONTAL SECTION PILL RUNNER (ENKETO JUMP TABS) */}
         {/* ------------------------------------------------------------------ */}
-        <div className="overflow-x-auto pb-1 -mx-2 px-2 scrollbar-none">
-          <div className="flex items-center gap-2 min-w-max">
-            {sectionStats.map((sec) => {
-              const isActive = activeSection === sec.id;
-              return (
-                <button
-                  key={sec.id}
-                  type="button"
-                  onClick={() => scrollToSection(sec.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                    isActive
-                      ? 'bg-emerald-800 text-white border-emerald-800 shadow-sm'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon name={sec.iconName} className="w-3.5 h-3.5" />
-                  <span>
-                    {sec.code}. {isHi ? sec.titleHi.split('.')[1] || sec.titleHi : sec.titleEn.split('.')[1] || sec.titleEn}
-                  </span>
-                  {sec.errorCount > 0 ? (
-                    <span className="w-2 h-2 rounded-full bg-rose-500" title={`${sec.errorCount} errors`} />
-                  ) : sec.isComplete ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" title="Completed" />
-                  ) : null}
-                </button>
-              );
-            })}
+        <div className="relative flex items-center gap-2 pt-1 pb-1">
+          {/* Scroll Left Button */}
+          <button
+            type="button"
+            onClick={handleSlideLeft}
+            aria-label={isHi ? 'बाएं स्क्रॉल करें' : 'Scroll left'}
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors shrink-0 shadow-xs cursor-pointer min-h-[40px] flex items-center justify-center"
+          >
+            <Icon name="ChevronLeft" className="w-4 h-4" />
+          </button>
+
+          {/* Pill Slider with sleek comic scrollbar */}
+          <div
+            ref={sliderRef}
+            className="flex-1 overflow-x-auto py-1 px-1 scroll-smooth scrollbar-comic"
+          >
+            <div className="flex items-center gap-2 min-w-max">
+              {sectionStats.map((sec) => {
+                const isActive = activeSection === sec.id;
+                return (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => scrollToSection(sec.id)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer min-h-[40px] ${
+                      isActive
+                        ? 'bg-primary text-white border-primary shadow-xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon name={sec.iconName} className="w-3.5 h-3.5" />
+                    <span>
+                      {sec.code}. {isHi ? sec.titleHi.split('.')[1] || sec.titleHi : sec.titleEn.split('.')[1] || sec.titleEn}
+                    </span>
+                    {sec.errorCount > 0 ? (
+                      <span className="w-2 h-2 rounded-full bg-rose-500" title={`${sec.errorCount} errors`} />
+                    ) : sec.isComplete ? (
+                      <span className="w-2 h-2 rounded-full bg-mint" title="Completed" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Scroll Right Button */}
+          <button
+            type="button"
+            onClick={handleSlideRight}
+            aria-label={isHi ? 'दाएं स्क्रॉल करें' : 'Scroll right'}
+            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 transition-colors shrink-0 shadow-xs cursor-pointer min-h-[40px] flex items-center justify-center"
+          >
+            <Icon name="ChevronRight" className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -742,7 +822,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               {/* Section Header */}
               <div className="border-b border-slate-100 pb-3 mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-lavender text-plum flex items-center justify-center font-bold">
                     <Icon name={section.iconName} className="w-5 h-5" />
                   </div>
                   <div>
@@ -756,7 +836,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 </div>
 
                 {stats?.isComplete && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success-ink bg-mint/50 px-2.5 py-1 rounded-full border border-mint">
                     <Icon name="check" className="w-3.5 h-3.5" />
                     <span>{isHi ? 'पूर्ण' : 'Completed'}</span>
                   </span>
@@ -790,7 +870,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <button
                         type="button"
                         onClick={handleAddMember}
-                        className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-300 transition-colors"
+                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
                       >
                         <Icon name="add" className="w-3.5 h-3.5" />
                         <span>{isHi ? '+ सदस्य जोड़ें' : '+ Add Member'}</span>
@@ -953,7 +1033,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <button
                         type="button"
                         onClick={handleAddReferral}
-                        className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-300 transition-colors"
+                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
                       >
                         <Icon name="add" className="w-3.5 h-3.5" />
                         <span>{isHi ? '+ रेफरल जोड़ें' : '+ Add Referral'}</span>
@@ -1075,7 +1155,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <button
                         type="button"
                         onClick={handleAddService}
-                        className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-300 transition-colors"
+                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
                       >
                         <Icon name="add" className="w-3.5 h-3.5" />
                         <span>{isHi ? '+ सेवा जोड़ें' : '+ Add Service'}</span>
@@ -1188,7 +1268,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     {totalErrors} {isHi ? 'त्रुटियां' : 'errors'}
                   </span>
                 ) : (
-                  <span className="text-emerald-700 font-bold">
+                  <span className="text-success-ink font-bold">
                     {isHi ? 'वैध' : 'All valid'}
                   </span>
                 )}
@@ -1212,7 +1292,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   <button
                     type="button"
                     onClick={onSwitchToEdit}
-                    className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md min-h-[44px]"
+                    className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md min-h-[44px]"
                   >
                     <Icon name="edit" className="w-4 h-4" />
                     <span>{isHi ? 'संशोधन करें (Edit)' : 'Edit Beneficiary Record'}</span>
@@ -1232,7 +1312,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
+                  className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
                 >
                   <Icon name="check" className="w-4 h-4" />
                   <span>{isSubmitting ? (isHi ? 'जमा हो रहा है...' : 'Submitting...') : (isHi ? 'पंजीकरण जमा करें' : 'Submit Registration')}</span>
@@ -1281,7 +1361,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 value={changeReason}
                 onChange={(e) => setChangeReason(e.target.value)}
                 placeholder={isHi ? 'उदा. हालिया वायरल लोड रिपोर्ट के आधार पर अद्यतन...' : 'e.g. Updated ART status and phone number as per hospital visit.'}
-                className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden"
+                className="w-full p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden"
               />
             </div>
 
@@ -1297,7 +1377,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 type="button"
                 onClick={handleConfirmEditSubmit}
                 disabled={!changeReason.trim() || isSubmitting}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-xs disabled:opacity-50"
+                className="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2 rounded-xl shadow-xs disabled:opacity-50"
               >
                 {isSubmitting ? (isHi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHi ? 'पुष्टि करें और सहेजें' : 'Confirm & Save Revision')}
               </button>

@@ -38,13 +38,23 @@ public class ClientQueryService {
 
     @Transactional(readOnly = true)
     public DTOs.ClientDetailResponse getClientDetail(UUID clientId, UserPrincipal user) {
-        List<String> centers = user.getAuthorizedCenters();
-        if (centers == null || centers.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope");
+        Client client;
+        if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
+            client = clientRepository.findByIdAndFieldUserId(clientId, user.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope"));
+        } else {
+            List<String> centers = user.getAuthorizedCenters();
+            if (centers == null || centers.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope");
+            }
+            if (centers.contains("ALL")) {
+                client = clientRepository.findById(clientId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+            } else {
+                client = clientRepository.findByIdAndCenterIdIn(clientId, centers)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope"));
+            }
         }
-
-        Client client = clientRepository.findByIdAndCenterIdIn(clientId, centers)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope"));
 
         List<Task> tasks = taskRepository.findByClientIdOrderByDueDateAsc(client.getId());
         List<ContactAttempt> attempts = contactAttemptRepository.findByClientIdOrderByAttemptDateDescAttemptTimeDesc(client.getId());

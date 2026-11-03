@@ -33,4 +33,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     List<Task> findByClientIdOrderByDueDateAsc(UUID clientId);
     long countByClientIdAndStatusIn(UUID clientId, Collection<String> statuses);
+    long countByStatusIn(Collection<String> statuses);
 }

@@ -24,6 +24,9 @@ public class Client {
     @Column(name = "assigned_worker_id")
     private UUID assignedWorkerId;
 
+    @Column(name = "field_user_id")
+    private UUID fieldUserId;
+
     @Column(name = "registration_date", nullable = false)
     private LocalDate registrationDate;
 
@@ -152,6 +155,8 @@ public class Client {
     public void setCenterId(String centerId) { this.centerId = centerId; }
     public UUID getAssignedWorkerId() { return assignedWorkerId; }
     public void setAssignedWorkerId(UUID assignedWorkerId) { this.assignedWorkerId = assignedWorkerId; }
+    public UUID getFieldUserId() { return fieldUserId; }
+    public void setFieldUserId(UUID fieldUserId) { this.fieldUserId = fieldUserId; }
     public LocalDate getRegistrationDate() { return registrationDate; }
     public void setRegistrationDate(LocalDate registrationDate) { this.registrationDate = registrationDate; }
     public String getClientType() { return clientType; }

@@ -313,11 +313,11 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         {/* Success Notice after New Registration */}
         {showCreatedNotice && (
           <div
-            className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-4 text-xs text-emerald-950 flex items-center justify-between shadow-xs"
+            className="bg-mint/40 border-2 border-mint rounded-xl p-4 text-xs text-success-ink flex items-center justify-between shadow-xs"
             role="status"
           >
             <div className="flex items-center gap-2.5">
-              <Icon name="check" className="w-5 h-5 text-emerald-700 shrink-0" />
+              <Icon name="check" className="w-5 h-5 text-success-ink shrink-0" />
               <div>
                 <strong className="font-bold text-sm block">
                   Beneficiary Registration Successfully Completed!
@@ -329,7 +329,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
             </div>
             <button
               onClick={() => setShowCreatedNotice(false)}
-              className="text-emerald-800 hover:text-emerald-950 font-bold px-2 py-1"
+              className="text-success-ink hover:text-ink font-bold px-2 py-1"
             >
               <Icon name="cancel" className="w-4 h-4" />
             </button>
@@ -367,14 +367,14 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         <div className="flex items-center justify-between">
           <Link
             href="/clients"
-            className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 flex items-center gap-1.5 transition-colors"
+            className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
           >
             <Icon name="back" className="w-3.5 h-3.5" />
             <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
           </Link>
           <div className="flex items-center space-x-2">
             <span className="text-[11px] font-mono text-slate-500">ID: {client.id}</span>
-            <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+            <span className="text-xs font-bold bg-mint text-success-ink px-2.5 py-0.5 rounded-full border border-mint">
               {client.status}
             </span>
           </div>
@@ -408,12 +408,12 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
               <div className="h-6 w-px bg-slate-200" />
               <div className="text-center">
                 <p className="text-[10px] uppercase font-bold text-slate-500">Latest CD4</p>
-                <p className="text-xs font-bold text-emerald-700">{client.cd4Count} cells/mm³</p>
+                <p className="text-xs font-bold text-success-ink">{client.cd4Count} cells/mm³</p>
               </div>
               <div className="h-6 w-px bg-slate-200" />
               <div className="text-center">
                 <p className="text-[10px] uppercase font-bold text-slate-500">Viral Load</p>
-                <p className="text-xs font-bold text-blue-700">{client.viralLoadCount} copies/mL</p>
+                <p className="text-xs font-bold text-plum">{client.viralLoadCount} copies/mL</p>
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
                 onClick={() => handleTabChange('followup')}
                 className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
                   activeTab === 'followup'
-                    ? 'bg-emerald-700 text-white shadow-md'
+                    ? 'bg-primary text-white shadow-md'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                 }`}
               >
@@ -438,7 +438,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
                 onClick={() => handleTabChange('registration')}
                 className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
                   activeTab === 'registration'
-                    ? 'bg-emerald-700 text-white shadow-md'
+                    ? 'bg-primary text-white shadow-md'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                 }`}
               >
@@ -454,7 +454,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
                   <button
                     type="button"
                     onClick={() => setFormMode('edit')}
-                    className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-300 transition-colors min-h-[44px]"
+                    className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3.5 py-2 rounded-xl border border-mint transition-colors min-h-[44px]"
                   >
                     <Icon name="edit" className="w-4 h-4" />
                     <span>{lang === 'hi' ? 'संशोधन करें (Edit)' : 'Edit Registration'}</span>
@@ -480,7 +480,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
             className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2"
             role="status"
           >
-            <Icon name="check" className="w-4 h-4 text-emerald-400" />
+            <Icon name="check" className="w-4 h-4 text-mint" />
             <span>{toastMessage}</span>
           </div>
         )}

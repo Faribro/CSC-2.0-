@@ -239,7 +239,7 @@ export default function SignInPage() {
             type="button"
             onClick={() => setLang('en')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-              lang === 'en' ? 'bg-emerald-800 text-white' : 'text-slate-600 hover:text-slate-900'
+              lang === 'en' ? 'bg-primary text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             EN
@@ -248,7 +248,7 @@ export default function SignInPage() {
             type="button"
             onClick={() => setLang('hi')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-              lang === 'hi' ? 'bg-emerald-800 text-white' : 'text-slate-600 hover:text-slate-900'
+              lang === 'hi' ? 'bg-primary text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             हिन्दी
@@ -258,7 +258,7 @@ export default function SignInPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center">
         {/* Logo */}
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-800 text-white flex items-center justify-center font-black text-2xl shadow-md">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-2xl shadow-md">
           CSC
         </div>
         <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -292,7 +292,7 @@ export default function SignInPage() {
                 onClick={() => setActiveTab('password')}
                 className={`py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center gap-1.5 ${
                   activeTab === 'password'
-                    ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                    ? 'bg-primary text-white border-primary shadow-xs'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
@@ -305,7 +305,7 @@ export default function SignInPage() {
                 onClick={() => setActiveTab('state_manager')}
                 className={`py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center gap-1.5 ${
                   activeTab === 'state_manager'
-                    ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                    ? 'bg-primary text-white border-primary shadow-xs'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
@@ -318,7 +318,7 @@ export default function SignInPage() {
                 onClick={() => setActiveTab('field_worker')}
                 className={`py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all min-h-[44px] flex items-center justify-center gap-1.5 ${
                   activeTab === 'field_worker'
-                    ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                    ? 'bg-primary text-white border-primary shadow-xs'
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
@@ -350,7 +350,7 @@ export default function SignInPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. field_worker_a or admin"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px]"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px]"
                   />
                 </div>
 
@@ -365,14 +365,14 @@ export default function SignInPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-700 focus:outline-hidden min-h-[44px]"
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-plum focus:outline-hidden min-h-[44px]"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isPasswordSubmitting}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
                 >
                   <Icon name="Lock" className="w-4 h-4" />
                   <span>{isPasswordSubmitting ? (isHi ? 'प्रवेश हो रहा है...' : 'Signing in...') : (isHi ? 'साइन इन करें' : 'Sign In with Password')}</span>
@@ -384,7 +384,7 @@ export default function SignInPage() {
                 <div className="border-t border-slate-100 pt-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Icon name="Users" className="w-4 h-4 text-emerald-800" />
+                      <Icon name="Users" className="w-4 h-4 text-plum" />
                       <span>{isHi ? 'स्थानीय परीक्षण पहचान (Synthetic)' : 'Local Test Identities (Synthetic)'}</span>
                     </h3>
                     <span className="text-[10px] font-mono text-slate-400">1-Click Fast Fill</span>
@@ -396,7 +396,7 @@ export default function SignInPage() {
                         key={user.username}
                         type="button"
                         onClick={() => handleInstantTestLogin(user.username)}
-                        className="p-3 text-left rounded-xl border border-slate-200 hover:border-emerald-600 hover:bg-emerald-50/30 transition-all text-xs group"
+                        className="p-3 text-left rounded-xl border border-slate-200 hover:border-plum hover:bg-lavender/30 transition-all text-xs group"
                       >
                         <div className="flex items-center justify-between">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${user.badgeColor}`}>
@@ -406,7 +406,7 @@ export default function SignInPage() {
                         </div>
                         <div className="font-bold text-slate-900 mt-1">{user.fullName}</div>
                         <div className="text-[11px] text-slate-500 line-clamp-1">{user.scopeDescription}</div>
-                        <div className="mt-2 text-[11px] font-bold text-emerald-800 flex items-center justify-between">
+                        <div className="mt-2 text-[11px] font-bold text-plum flex items-center justify-between">
                           <span>{isHi ? 'इस रूप में प्रवेश करें →' : 'Sign in as this user →'}</span>
                         </div>
                       </button>
@@ -504,7 +504,7 @@ export default function SignInPage() {
                   <button
                     type="submit"
                     disabled={smLoading}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl min-h-[44px] shadow-sm disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white font-bold py-2.5 rounded-xl min-h-[44px] shadow-sm disabled:opacity-50"
                   >
                     <span>{smLoading ? 'Sending Challenge...' : 'Send 6-Digit Verification Code'}</span>
                   </button>
@@ -529,7 +529,7 @@ export default function SignInPage() {
                       value={smOtp}
                       onChange={(e) => setSmOtp(e.target.value.replace(/\D/g, ''))}
                       placeholder="123456"
-                      className="w-48 mx-auto text-center font-mono font-black text-xl tracking-widest px-3 py-2.5 border-2 border-emerald-700 rounded-xl min-h-[44px] focus:outline-hidden"
+                      className="w-48 mx-auto text-center font-mono font-black text-xl tracking-widest px-3 py-2.5 border-2 border-primary rounded-xl min-h-[44px] focus:outline-hidden"
                     />
                   </div>
 
@@ -544,7 +544,7 @@ export default function SignInPage() {
                     <button
                       type="submit"
                       disabled={smLoading || smOtp.length !== 6}
-                      className="w-1/2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-xl min-h-[44px] disabled:opacity-50"
+                      className="w-1/2 bg-primary hover:bg-primary-hover text-white font-bold py-2 rounded-xl min-h-[44px] disabled:opacity-50"
                     >
                       {smLoading ? 'Verifying...' : 'Verify & Continue'}
                     </button>
@@ -553,17 +553,17 @@ export default function SignInPage() {
               )}
 
               {smStep === 'pending' && (
-                <div className="p-5 bg-blue-50 border border-blue-200 rounded-2xl text-center space-y-3">
-                  <Icon name="Clock" className="w-8 h-8 text-blue-700 mx-auto" />
-                  <h4 className="font-bold text-sm text-blue-950">Application Pending Approval</h4>
-                  <p className="text-xs text-blue-800">{smPendingNotice}</p>
+                <div className="p-5 bg-peach border border-border/40 rounded-2xl text-center space-y-3">
+                  <Icon name="Clock" className="w-8 h-8 text-plum mx-auto" />
+                  <h4 className="font-bold text-sm text-ink">Application Pending Approval</h4>
+                  <p className="text-xs text-ink">{smPendingNotice}</p>
                   <button
                     type="button"
                     onClick={() => {
                       setSmStep('details');
                       setActiveTab('password');
                     }}
-                    className="text-xs font-bold text-blue-900 underline mt-2"
+                    className="text-xs font-bold text-plum underline mt-2"
                   >
                     Back to Login
                   </button>
@@ -624,7 +624,7 @@ export default function SignInPage() {
                 <button
                   type="submit"
                   disabled={fwLoading}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl min-h-[44px] shadow-sm disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white font-bold py-2.5 rounded-xl min-h-[44px] shadow-sm disabled:opacity-50"
                 >
                   <Icon name="check" className="w-4 h-4" />
                   <span>{fwLoading ? 'Validating Code & Enrolling...' : 'Complete Onboarding & Open My Work'}</span>

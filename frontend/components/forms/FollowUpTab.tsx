@@ -196,7 +196,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
       type: 'ENCOUNTER',
       title: `${t.recordEncounter}: ${e.encounterType || 'Clinical Follow-Up'}`,
       badge: 'ENCOUNTER',
-      badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+      badgeClass: 'bg-lavender text-plum border-border/40',
       notes: e.generalNotes || 'No specific notes recorded.',
       details: {
         'Observation Date': e.observationDate,
@@ -216,7 +216,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
       badge: a.outcome.toUpperCase(),
       badgeClass:
         a.outcome === 'reached'
-          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          ? 'bg-mint text-success-ink border-mint'
           : a.outcome === 'refused'
           ? 'bg-rose-100 text-rose-800 border-rose-200'
           : 'bg-amber-100 text-amber-800 border-amber-200',
@@ -238,8 +238,8 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
       badge: p.status,
       badgeClass:
         p.status === 'DELIVERED'
-          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-          : 'bg-indigo-100 text-indigo-800 border-indigo-200',
+          ? 'bg-mint text-success-ink border-mint'
+          : 'bg-peach text-ink border-border/40',
       notes: p.notes || `Target Due: ${p.targetDueDate}`,
       details: {
         'Service Code': p.serviceCode,
@@ -257,7 +257,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
       type: 'DELIVERED_SERVICE',
       title: `${t.recordDeliveredService}: ${d.serviceCode}`,
       badge: 'DELIVERED',
-      badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      badgeClass: 'bg-mint text-success-ink border-mint',
       notes: d.notes || `Delivered at ${d.facilityName}`,
       details: {
         Facility: d.facilityName,
@@ -518,7 +518,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
               setSelectedTask(tasks[0] || null);
               setActiveModal('encounter');
             }}
-            className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm min-h-[44px] transition-colors"
+            className="px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-lg shadow-sm min-h-[44px] transition-colors"
           >
             + {t.recordEncounter}
           </button>
@@ -538,7 +538,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
               setSelectedTask(tasks[0] || null);
               setActiveModal('delivered');
             }}
-            className="px-3.5 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg min-h-[44px] transition-colors"
+            className="px-3.5 py-2 text-xs font-semibold text-success-ink bg-mint/40 hover:bg-mint border border-mint rounded-lg min-h-[44px] transition-colors"
           >
             + {t.recordDeliveredService}
           </button>
@@ -550,7 +550,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Icon name="file" className="w-4 h-4 text-emerald-800" />
+              <Icon name="file" className="w-4 h-4 text-plum" />
               <span>{t.openTasksTitle} ({filteredTasks.length})</span>
             </h4>
             <p className="text-xs text-slate-500">
@@ -600,7 +600,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                     isOverdue
                       ? 'border-rose-300 bg-rose-50/30'
                       : isCompleted
-                      ? 'border-emerald-300 bg-emerald-50/20'
+                      ? 'border-mint bg-mint/20'
                       : 'border-slate-200 bg-white'
                   }`}
                 >
@@ -615,10 +615,10 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                             isOverdue
                               ? 'bg-rose-100 text-rose-800 border-rose-300'
                               : isCompleted
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              ? 'bg-mint text-success-ink border-mint'
                               : isDue
                               ? 'bg-amber-100 text-amber-800 border-amber-300'
-                              : 'bg-sky-100 text-sky-800 border-sky-300'
+                              : 'bg-peach text-ink border-border/40'
                           }`}
                         >
                           {task.status}
@@ -665,7 +665,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                             setSelectedTask(task);
                             setActiveModal('encounter');
                           }}
-                          className="px-2 py-1 font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded"
+                          className="px-2 py-1 font-bold text-white bg-primary hover:bg-primary-hover rounded"
                         >
                           Visit
                         </button>
@@ -695,7 +695,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Icon name="Clock" className="w-4 h-4 text-emerald-800" />
+              <Icon name="Clock" className="w-4 h-4 text-plum" />
               <span>{t.timelineTitle} ({filteredTimeline.length})</span>
             </h4>
             <p className="text-xs text-slate-500">
@@ -739,10 +739,10 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 <div
                   className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 bg-white ${
                     item.type === 'ENCOUNTER'
-                      ? 'border-emerald-600'
+                      ? 'border-plum'
                       : item.type === 'ATTEMPT'
-                      ? 'border-blue-600'
-                      : 'border-indigo-600'
+                      ? 'border-primary'
+                      : 'border-sun'
                   }`}
                 />
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2 hover:bg-white hover:border-slate-300 transition-colors">
@@ -1033,7 +1033,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm min-h-[44px]"
+                  className="px-5 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-lg shadow-sm min-h-[44px]"
                 >
                   {submitting ? 'Submitting...' : t.submitToServer}
                 </button>
@@ -1161,7 +1161,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-700 hover:bg-indigo-800 rounded-lg shadow-sm min-h-[44px]"
+                  className="px-5 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-lg shadow-sm min-h-[44px]"
                 >
                   {submitting ? 'Submitting...' : t.planService}
                 </button>
@@ -1275,7 +1275,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm min-h-[44px]"
+                  className="px-5 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-lg shadow-sm min-h-[44px]"
                 >
                   {submitting ? 'Submitting...' : t.recordDeliveredService}
                 </button>

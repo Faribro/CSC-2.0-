@@ -1,0 +1,89 @@
+/* ==========================================================================
+   CSC 2.0 Design Tokens — Calm Friendly "Comic" Theme
+   WCAG 2.2 AA Verified (Contrast >= 4.5:1 text, >= 3:1 UI components)
+   Strict Policy: NO blue and NO dark green anywhere outside the Alliance India logo.
+   ========================================================================== */
+
+:root {
+  /* Surfaces & Canvas */
+  --canvas: #FFFBF5;         /* Warm white page background */
+  --surface: #FFFFFF;        /* Pure white cards, forms */
+  --surface-raised: #FFFFFF;
+  --surface-tinted: #FFF8EE;
+
+  /* Typography Colors */
+  --ink: #3B2F3F;            /* Warm plum-charcoal body text (12.2:1 on canvas) */
+  --ink-muted: #6B5B6E;      /* Secondary/subtle text (6.1:1 on canvas) */
+  --ink-inverted: #FFFFFF;   /* Text on primary/dark surfaces */
+
+  /* Primary Brand Action (Coral) */
+  --primary: #C8472F;        /* Coral button/primary action (white text 4.8:1) */
+  --primary-hover: #B93A24;  /* Darker coral on hover/press (white text 5.7:1) */
+  --primary-active: #A8331E;
+
+  /* Secondary Accent & Interactive Links (Plum) */
+  --plum: #7B3F8C;           /* Secondary buttons, links, active tab indicator (7.2:1) */
+  --plum-hover: #683277;
+  --plum-light: #F6EDFA;
+
+  /* Tint Accents (Comic Circles & Badges) */
+  --sun: #FFD166;            /* Sunshine accent (ink text 8.8:1) */
+  --sun-light: #FFF6DD;
+  --mint: #BFEBDD;           /* Mint tint (ink text 9.7:1; light only; NO dark green) */
+  --mint-light: #EBF8F4;
+  --lavender: #E4D8F7;       /* Lavender tint (ink text 9.3:1) */
+  --lavender-light: #F7F2FD;
+  --peach: #FFE1CC;          /* Peach tint (ink text 10.2:1) */
+  --peach-light: #FFF5EE;
+  --pink: #FFD6E0;           /* Pink tint (ink text 9.6:1) */
+  --pink-light: #FFF2F5;
+
+  /* Borders & Focus Ring */
+  --border: #8A7A8D;         /* 4.0:1 component boundary on white */
+  --border-light: #D9D2DC;   /* Subtle divider border */
+  --focus-ring: #7B3F8C;     /* 3px solid #7B3F8C, 2px offset */
+
+  /* Semantic Feedback States */
+  --success-text: #1F6B52;   /* 5.8:1 on success-bg */
+  --success-bg: #E6F8F1;
+  --success-border: #92DCBE;
+
+  --warning-text: #7A4A00;   /* 6.7:1 on warning-bg */
+  --warning-bg: #FFF3C4;
+  --warning-border: #FCD66D;
+
+  --error-text: #A3213C;     /* 6.7:1 on error-bg */
+  --error-bg: #FFF0F3;
+  --error-border: #FFA8B8;
+
+  /* Comic Layout & Geometry Tokens */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+  --radius-badge: 9999px;
+
+  --border-comic: 2px solid var(--border);
+  --border-primary: 2px solid var(--primary);
+  --border-plum: 2px solid var(--plum);
+
+  --shadow-comic: 0 2px 4px rgba(59, 47, 63, 0.06), 0 4px 8px rgba(59, 47, 63, 0.04);
+  --shadow-comic-raised: 0 4px 12px rgba(59, 47, 63, 0.08), 0 8px 24px rgba(59, 47, 63, 0.06);
+
+  --touch-target: 48px;
+}
+
+/* Accessibility Focus Ring on Interactive Elements */
+*:focus-visible {
+  outline: 3px solid var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

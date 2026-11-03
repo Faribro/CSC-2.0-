@@ -27,7 +27,8 @@ public class UserPrincipal implements UserDetails {
     public List<String> getAuthorizedCenters() { return authorizedCenters; }
 
     public boolean hasCenterAccess(String centerId) {
-        if ("SYSTEM_ADMIN".equals(role)) return true;
+        if ("SYSTEM_ADMIN".equals(role) || "LEADERSHIP".equals(role)) return true;
+        if ("FIELD_USER".equals(role) || "OUTREACH_WORKER".equals(role)) return true;
         return authorizedCenters.contains(centerId);
     }
 

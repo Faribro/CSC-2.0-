@@ -68,7 +68,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
             <select
               value={serviceCode}
               onChange={(e) => handleServiceChange(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-plum focus:outline-none"
             >
               <option value="ART_REFILL">ART Refill Support (दवा वितरण सहायता)</option>
               <option value="VIRAL_LOAD">Viral Load Test Facilitation (वायरल लोड जांच)</option>
@@ -84,7 +84,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
               type="text"
               value={serviceName}
               onChange={(e) => setServiceName(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
               required
             />
           </div>
@@ -95,7 +95,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
               type="date"
               value={targetDueDate}
               onChange={(e) => setTargetDueDate(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
               required
             />
             <p className="text-[11px] text-slate-500 mt-1 italic">
@@ -110,7 +110,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="Action plan, ART center name, assigned volunteer..."
-              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-plum focus:outline-none"
             />
           </div>
 
@@ -124,7 +124,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 rounded-md shadow-sm"
+              className="px-4 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-md shadow-sm"
             >
               {t.submitToServer}
             </button>

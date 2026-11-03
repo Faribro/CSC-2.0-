@@ -151,7 +151,7 @@ export default function NewClientRegistrationPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
           <Link
             href="/clients"
-            className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 flex items-center gap-1.5 transition-colors"
+            className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
           >
             <Icon name="back" className="w-3.5 h-3.5" />
             <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
@@ -161,7 +161,7 @@ export default function NewClientRegistrationPage() {
             <select
               value={centerId}
               onChange={(e) => setCenterId(e.target.value)}
-              className="text-xs font-mono font-bold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white shadow-2xs focus:ring-2 focus:ring-emerald-700 focus:outline-hidden"
+              className="text-xs font-mono font-bold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white shadow-2xs focus:ring-2 focus:ring-plum focus:outline-hidden"
             >
               <option value="CENTER_DELHI_01">CENTER_DELHI_01 (Delhi Central)</option>
               <option value="CENTER_MUMBAI_01">CENTER_MUMBAI_01 (Mumbai South)</option>

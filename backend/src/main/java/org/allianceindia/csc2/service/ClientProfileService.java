@@ -53,7 +53,7 @@ public class ClientProfileService {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not found"));
 
-        validateCenterScope(client.getCenterId(), user);
+        validateCenterScope(client, user);
 
         List<FamilyMember> activeMembers = familyMemberRepository.findByClientIdAndDeletedFalse(clientId);
         List<ReferralRequest> activeReferrals = referralRequestRepository.findByClientIdAndDeletedFalse(clientId);
@@ -84,7 +84,7 @@ public class ClientProfileService {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not found"));
 
-        validateCenterScope(client.getCenterId(), user);
+        validateCenterScope(client, user);
 
         // 4. Restricted / Immutable fields validation
         if (req.clientRef() != null && !req.clientRef().trim().equalsIgnoreCase(client.getClientRef().trim())) {
@@ -232,12 +232,18 @@ public class ClientProfileService {
         );
     }
 
-    private void validateCenterScope(String clientCenterId, UserPrincipal user) {
+    private void validateCenterScope(Client client, UserPrincipal user) {
+        if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
+            if (client.getFieldUserId() == null || !client.getFieldUserId().equals(user.getId())) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not found");
+            }
+            return;
+        }
         List<String> authorized = user.getAuthorizedCenters();
         if (authorized == null || authorized.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
         }
-        if (!authorized.contains("ALL") && !authorized.contains(clientCenterId)) {
+        if (!authorized.contains("ALL") && !authorized.contains(client.getCenterId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
         }
     }

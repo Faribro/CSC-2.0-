@@ -27,12 +27,20 @@ import {
   AlertTriangle,
   CheckCircle,
   Lock,
+  Unlock,
+  Shield,
+  Heart,
+  Building,
+  ClipboardList,
+  Home,
   Calendar,
   FileText,
   Phone,
   MapPin,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Share2,
   HelpCircle,
@@ -176,6 +184,12 @@ export const Icon: React.FC<IconProps> = ({
       return <ChevronDown {...commonProps} />;
     case 'chevron-up':
       return <ChevronUp {...commonProps} />;
+    case 'chevron-left':
+    case 'ChevronLeft':
+      return <ChevronLeft {...commonProps} />;
+    case 'chevron-right':
+    case 'ChevronRight':
+      return <ChevronRight {...commonProps} />;
     case 'download':
       return <Download {...commonProps} />;
     case 'share':
@@ -192,7 +206,29 @@ export const Icon: React.FC<IconProps> = ({
     case 'completed':
       return <CheckCircle {...commonProps} />;
     case 'locked':
+    case 'Lock':
       return <Lock {...commonProps} />;
+    case 'unlock':
+    case 'Unlock':
+      return <Unlock {...commonProps} />;
+    case 'Shield':
+      return <Shield {...commonProps} />;
+    case 'Heart':
+      return <Heart {...commonProps} />;
+    case 'Building':
+      return <Building {...commonProps} />;
+    case 'ClipboardList':
+      return <ClipboardList {...commonProps} />;
+    case 'Home':
+      return <Home {...commonProps} />;
+    case 'x':
+      return <X {...commonProps} />;
+    case 'info':
+    case 'Info':
+      return <AlertCircle {...commonProps} />;
+    case 'check-circle':
+    case 'CheckCircle':
+      return <CheckCircle {...commonProps} />;
 
     default:
       return <FileText {...commonProps} />;

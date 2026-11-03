@@ -50,7 +50,7 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               CRF Sections (A–H, J)
             </h2>
-            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-xs font-bold text-plum bg-lavender px-2 py-0.5 rounded-full border border-border/40">
               {percentComplete}%
             </span>
           </div>
@@ -72,7 +72,7 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
                   }}
                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-emerald-800 text-white font-bold shadow-xs'
+                      ? 'bg-primary text-white font-bold shadow-xs'
                       : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
@@ -81,11 +81,11 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     {isSectionDone ? (
-                      <span className={`text-[10px] ${isActive ? 'text-emerald-200' : 'text-emerald-700 font-bold'}`}>
+                      <span className={`text-[10px] ${isActive ? 'text-white/80' : 'text-plum font-bold'}`}>
                         <Icon name="check" className="w-3 h-3" />
                       </span>
                     ) : (
-                      <span className={`text-[10px] font-mono ${isActive ? 'text-emerald-200' : 'text-slate-400'}`}>
+                      <span className={`text-[10px] font-mono ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
                         {sec.completedFields}/{sec.totalFields}
                       </span>
                     )}
@@ -116,8 +116,8 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
               </span>
             )}
             {saveStatus === 'accepted_by_server' && (
-              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-success-ink bg-mint/50 px-2.5 py-1 rounded-md border border-mint">
+                <span className="w-2 h-2 rounded-full bg-success-ink"></span>
                 {t.accepted}
               </span>
             )}
@@ -137,7 +137,7 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
               type="button"
               onClick={onReviewSubmit}
               disabled={isSubmitting}
-              className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-emerald-800 hover:bg-emerald-900 rounded-lg shadow-sm min-h-[44px] transition-all disabled:opacity-50"
+              className="flex-1 sm:flex-none px-5 py-2 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-lg shadow-sm min-h-[44px] transition-all disabled:opacity-50"
             >
               {isSubmitting ? 'Submitting...' : t.reviewBeforeSubmit}
             </button>

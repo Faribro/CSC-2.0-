@@ -1,17 +1,13 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Language, translations } from '@/lib/translations';
 import { Icon } from '@/components/ui/Icon';
-import {
-  getStoredSession,
-  clearSessionPreservingDrafts,
-  checkHasUnsentDrafts,
-  isRouteAllowedForRole,
-  StoredUser,
-} from '@/lib/auth';
+import { FieldPhoneVerificationModal } from '@/components/auth/FieldPhoneVerificationModal';
+import { EvaluationLoginModal } from '@/components/auth/EvaluationLoginModal';
 
 export type UserRole =
   | 'field_worker'
@@ -41,380 +37,439 @@ interface AppShellProps {
   isOffline?: boolean;
 }
 
-export const AppShell: React.FC<AppShellProps> = ({
+export function AppShell({
   children,
   currentLang,
   onLanguageChange,
   activeClient,
-  currentRole: propRole,
+  currentRole,
   onRoleChange,
   offlineCount = 0,
   isOffline = false,
-}) => {
+}: AppShellProps) {
   const t = translations[currentLang];
   const pathname = usePathname();
   const router = useRouter();
 
-  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [hasUnsentDrafts, setHasUnsentDrafts] = useState(false);
-  const [isClientLoaded, setIsClientLoaded] = useState(false);
+  // Verification & Auth states
+  const [fieldUser, setFieldUser] = useState<{ id: string; firstName: string; phone: string; status: string; state?: string } | null>(null);
+  const [evalUser, setEvalUser] = useState<{ role: string; fullName: string; state: string } | null>(null);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [phoneTargetUrl, setPhoneTargetUrl] = useState<string | null>(null);
+  const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
+  const [isJustUnlocked, setIsJustUnlocked] = useState(false);
 
-  // Authenticated session load & route guard
+  // Network & Sync status
+  const [isOnline, setIsOnline] = useState(!isOffline);
+  const [submittedCount, setSubmittedCount] = useState<number>(0);
+
   useEffect(() => {
-    setIsClientLoaded(true);
-    const session = getStoredSession();
-    if (!session) {
-      if (pathname !== '/sign-in') {
-        router.push('/sign-in');
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      // Restore field user from localStorage if verified
+      const storedFieldUser = localStorage.getItem('csc2_field_user');
+      if (storedFieldUser) {
+        try {
+          setFieldUser(JSON.parse(storedFieldUser));
+        } catch {}
       }
-      return;
+
+      // Check authoritative device session via backend cookie
+      fetch('/api/v1/auth/field/session')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.authenticated) {
+            setFieldUser(data);
+            localStorage.setItem('csc2_field_user', JSON.stringify(data));
+          }
+        })
+        .catch(() => {});
+
+      // Restore evaluation user from localStorage
+      const storedEvalUser = localStorage.getItem('csc2_eval_user');
+      if (storedEvalUser) {
+        try {
+          setEvalUser(JSON.parse(storedEvalUser));
+        } catch {}
+      }
+
+      // Fetch submission count for badge
+      fetch('/api/v1/clients?page=0&size=1')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && typeof data.totalElements === 'number') {
+            setSubmittedCount(data.totalElements);
+          }
+        })
+        .catch(() => {});
+
+      // Listen for custom trigger to open phone verification
+      const handleOpenPhone = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail?.targetUrl) {
+          setPhoneTargetUrl(customEvent.detail.targetUrl);
+        } else {
+          setPhoneTargetUrl('/clients/new');
+        }
+        setIsPhoneModalOpen(true);
+      };
+      window.addEventListener('csc2:open_phone_verification', handleOpenPhone);
+
+      const handleUserUpdated = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail) {
+          setFieldUser(customEvent.detail);
+        }
+      };
+      window.addEventListener('csc2:field_user_updated', handleUserUpdated);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('csc2:open_phone_verification', handleOpenPhone);
+        window.removeEventListener('csc2:field_user_updated', handleUserUpdated);
+      };
     }
+  }, []);
 
-    setCurrentUser(session);
-    const role = propRole || session.role;
+  const isEvaluationUnlocked = !!evalUser;
 
-    // Guard route against unauthorized role
-    if (!isRouteAllowedForRole(role, pathname)) {
-      router.push('/not-permitted');
+  const handleSubmittedSurveysClick = (e: React.MouseEvent) => {
+    let current = fieldUser;
+    if (!current && typeof window !== 'undefined') {
+      const stored = localStorage.getItem('csc2_field_user');
+      if (stored) {
+        try {
+          current = JSON.parse(stored);
+          setFieldUser(current);
+        } catch {}
+      }
     }
+    if (!current) {
+      e.preventDefault();
+      setPhoneTargetUrl('/clients');
+      setIsPhoneModalOpen(true);
+    }
+  };
 
-    // Check draft status
-    setHasUnsentDrafts(checkHasUnsentDrafts());
-  }, [pathname, propRole, router]);
+  const handleEvaluationClick = (e: React.MouseEvent) => {
+    if (!isEvaluationUnlocked) {
+      e.preventDefault();
+      setIsEvalModalOpen(true);
+    }
+  };
 
-  const effectiveRole: UserRole = propRole || currentUser?.role || 'field_worker';
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('csc2_field_user');
+      localStorage.removeItem('csc2_eval_user');
+      localStorage.removeItem('csc2_auth_token');
+    }
+    fetch('/api/v1/auth/field/logout', { method: 'POST' }).catch(() => {});
+    setFieldUser(null);
+    setEvalUser(null);
+    router.push('/work');
+  };
 
-  // Role Gating Logic
-  const navItems = [
+  // 3 Primary Navigation Items
+  const navTabs = [
     {
+      id: 'forms',
       href: '/work',
-      label: t.myWork,
-      roles: ['field_worker', 'supervisor', 'leadership', 'administrator'],
+      label: currentLang === 'hi' ? 'फॉर्म' : 'Forms',
+      icon: 'Home',
+      isActive: pathname === '/' || pathname === '/work' || pathname?.startsWith('/clients/new'),
     },
     {
+      id: 'submitted',
       href: '/clients',
-      label: t.clients,
-      roles: ['field_worker', 'supervisor', 'state_reviewer', 'leadership', 'administrator'],
+      label: currentLang === 'hi' ? 'रिकॉर्ड और फॉलो-अप' : 'Records & Follow-ups',
+      icon: 'ClipboardList',
+      badge: submittedCount > 0 ? submittedCount : undefined,
+      isActive: pathname === '/clients' || (pathname?.startsWith('/clients/') && pathname !== '/clients/new'),
+      onClick: handleSubmittedSurveysClick,
     },
     {
-      href: '/reports',
-      label: t.reports,
-      roles: ['supervisor', 'state_reviewer', 'leadership', 'administrator'],
-    },
-    {
+      id: 'evaluation',
       href: '/admin',
-      label: t.admin,
-      roles: ['administrator'], // strictly admin only!
+      label: currentLang === 'hi' ? 'मूल्यांकन' : 'Evaluation',
+      restrictedLabel: currentLang === 'hi' ? '(प्रतिबंधित)' : '(Restricted)',
+      icon: isJustUnlocked ? 'Unlock' : isEvaluationUnlocked ? 'Shield' : 'Lock',
+      isLocked: !isEvaluationUnlocked,
+      isUnlocking: isJustUnlocked,
+      isActive: pathname === '/admin' || pathname === '/reports',
+      onClick: handleEvaluationClick,
     },
   ];
 
-  const visibleNav = navItems.filter((item) => item.roles.includes(effectiveRole));
-
-  const handleSignOutClick = () => {
-    const hasDrafts = checkHasUnsentDrafts();
-    setHasUnsentDrafts(hasDrafts);
-    if (hasDrafts) {
-      setShowSignOutModal(true);
-    } else {
-      performSignOut();
-    }
-  };
-
-  const performSignOut = () => {
-    clearSessionPreservingDrafts();
-    setShowSignOutModal(false);
-    router.push('/sign-in');
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
-      {/* Top Masthead */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+    <div className="min-h-screen flex flex-col bg-canvas text-ink font-sans antialiased pb-20 md:pb-0">
+      {/* Top Masthead (Desktop & Mobile Header) */}
+      <header className="bg-surface border-b-2 border-border/40 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            {/* Logo & Platform Title */}
+            {/* Alliance India Brand Logo */}
             <div className="flex items-center space-x-3">
-              <Link href="/work" className="flex items-center space-x-3 group">
-                <div className="w-10 h-10 rounded-lg bg-emerald-800 text-white flex items-center justify-center font-bold text-lg tracking-wider shadow-sm group-hover:bg-emerald-900 transition-colors">
-                  CSC
-                </div>
-                <div>
-                  <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight flex items-center gap-2">
-                    {t.appTitle}
-                    <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded-full uppercase tracking-wider font-semibold">
-                      v2.0
-                    </span>
-                  </h1>
-                  <p className="text-xs text-slate-500 hidden sm:block">{t.subTitle}</p>
+              <Link
+                href="/work"
+                className="flex items-center rounded-[12px] p-1 group focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-plum"
+                title="India HIV/AIDS Alliance"
+              >
+                <div className="h-10 w-28 sm:w-36 relative flex items-center">
+                  <Image
+                    src="/alliance-india-logo.png"
+                    alt="India HIV/AIDS Alliance"
+                    width={150}
+                    height={40}
+                    className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+                    priority
+                  />
                 </div>
               </Link>
             </div>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center space-x-1" aria-label="Main Navigation">
-              {visibleNav.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== '/work' && pathname?.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+            {/* Desktop Center Navigation (Three Top-Level Tabs) */}
+            <nav className="hidden md:flex items-center space-x-2" aria-label="Main Navigation">
+              {navTabs.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  onClick={tab.onClick}
+                  className={`group relative flex items-center space-x-2 px-3.5 py-2 rounded-[12px] text-xs transition-all select-none cursor-pointer ${
+                    tab.isUnlocking
+                      ? 'bg-lavender text-plum border-2 border-plum animate-unlock-pop shadow-comic'
+                      : tab.isActive
+                      ? 'bg-plum/10 text-plum border border-plum/30 shadow-xs font-bold'
+                      : tab.isLocked
+                      ? 'text-ink-muted/70 bg-canvas/30 border border-dashed border-border/50 hover:bg-canvas hover:text-ink hover:border-border/80 opacity-80 hover:opacity-100 font-medium'
+                      : 'text-ink-muted hover:text-ink hover:bg-canvas font-bold'
+                  }`}
+                >
+                  <div className={`relative ${tab.isUnlocking ? 'animate-lock-shackle text-plum' : ''}`}>
+                    <Icon
+                      name={tab.icon}
+                      className={`w-4 h-4 ${
+                        tab.isUnlocking
+                          ? 'text-plum animate-pulse'
+                          : tab.isActive
+                          ? 'text-plum'
+                          : tab.isLocked
+                          ? 'text-ink-muted/80'
+                          : 'text-ink-muted'
+                      }`}
+                    />
+                  </div>
+                  <span className={tab.isActive || tab.isUnlocking ? 'font-bold' : ''}>{tab.label}</span>
+                  {tab.badge !== undefined && (
+                    <span className="ml-1 bg-primary text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+                      {tab.badge}
+                    </span>
+                  )}
+                  {tab.isLocked && !tab.isUnlocking && (
+                    <span className="text-[11px] font-normal text-ink-muted/70 ml-0.5" aria-hidden="true">
+                      {tab.restrictedLabel}
+                    </span>
+                  )}
+                  {tab.isUnlocking && (
+                    <span className="text-[9px] font-black uppercase text-plum bg-surface px-1.5 py-0.5 rounded-full border border-plum/30 animate-pulse">
+                      Unlocked!
+                    </span>
+                  )}
+                  {tab.id === 'evaluation' && !tab.isLocked && !tab.isUnlocking && (
+                    <span className="text-[9px] font-mono font-bold bg-mint text-success-ink px-1.5 py-0.5 rounded-full border border-mint">
+                      {evalUser?.role === 'leadership' ? 'National' : evalUser?.state || 'State'}
+                    </span>
+                  )}
+                  {/* Comic Active Tab Underline */}
+                  {tab.isActive && (
+                    <span className="absolute -bottom-1 left-3 right-3 h-[3px] rounded-full bg-plum shadow-[0_2px_4px_rgba(123,63,140,0.4)]" />
+                  )}
+                </Link>
+              ))}
             </nav>
 
-            {/* Controls: Role/User Chip, Language Toggle, Sign Out */}
-            <div className="flex items-center space-x-2.5">
-              {/* Current User Chip with Role + Scope */}
-              {currentUser && (
-                <div className="hidden lg:flex items-center bg-slate-100 border border-slate-200 rounded-lg py-1 px-2.5 text-xs">
-                  <div className="flex flex-col text-right mr-2">
-                    <span className="font-bold text-slate-800 text-[11px] leading-tight">
-                      {currentUser.fullName}
-                    </span>
-                    <span className="text-[10px] font-mono text-emerald-700 font-semibold leading-tight">
-                      {effectiveRole} • {currentUser.scope}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Offline Queue Badge */}
-              {offlineCount > 0 && (
-                <span className="inline-flex items-center px-2 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
-                  Queue: {offlineCount}
-                </span>
-              )}
-
-              {/* Bilingual Language Selector */}
+            {/* Right Controls: Online/Sync Status, Language Toggle, Identity */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Online / Sync Status Indicator (Pill dot; shows 'Offline' badge only when disconnected) */}
               <div
-                className="inline-flex rounded-lg border border-slate-300 bg-white shadow-xs p-0.5"
-                role="group"
-                aria-label="Language Toggle"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border ${
+                  isOnline
+                    ? 'bg-mint/40 text-success-ink border-mint'
+                    : 'bg-sun/30 text-warning-ink border-sun'
+                }`}
+                title={isOnline ? 'Connected to server' : 'Offline - Local storage active'}
+                aria-label={isOnline ? 'Connected' : 'Offline'}
               >
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-success-ink animate-pulse' : 'bg-warning-ink'}`} />
+                {!isOnline && <span>Offline</span>}
+              </div>
+
+              {/* Language Switcher */}
+              <div className="flex items-center bg-canvas border border-border/40 rounded-[10px] p-0.5">
                 <button
                   type="button"
                   onClick={() => onLanguageChange('en')}
-                  className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${
-                    currentLang === 'en'
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                  className={`px-2 py-1 text-xs font-black rounded-[8px] transition-colors cursor-pointer ${
+                    currentLang === 'en' ? 'bg-surface text-plum shadow-2xs' : 'text-ink-muted hover:text-ink'
                   }`}
-                  aria-pressed={currentLang === 'en'}
                 >
                   EN
                 </button>
                 <button
                   type="button"
                   onClick={() => onLanguageChange('hi')}
-                  className={`px-2 py-1 text-xs font-bold rounded-md transition-colors ${
-                    currentLang === 'hi'
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                  className={`px-2 py-1 text-xs font-black rounded-[8px] transition-colors cursor-pointer ${
+                    currentLang === 'hi' ? 'bg-surface text-plum shadow-2xs' : 'text-ink-muted hover:text-ink'
                   }`}
-                  aria-pressed={currentLang === 'hi'}
                 >
-                  हिन्दी
+                  HI
                 </button>
               </div>
 
-              {/* Sign Out Button */}
-              <button
-                type="button"
-                onClick={handleSignOutClick}
-                title="Sign Out"
-                className="p-1.5 text-xs font-semibold text-slate-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-slate-200 transition-colors"
-                aria-label="Sign Out"
-              >
-                <span className="hidden sm:inline px-1">
-                  {currentLang === 'hi' ? 'लॉगआउट' : 'Sign Out'}
-                </span>
-                <span className="sm:hidden flex items-center justify-center">
-                  <Icon name="logout" className="w-3.5 h-3.5" />
-                </span>
-              </button>
-
-              {/* Mobile menu hamburger button */}
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-hidden"
-                aria-label="Toggle navigation menu"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {isMobileMenuOpen ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
+              {/* User Identity or Verification Trigger */}
+              {evalUser ? (
+                <div className="flex items-center gap-2">
+                  <div className="hidden lg:flex flex-col text-right">
+                    <span className="text-xs font-bold text-ink leading-tight">{evalUser.fullName}</span>
+                    <span className="text-[10px] font-mono text-plum">{evalUser.role} ({evalUser.state})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-canvas rounded-[10px] transition-colors"
+                    title={currentLang === 'hi' ? 'साइन आउट' : 'Sign out'}
+                    aria-label="Sign out"
+                  >
+                    <Icon name="LogOut" className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : fieldUser ? (
+                <div className="flex items-center gap-2">
+                  <div className="hidden lg:flex flex-col text-right">
+                    <span className="text-xs font-bold text-ink leading-tight">{fieldUser.firstName || 'Field Caseworker'}</span>
+                    <span className="text-[10px] font-mono text-ink-muted">{fieldUser.phone}</span>
+                  </div>
+                  {fieldUser.status === 'PENDING' && (
+                    <span className="px-2 py-0.5 bg-sun/30 text-warning-ink border border-sun rounded-full text-[10px] font-bold">
+                      Pending
+                    </span>
                   )}
-                </svg>
-              </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="p-2 text-ink-muted hover:text-primary hover:bg-canvas rounded-[10px] transition-colors"
+                    title={currentLang === 'hi' ? 'सत्र रीसेट करें' : 'Reset device session'}
+                    aria-label="Reset device session"
+                  >
+                    <Icon name="LogOut" className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsPhoneModalOpen(true)}
+                  className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-[10px] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Icon name="Phone" className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{currentLang === 'hi' ? 'फोन सत्यापन' : 'Verify Phone'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Mobile Navigation Drawer */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 shadow-md">
-            {currentUser && (
-              <div className="pb-2 border-b border-slate-100 text-xs">
-                <div className="font-bold text-slate-900">{currentUser.fullName}</div>
-                <div className="text-[11px] text-emerald-700 font-mono">
-                  {effectiveRole} • {currentUser.scope}
-                </div>
-              </div>
-            )}
-            {visibleNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-semibold ${
-                  pathname === item.href
-                    ? 'bg-emerald-50 text-emerald-800 font-bold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {effectiveRole !== 'leadership' && effectiveRole !== 'state_reviewer' && (
-              <Link
-                href="/clients/new"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block text-center py-2 bg-emerald-700 text-white rounded-lg text-xs font-bold"
-              >
-                + {currentLang === 'hi' ? 'नया पंजीकरण' : 'New Registration'}
-              </Link>
-            )}
-          </div>
-        )}
       </header>
 
-      {/* Persistent MobileContextBar when viewing an active client */}
-      {activeClient && (activeClient.clientRef || activeClient.fullName) && (
-        <aside
-          aria-label="Active Beneficiary Bar"
-          className="h-10 bg-slate-900 text-white px-4 flex items-center justify-between text-xs sticky top-16 z-30 shadow-xs"
-        >
-          <div className="flex items-center space-x-2 truncate">
-            <span className="font-mono font-bold bg-emerald-600 text-white px-2 py-0.5 rounded text-[11px] shrink-0 tracking-wider">
-              {activeClient.clientRef || 'NEW-REGISTRATION'}
-            </span>
-            {activeClient.fullName && (
-              <span className="font-semibold text-slate-100 truncate">
-                {activeClient.fullName}
-              </span>
-            )}
-            {activeClient.age && activeClient.gender && (
-              <span className="text-slate-400 hidden sm:inline">
-                ({activeClient.age}y / {activeClient.gender})
-              </span>
-            )}
-            {activeClient.centerId && (
-              <span className="text-slate-400 hidden md:inline">
-                • {activeClient.centerId}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2 shrink-0">
-            {activeClient.saveStatus === 'saved_locally' && (
-              <span className="inline-flex items-center gap-1 text-slate-300 bg-slate-800 px-2 py-0.5 rounded-full text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                {t.savedLocally}
-              </span>
-            )}
-            {activeClient.saveStatus === 'queued' && (
-              <span className="inline-flex items-center gap-1 text-amber-300 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                {t.queuedForSync}
-              </span>
-            )}
-            {activeClient.saveStatus === 'accepted_by_server' && (
-              <span className="inline-flex items-center gap-1 text-emerald-300 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                {t.accepted}
-              </span>
-            )}
-          </div>
-        </aside>
-      )}
-
-      {/* Offline Alert Strip */}
-      {isOffline && (
-        <div
-          className="bg-amber-500 text-white text-xs font-bold px-4 py-1.5 text-center shadow-xs"
-          role="alert"
-        >
-          {t.offlineNotice}
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main Page Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
 
-      {/* Sign Out Draft Warning Modal */}
-      {showSignOutModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-left border border-slate-200">
-            <div className="flex items-center gap-3 mb-3 text-amber-600">
-              <Icon name="AlertTriangle" className="w-6 h-6 text-amber-600 shrink-0" />
-              <h3 className="text-base font-bold text-slate-900">
-                {currentLang === 'hi' ? 'अपूर्ण ड्राफ्ट सूचना' : 'Unsaved Draft Registration Notice'}
-              </h3>
+      {/* Mobile Bottom Navigation Bar (48px Touch Targets) */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t-2 border-border/40 z-40 px-2 py-1 flex items-center justify-around shadow-comic"
+        aria-label="Mobile Navigation"
+      >
+        {navTabs.map((tab) => (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            onClick={tab.onClick}
+            className={`flex flex-col items-center justify-center min-h-[48px] min-w-[64px] px-2 py-1 rounded-[12px] text-[11px] font-bold transition-all relative select-none cursor-pointer ${
+              tab.isUnlocking
+                ? 'text-plum bg-lavender animate-unlock-pop border border-plum/40'
+                : tab.isActive
+                ? 'text-plum bg-plum/10'
+                : tab.isLocked
+                ? 'text-ink-muted/60 opacity-75 hover:opacity-100'
+                : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            <div className={`relative ${tab.isUnlocking ? 'animate-lock-shackle text-plum' : ''}`}>
+              <Icon
+                name={tab.icon}
+                className={`w-5 h-5 mb-0.5 ${
+                  tab.isUnlocking
+                    ? 'text-plum animate-pulse'
+                    : tab.isActive
+                    ? 'text-plum'
+                    : tab.isLocked
+                    ? 'text-ink-muted/70'
+                    : 'text-ink-muted'
+                }`}
+              />
+              {tab.badge !== undefined && (
+                <span className="absolute -top-1.5 -right-2 bg-primary text-white text-[9px] font-mono font-black px-1 rounded-full border border-surface">
+                  {tab.badge}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {currentLang === 'hi'
-                ? 'आपके पास स्थानीय भंडारण में सहेजा गया अपूर्ण पंजीकरण ड्राफ्ट है। लॉगआउट करने पर यह ड्राफ्ट इस डिवाइस पर सुरक्षित रहेगा, लेकिन अभी तक केंद्रीय डेटाबेस में सबमिट नहीं हुआ है।'
-                : 'You have an unsaved client intake registration draft in local storage. Signing out will safely retain your draft on this device, but it has not yet been submitted to the central database.'}
-            </p>
-            <div className="mt-5 flex justify-end space-x-3 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowSignOutModal(false)}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px]"
-              >
-                {currentLang === 'hi' ? 'वापस जाएं' : 'Stay Signed In'}
-              </button>
-              <button
-                type="button"
-                onClick={performSignOut}
-                className="px-4 py-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-300 hover:bg-rose-100 rounded-lg min-h-[44px]"
-              >
-                {currentLang === 'hi' ? 'लॉगआउट (ड्राफ्ट सुरक्षित रखें)' : 'Sign Out (Retain Local Draft)'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <span className="flex items-center gap-0.5">
+              <span>{tab.label}</span>
+              {tab.isLocked && !tab.isUnlocking && (
+                <span className="text-[9px] font-normal text-ink-muted/70">(Restricted)</span>
+              )}
+            </span>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Field Phone Verification Modal */}
+      <FieldPhoneVerificationModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => {
+          setIsPhoneModalOpen(false);
+          setPhoneTargetUrl(null);
+        }}
+        onSuccess={(user) => {
+          setFieldUser(user);
+          setIsPhoneModalOpen(false);
+          const dest = phoneTargetUrl || '/clients/new';
+          setPhoneTargetUrl(null);
+          router.push(dest);
+        }}
+        lang={currentLang}
+      />
+
+      {/* Evaluation Login Modal */}
+      <EvaluationLoginModal
+        isOpen={isEvalModalOpen}
+        onClose={() => setIsEvalModalOpen(false)}
+        onSuccess={(authData) => {
+          setEvalUser({ role: authData.role, fullName: authData.fullName, state: authData.state });
+          setIsJustUnlocked(true);
+          setTimeout(() => {
+            setIsJustUnlocked(false);
+            router.push('/admin');
+          }, 1200);
+        }}
+        lang={currentLang}
+      />
     </div>
   );
-};
+}

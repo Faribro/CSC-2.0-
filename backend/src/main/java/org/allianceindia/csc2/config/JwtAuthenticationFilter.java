@@ -2,9 +2,13 @@ package org.allianceindia.csc2.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.allianceindia.csc2.domain.FieldUser;
+import org.allianceindia.csc2.service.FieldUserAuthService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,17 +17,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final FieldUserAuthService fieldUserAuthService;
     private final String expectedServiceCredential;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider,
+                                   @Lazy FieldUserAuthService fieldUserAuthService,
                                    @Value("${app.service.credential:local_dev_service_secret_token_abcdef123456789}") String expectedServiceCredential) {
         this.tokenProvider = tokenProvider;
+        this.fieldUserAuthService = fieldUserAuthService;
         this.expectedServiceCredential = expectedServiceCredential;
     }
 
@@ -56,8 +64,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     principal, null, principal.getAuthorities()
             );
             SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            // Check Device Session for Field Caseworkers
+            String deviceToken = extractDeviceSessionToken(request);
+            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+                try {
+                    Optional<FieldUser> userOpt = fieldUserAuthService.validateDeviceSession(deviceToken);
+                    if (userOpt.isPresent()) {
+                        FieldUser fu = userOpt.get();
+                        String role = "ACTIVE".equalsIgnoreCase(fu.getStatus()) ? "FIELD_USER" : "PENDING_FIELD_USER";
+                        List<String> centers = List.of("CENTER_FIELD", "ALL", fu.getState() != null ? fu.getState() : "NATIONAL");
+                        UserPrincipal principal = new UserPrincipal(fu.getId(), fu.getPhoneE164(), role, centers);
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                principal, null, principal.getAuthorities()
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String extractDeviceSessionToken(HttpServletRequest request) {
+        String header = request.getHeader("X-Device-Session");
+        if (header != null && !header.trim().isEmpty()) {
+            return header.trim();
+        }
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if ("csc2_device_session".equals(c.getName())) {
+                    return c.getValue();
+                }
+            }
+        }
+        return null;
     }
 }
