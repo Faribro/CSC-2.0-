@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface ReferralRequestRepository extends JpaRepository<ReferralRequest, UUID> {
     List<ReferralRequest> findByClientIdOrderByReferralDateDesc(UUID clientId);
+    List<ReferralRequest> findByClientIdAndDeletedFalse(UUID clientId);
 }

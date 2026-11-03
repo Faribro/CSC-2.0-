@@ -3,6 +3,7 @@ package org.allianceindia.csc2.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.allianceindia.csc2.config.UserPrincipal;
 import org.allianceindia.csc2.dto.DTOs;
+import org.allianceindia.csc2.service.ClientProfileService;
 import org.allianceindia.csc2.service.ClientQueryService;
 import org.allianceindia.csc2.service.ClientService;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,14 @@ public class ClientController {
 
     private final ClientQueryService clientQueryService;
     private final ClientService clientService;
+    private final ClientProfileService clientProfileService;
 
-    public ClientController(ClientQueryService clientQueryService, ClientService clientService) {
+    public ClientController(ClientQueryService clientQueryService,
+                            ClientService clientService,
+                            ClientProfileService clientProfileService) {
         this.clientQueryService = clientQueryService;
         this.clientService = clientService;
+        this.clientProfileService = clientProfileService;
     }
 
     @PostMapping
@@ -51,5 +56,26 @@ public class ClientController {
             @AuthenticationPrincipal UserPrincipal user) {
         DTOs.ClientDetailResponse response = clientQueryService.getClientDetail(id, user);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<DTOs.ClientProfileDto> getClientProfile(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        DTOs.ClientProfileDto profile = clientProfileService.getClientProfile(id, user);
+        return ResponseEntity.ok(profile);
+    }
+
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<DTOs.ActionReceipt> updateClientProfile(
+            @PathVariable UUID id,
+            @RequestBody DTOs.UpdateProfileRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @AuthenticationPrincipal UserPrincipal user,
+            HttpServletRequest httpRequest) {
+        DTOs.ActionReceipt receipt = clientProfileService.updateClientProfile(
+                id, request, user, idempotencyKey, httpRequest.getRemoteAddr()
+        );
+        return ResponseEntity.ok(receipt);
     }
 }

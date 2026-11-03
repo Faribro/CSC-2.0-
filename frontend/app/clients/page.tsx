@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 interface ClientSummary {
   id: string;
@@ -113,7 +114,8 @@ export default function ClientsDirectoryPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>👥</span> {t.clients} ({filteredClients.length})
+              <Icon name="Users" className="w-5 h-5 text-emerald-800" />
+              <span>{t.clients} ({filteredClients.length})</span>
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               Care & Support Centre Linelist and Beneficiary Directory
@@ -124,7 +126,8 @@ export default function ClientsDirectoryPage() {
             href="/clients/new"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all min-h-[44px]"
           >
-            <span>+</span> {lang === 'hi' ? 'नया लाभार्थी पंजीकरण (CRF)' : 'New Registration (CRF)'}
+            <Icon name="add" className="w-4 h-4" />
+            <span>{lang === 'hi' ? 'नया लाभार्थी पंजीकरण (CRF)' : 'New Registration (CRF)'}</span>
           </Link>
         </div>
 
@@ -132,14 +135,14 @@ export default function ClientsDirectoryPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative w-full md:w-96">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-              🔍
+              <Icon name="search" className="w-4 h-4 text-slate-400" />
             </span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className="w-full text-xs pl-9 pr-4 py-2 border border-slate-300 rounded-lg min-h-[44px] focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+              className="w-full text-xs pl-9 pr-4 py-2 border border-slate-300 rounded-lg min-h-[44px] focus:ring-2 focus:ring-emerald-600 focus:outline-hidden"
             />
           </div>
 
@@ -229,12 +232,22 @@ export default function ClientsDirectoryPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/clients/${client.id}`}
-                          className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-md border border-slate-300 transition-colors"
-                        >
-                          View Case →
-                        </Link>
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link
+                            href={`/clients/${client.id}?tab=registration&view=true`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg border border-slate-300 transition-colors text-xs"
+                          >
+                            <Icon name="view" className="w-3.5 h-3.5" />
+                            <span>{lang === 'hi' ? 'देखें' : 'View'}</span>
+                          </Link>
+                          <Link
+                            href={`/clients/${client.id}?tab=registration&edit=true`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-lg border border-emerald-300 transition-colors text-xs"
+                          >
+                            <Icon name="edit" className="w-3.5 h-3.5" />
+                            <span>{lang === 'hi' ? 'संशोधन' : 'Edit'}</span>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))

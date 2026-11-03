@@ -9,9 +9,16 @@
 
 CSC 2.0 is designed as a secure, role-governed follow-up engine for Care & Support Centres:
 - **Frontend:** Next.js 15 (App Router, React 19, Tailwind CSS) operating as a thin BFF with client-side state caching, IndexedDB draft recovery, and bilingual UI (English / Hindi).
+  - **Enketo-Style Centered CRF Form:** Complete 187-field intake instrument across Sections A through J, full XLSForm relevance and skipping engine (`lib/crfLogic.ts`), repeat groups for Family Members (B2), Referral Requests (D5), and Planned Services (J5), horizontal progress navigation tabs with error counters, and clean paper layout (`max-w-4xl mx-auto`) without distracting sidebars.
+  - **Zero-Emoji Architecture:** 100% of emojis eliminated from source code, translations, and rendered DOM, replaced with pinned, verified `lucide-react@0.475.0` iconography. Enforced via `scripts/lint_no_emoji.js` and automated browser DOM assertions (`scripts/verify_controls_and_emoji.js`).
+  - **Record View / Edit & Audit History:** Dual-mode single-page CRF supporting read-only View and permission-gated Edit with optimistic concurrency (`expectedVersion`), client-side diff preview, and revision history timeline.
 - **Backend API:** Java 21 with Spring Boot 3.4, Spring Security stateless JWT authentication, and transactional integrity.
+  - **Legacy Onboarding & Session Engine (Rebuilt):** Flyway migrations `V2` (profile revisions), `V3` (onboarding & session persistence), and `V4` (audit alignment).
+  - **State Manager Flow:** Work email signup, domain allowlist, HMAC-SHA256 state code generation (`ALN-<STATE>-XXXX-XXXX`), 6-digit OTP (10 min expiry, 5 attempt lockout), authenticated POST admin approval.
+  - **Field Worker Flow:** Minimal-scope Google sign-in, atomic single-use state code redemption with pessimistic locking `findByCodeVerifierForUpdate`.
+  - **Persistent Sessions (RFC 6819):** HttpOnly Secure SameSite cookie, server-side session persistence in `csc2.session`, 30-day sliding idle expiry with 90-day absolute cap, refresh token rotation with user-wide revocation on token reuse detection.
 - **Database:** PostgreSQL 16 with relational schema, Flyway migrations, pessimistic concurrency locks on tasks, and immutable append-only audit logging.
-- **Asynchronous Mirroring:** Transactional Outbox pattern asynchronously synchronizing client registrations and encounters to Google Sheets via Google Apps Script WebApp.
+- **Asynchronous Mirroring:** Transactional Outbox pattern asynchronously synchronizing client registrations, profile revisions, and encounters to Google Sheets via Google Apps Script WebApp.
 
 ---
 
@@ -83,29 +90,48 @@ All pre-seeded test accounts use the password: `TestPass123!`
 
 ## 6. End-to-End Walkthrough & Verification
 
-Automated Playwright test suite covers the complete workflow across **4 matrices**:
-- Desktop English (`1280x820`)
-- Mobile English (`390x844`)
-- Desktop Hindi (`1280x820`)
-- Mobile Hindi (`390x844`)
+### Automated Test Suite Commands:
 
-### Run Automated Walkthrough:
-```bash
-node scripts/run_walkthrough.js
-```
+1. **Zero-Emoji Static & Source Lint:**
+   ```bash
+   node scripts/lint_no_emoji.js
+   ```
+   Asserts zero emojis across all frontend TypeScript / TSX components, JSON translations, and definitions.
 
-Each run asserts every step and outputs 44 evidence screenshots in `evidence/walkthrough/`:
-1. `*_01_signin.png` &mdash; Test identity selector & security banner
-2. `*_02_my_work.png` &mdash; My Work worklist with today/overdue/upcoming tabs
-3. `*_03_open_task_followup.png` &mdash; Client detail page deep-linked to Follow-up tab
-4. `*_04_record_attempt.png` &mdash; Recorded contact attempt with channel & outcome
-5. `*_05_record_encounter.png` &mdash; Clinical visit (Section I) with explicit `COMPLETE` action
-6. `*_06_plan_service.png` &mdash; Next planned action (Section J5 canonical codes)
-7. `*_07_clients_directory.png` &mdash; Beneficiary linelist table
-8. `*_08_registered_new_client.png` &mdash; Single-page registration submission with success banner
-9. `*_09_found_new_client.png` &mdash; Linelist search finding newly registered client
-10. `*_10_switch_language_hi.png` &mdash; Bilingual switch (EN &harr; HI)
-11. `*_11_sign_out.png` &mdash; Sign out preserving local drafts
+2. **Control Deduplication & Rendered DOM Emoji Scan:**
+   ```bash
+   node scripts/verify_controls_and_emoji.js
+   ```
+   Asserts zero emojis in the live rendered DOM across all routes (`/sign-in`, `/work`, `/clients`, `/clients/new`, `/clients/[id]`) in both English and Hindi. Asserts exactly 1 primary action per page (`+ New Registration` on `/work`, 'View' and 'Edit' actions per row on `/clients`).
+
+3. **Playwright End-to-End Walkthrough (4 Matrices):**
+   ```bash
+   node scripts/run_walkthrough.js
+   ```
+   Automated Playwright test suite covers the complete workflow across **4 matrices**:
+   - Desktop English (`1280x820`)
+   - Mobile English (`390x844`)
+   - Desktop Hindi (`1280x820`)
+   - Mobile Hindi (`390x844`)
+
+   Each run asserts every step and outputs 44 evidence screenshots in `evidence/walkthrough/`:
+   1. `*_01_signin.png` &mdash; Test identity selector & security banner
+   2. `*_02_my_work.png` &mdash; My Work worklist with today/overdue/upcoming tabs
+   3. `*_03_open_task_followup.png` &mdash; Client detail page deep-linked to Follow-up tab
+   4. `*_04_record_attempt.png` &mdash; Recorded contact attempt with channel & outcome
+   5. `*_05_record_encounter.png` &mdash; Clinical visit (Section I) with explicit `COMPLETE` action
+   6. `*_06_plan_service.png` &mdash; Next planned action (Section J5 canonical codes)
+   7. `*_07_clients_directory.png` &mdash; Beneficiary linelist table
+   8. `*_08_registered_new_client.png` &mdash; Single-page registration submission with success banner
+   9. `*_09_found_new_client.png` &mdash; Linelist search finding newly registered client
+   10. `*_10_switch_language_hi.png` &mdash; Bilingual switch (EN &harr; HI)
+   11. `*_11_sign_out.png` &mdash; Sign out preserving local drafts
+
+4. **Spring Boot Backend Integration Suite (Real PostgreSQL):**
+   ```bash
+   cd backend && mvn test
+   ```
+   Runs 29 integration tests across Flyway migrations, task concurrency, outbox dispatch, optimistic locking (`expectedVersion`), 409 conflict detection, OTP challenge/lockout, atomic state code redemption, and refresh token reuse revocation.
 
 ---
 

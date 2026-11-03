@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 interface CenterStat {
   centerId: string;
@@ -129,7 +130,8 @@ export default function ReportsPage() {
         {/* Center-wise Breakdown */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
           <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <span>🏥</span> {lang === 'hi' ? 'केंद्र-वार लाभार्थी विवरण' : 'Center Distribution & Workload'}
+            <Icon name="Activity" className="w-4 h-4 text-emerald-800" />
+            <span>{lang === 'hi' ? 'केंद्र-वार लाभार्थी विवरण' : 'Center Distribution & Workload'}</span>
           </h2>
 
           <div className="overflow-x-auto">

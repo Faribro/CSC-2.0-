@@ -3698,5 +3698,16 @@ Key intra-slice dependencies: `[PROPOSED]`
 | **TCK-020** | Delivered Service Explicit Transition API | 1 | `55610e7` | `testPlannedServiceTransitionsOnlyViaDeliveredService` | POST `/api/v1/delivered-services`, strictly explicit | **DONE** `[VERIFIED]` |
 | **TCK-021** | Pessimistic Lock & Optimistic Version Verification | 1 | `55610e7` | `testOptimisticLockVersionConflictReturns409` | Version conflict yields 409 Conflict | **DONE** `[VERIFIED]` |
 | **TCK-022** | Outbox Event Generation & Dispatch | 1 | `55610e7` | `OutboxWorker`, mock Apps Script gateway test | Outbox row queued on domain action, processed asynchronously | **DONE** `[VERIFIED]` |
+| **TCK-030** | Document Declarations (Section J) | 2 | `HEAD` | `crfDefinitions.ts`, `RegistrationForm.tsx` | J1 physical sighting attestations, J5 service repeats | **DONE** `[VERIFIED]` |
+| **TCK-031** | Social Protection (Section D Full) | 2 | `HEAD` | `crfDefinitions.ts`, `RegistrationForm.tsx` | Schemes D1-D4, D5 referral repeat table | **DONE** `[VERIFIED]` |
+| **TCK-032** | Death Recording (Section H) | 2 | `HEAD` | `crfDefinitions.ts`, `crfLogic.ts` | Complete H1-H7 questions, conditional relevance | **DONE** `[VERIFIED]` |
+| **TCK-033** | Stigma & Discrimination (Section F) | 2 | `HEAD` | `crfDefinitions.ts`, `crfLogic.ts` | F1-F8 settings, healthcare, legal actions | **DONE** `[VERIFIED]` |
+| **TCK-034** | Disability (Section G) | 2 | `HEAD` | `crfDefinitions.ts`, `crfLogic.ts` | G1-G8 Washington Group questions | **DONE** `[VERIFIED]` |
+| **TCK-035** | Key Population Behaviour (Section E) | 2 | `HEAD` | `crfDefinitions.ts`, `crfLogic.ts` | E1-E9 risk behaviours, partner status | **DONE** `[VERIFIED]` |
+| **TCK-036** | Profile Revision & Optimistic Concurrency | 2 | `HEAD` | `AuthAndProfileIntegrationTest.testEditClientProfileWithStaleVersionReturns409` | `ProfileRevision` entity, diff engine, 409 conflict | **DONE** `[VERIFIED]` |
+| **TCK-040** | User Onboarding Rebuild (Spring Boot / Postgres) | 3 | `HEAD` | `AuthAndProfileIntegrationTest.testStateManagerFullOnboardingFlow`, `testConcurrentStateCodeRedemptionsEnforcesLimit` | State Manager signup/OTP, HMAC state code, Field Worker atomic redemption | **DONE** `[VERIFIED]` |
+| **TCK-041** | Persistent Sessions & Token Reuse Detection | 3 | `HEAD` | `AuthAndProfileIntegrationTest.testRefreshTokenReuseRevocation` | RFC 6819 refresh token rotation, user-wide revocation on token reuse, HttpOnly cookies | **DONE** `[VERIFIED]` |
+| **TCK-CRF** | Enketo-Style Centered CRF Form | UI | `HEAD` | `run_walkthrough.js` (4 matrices), `verify_controls_and_emoji.js` | 187 fields, centered paper layout without sidebar, horizontal progress tabs | **DONE** `[VERIFIED]` |
+| **TCK-EMOJI**| Zero Emojis & Lucide Icons Migration | UI | `HEAD` | `lint_no_emoji.js` (28 files), `verify_controls_and_emoji.js` | 100% emojis removed, replaced with `lucide-react@0.475.0` | **DONE** `[VERIFIED]` |
 
 

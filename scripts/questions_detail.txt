@@ -1,0 +1,256 @@
+
+==================== SECTION: sec_a (Section A of 10 – Basic Profile) ====================
+  a01_reg_date * (date): A1. Registration date [CONSTRAINT: . <= today()]
+  a02_reg_place * (select_one place): A2. Registration done at
+  a03_name * (text): A3. Full name
+  a04_age * (integer): A4. Age (years) [CONSTRAINT: . >= 0 and . <= 120]
+  a05_gender * (select_one gender): A5. Gender
+  ctx_banner (calculate): 
+  a_child_note (note): ℹ Child client (under 18): caregiver, orphan-status and school questions will appear below. [RELEVANT: ${a04_age}!='' and (${a04_age}<18)]
+  a06_abha (text): A6. Patient ABHA ID (if any) [CONSTRAINT: regex(., '^[0-9]{14}$') or regex(., '^[0-9]{2}-[0-9]{4}-[0-9]{4}-[0-9]{4}$')]
+  a07_csc_id (text): A7. Client CSC ID
+  a08_consent * (select_one yn): A8. Consent for home visit received?
+  a_sub_centres (note): Centres
+  a09_artc_name (text): A9. ART Centre where client is registered
+  a09_artc_code (text): ARTC code
+  a10_csc_name * (text): A10. CSC where client is registered
+  a10_csc_code (text): CSC code
+  a10_clh_code (text): CLH code
+  a11_sub (note): A11. Present address (for a child: parent / caregiver address)
+  a11_res_type (select_one res_type): Type of residence
+  a11_door (text): House / door no., ward, colony, apartment
+  a11_street (text): Street
+  a11_village (text): Village / City
+  a11_block (text): Taluk / Mandal / Block
+  a11_landmark (text): Landmark
+  a11_district (text): District
+  a11_state (text): State
+  a11_pin (text): Pin code [CONSTRAINT: regex(., '^[1-9][0-9]{5}$')]
+  a11_phone (text): Contact number [CONSTRAINT: regex(., '^[6-9][0-9]{9}$')]
+  a11_addr_verified (date): Address verified on [CONSTRAINT: . <= today()]
+  a11_phone_verified (date): Contact number verified on [RELEVANT: ${a11_phone}!=''] [CONSTRAINT: . <= today()]
+  a12_hdr (note): Permanent / alternative address
+  a12_same (select_one yn): A12. Is the permanent / alternative address the same as the present address?
+  a12_sub (note): A12. Permanent / alternative address (caregiver / family member) [RELEVANT: ${a12_same}='no']
+  a12_res_type (select_one res_type): Type of residence [RELEVANT: ${a12_same}='no']
+  a12_door (text): House / door no., ward, colony, apartment [RELEVANT: ${a12_same}='no']
+  a12_street (text): Street [RELEVANT: ${a12_same}='no']
+  a12_village (text): Village / City [RELEVANT: ${a12_same}='no']
+  a12_block (text): Taluk / Mandal / Block [RELEVANT: ${a12_same}='no']
+  a12_landmark (text): Landmark [RELEVANT: ${a12_same}='no']
+  a12_district (text): District [RELEVANT: ${a12_same}='no']
+  a12_state (text): State [RELEVANT: ${a12_same}='no']
+  a12_pin (text): Pin code [RELEVANT: ${a12_same}='no'] [CONSTRAINT: regex(., '^[1-9][0-9]{5}$')]
+  a12_phone (text): Contact number [RELEVANT: ${a12_same}='no'] [CONSTRAINT: regex(., '^[6-9][0-9]{9}$')]
+  a12_addr_verified (date): Address verified on [RELEVANT: ${a12_same}='no'] [CONSTRAINT: . <= today()]
+  a12_phone_verified (date): Contact number verified on [RELEVANT: (${a12_same}='no') and ${a12_phone}!=''] [CONSTRAINT: . <= today()]
+  a_sub_cat (note): Client category
+  a13_client_type * (select_one client_type): A13. Type of client
+  a14_kp * (select_one kp): A14. Typology (KP) [CONSTRAINT: (.!='fsw' or ${a05_gender}!='1') and (.!='msm' or ${a05_gender}='1') and (.!='tgh' or ${a05_gender}='3')]
+  a15_typ_other * (select_one typ_other): A15. Typology (others) [CONSTRAINT: (.!='anc' or ${a05_gender}='2')]
+  a16_caretaker * (select_one caretaker): A16. Who takes care of the child? [RELEVANT: (${a04_age}<18)]
+  a17_orphan * (select_one orphan): A17. Orphan status [RELEVANT: (${a04_age}<18)]
+  a_sub_edu (note): Education, work & income
+  a18_education (select_one education): A18. Education [CONSTRAINT: (${a04_age}<5 and .='7') or (${a04_age}>=5 and .!='7')]
+  a18_in_school (select_one yn): Currently going to school? [RELEVANT: ${a04_age}>=5 and (${a04_age}<18)]
+  a19_occupation (select_one occupation): A19. Occupation
+  a19_occupation_other * (text): Specify other occupation [RELEVANT: ${a19_occupation}='14']
+  a20_marital (select_one marital): A20. Marital status [CONSTRAINT: (${a04_age}<15 and .='6') or (${a04_age}>=15 and .!='6')]
+  a21_income (select_one income): A21. Average monthly income
+
+==================== SECTION: sec_b (Section B of 10 – Family History) ====================
+
+==================== SECTION: b_p1 () ====================
+  b_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  b1_family_id (text): B1. Family ID
+  b2_hdr (note): B2. Family members – tap "Add" for each member
+  b2_note (note): ℹ Add father, mother, spouse, partner, each child and any non-traditional member (Transgender / Hijra / MSM living under one roof, other sexual partners).
+  REPEAT: b2_members
+
+==================== SECTION: b2_in () ====================
+  b2_name * (text): Name
+  b2_relation * (select_one relation): Relationship to client
+  b2_age * (integer): Age (years) [CONSTRAINT: . >= 0 and . <= 120]
+  b2_gender * (select_one gender): Gender
+  b2_living * (select_one living): Living status
+  b2_hiv * (select_one hivstat): HIV status
+  b2_hiv_date (date): Date of most recent HIV test [RELEVANT: ${b2_hiv}='1' or ${b2_hiv}='2'] [CONSTRAINT: . <= today()]
+  b2_cd4 (integer): Latest CD4 [RELEVANT: ${b2_hiv}='1' and ${b2_living}='1'] [CONSTRAINT: . >= 0 and . <= 5000]
+  b2_vl (integer): Latest viral load [RELEVANT: ${b2_hiv}='1' and ${b2_living}='1'] [CONSTRAINT: . >= 0]
+  b2_art * (select_one artstat): ART status [RELEVANT: ${b2_hiv}='1' and ${b2_living}='1']
+  b2_idtype (select_one idtype): Type of ID [RELEVANT: ${b2_hiv}='1']
+  b2_idno (text): ID number [RELEVANT: ${b2_idtype}!='']
+  b2_at_csc (select_one yn): Registered at a CSC? [RELEVANT: ${b2_hiv}='1']
+  b2_csc_id * (text): Client CSC ID [RELEVANT: ${b2_at_csc}='yes']
+  b2_f_plhiv (calculate): 
+  b2_f_ictc (calculate): 
+  REPEAT: 
+
+==================== SECTION: b_p2 () ====================
+  b3_total_plhiv (calculate): 
+  b4_total_ictc (calculate): 
+  b3_note (note): B3. Family members who are PLHIV: ${b3_total_plhiv}
+  b4_note (note): B4. Eligible for ICTC referral: ${b4_total_ictc}
+
+==================== SECTION: sec_c (Section C of 10 – Testing and Treatment) ====================
+  c_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  c1_hiv_confirmed * (select_one yn): C1. Is HIV-positive status confirmed (ICTC)?
+  c2_confirm_date * (date): C2. Date of HIV confirmation [RELEVANT: ${c1_hiv_confirmed}='yes'] [CONSTRAINT: . <= today()]
+  c3_ictc_pid (text): C3. ICTC PID number [RELEVANT: ${c1_hiv_confirmed}='yes']
+  c4_ictc_name (text): C4. Name of ICTC (place of confirmation) [RELEVANT: ${c1_hiv_confirmed}='yes']
+  c5_route (select_one route): C5. Route of transmission [RELEVANT: ${c1_hiv_confirmed}='yes']
+  c_sub_art (note): ART centre & registration
+  c6_artc_name (text): C6. Name of ARTC
+  c6_artc_type (select_one artc_type): Type of ARTC [RELEVANT: ${c6_artc_name}!='']
+  c7_preart_date (date): C7. Date of Pre-ART registration [RELEVANT: ${c1_hiv_confirmed}='yes'] [CONSTRAINT: (. <= today()) and (${c2_confirm_date}='' or . >= ${c2_confirm_date})]
+  c7a_preart_no (text): C7a. Pre-ART registration number [RELEVANT: ${c7_preart_date}!='']
+  c8_art_status (select_one art_init): C8. Status of ART initiation
+  c9_art_date * (date): C9. Date of ART initiation [RELEVANT: ${c8_art_status}='1'] [CONSTRAINT: (. <= today()) and (${c2_confirm_date}='' or . >= ${c2_confirm_date})]
+  c9a_art_no (text): C9a. ART registration number [RELEVANT: ${c8_art_status}='1']
+  c9b_regimen_reg (text): C9b. ART regimen at registration [RELEVANT: ${c8_art_status}='1']
+  c9c_regimen_now (text): C9c. Current ART regimen [RELEVANT: ${c8_art_status}='1']
+  c_base (note): Baseline screening & investigations
+  c10_height (decimal): C10. Height (cm) [CONSTRAINT: . >= 30 and . <= 230]
+  c11_weight (decimal): C11. Weight (kg) [CONSTRAINT: . >= 1 and . <= 200]
+  c_muac (decimal): MUAC (cm) [RELEVANT: ${a04_age}<5] [CONSTRAINT: . > 0 and . <= 30]
+  c_who (select_one who): WHO stage
+  c12_cd4_done (select_one yn): C12. CD4 done at baseline?
+  c12a_cd4_date * (date): C12a. Date of CD4 test [RELEVANT: ${c12_cd4_done}='yes'] [CONSTRAINT: . <= today()]
+  c12b_cd4_count * (integer): C12b. CD4 count [RELEVANT: ${c12_cd4_done}='yes' and ${a04_age}>=18] [CONSTRAINT: . >= 0 and . <= 5000]
+  c12b_cd4_pct * (decimal): C12b. CD4 % (children) [RELEVANT: ${c12_cd4_done}='yes' and (${a04_age}<18)] [CONSTRAINT: . >= 0 and . <= 100]
+  c13_vl_done (select_one yn): C13. Viral load done at baseline?
+  c13a_vl_date * (date): C13a. Date of viral load test [RELEVANT: ${c13_vl_done}='yes'] [CONSTRAINT: . <= today()]
+  c13b_vl_count * (integer): C13b. Viral load (copies/mL) [RELEVANT: ${c13_vl_done}='yes'] [CONSTRAINT: . >= 0]
+  c_tb (note): TB history
+  c14_tb_history * (select_one yn): C14. History of TB
+  c14a_tb_confirm (date): Date of TB confirmation [RELEVANT: ${c14_tb_history}='yes'] [CONSTRAINT: . <= today()]
+  c14b_att_started (select_one yn): Initiated on ATT? [RELEVANT: ${c14_tb_history}='yes']
+  c14c_att_date * (date): Date of ATT initiation [RELEVANT: ${c14_tb_history}='yes' and ${c14b_att_started}='yes'] [CONSTRAINT: (. <= today()) and (${c14a_tb_confirm}='' or . >= ${c14a_tb_confirm})]
+  c15_tb_status * (select_one tb_status): C15. TB treatment status at registration [RELEVANT: ${c14_tb_history}='yes' and ${c14b_att_started}='yes']
+  c15a_tb_complete * (date): Date of treatment completion [RELEVANT: ${c15_tb_status}='1' or ${c15_tb_status}='3'] [CONSTRAINT: (. <= today()) and (${c14c_att_date}='' or . >= ${c14c_att_date})]
+  c16_tb_family (select_one yn): C16. Family history of TB
+
+==================== SECTION: sec_d (Section D of 10 – Social Protection Schemes & Entitlements) ====================
+
+==================== SECTION: d_p1 () ====================
+  d_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  d1_linked (select_one yn): D1. Ever linked with any welfare scheme?
+  d1a_services * (select_multiple schemes_linked): Which services were availed? [RELEVANT: ${d1_linked}='yes']
+  d1b_other * (text): Other (specify) [RELEVANT: ${d1_linked}='yes' and selected(${d1a_services},'15')]
+  d2_has_ent (select_one yn): D2. Does the client hold any social entitlement document?
+  d2a_docs * (select_multiple entitlements): Which documents are available? [RELEVANT: ${d2_has_ent}='yes']
+  d2b_other * (text): Other document (specify) [RELEVANT: ${d2_has_ent}='yes' and selected(${d2a_docs},'15')]
+  d3_assessed (select_one yn): D3. In-depth individual & family need assessment done?
+  d4_willing (select_one yn): D4. Willing to be referred to schemes / entitlements?
+  REPEAT: d5_referrals
+
+==================== SECTION: d5_in () ====================
+  d5_scheme (text): Scheme
+  d5_entitlement (text): Entitlement
+  REPEAT: 
+
+==================== SECTION: sec_e (Section E of 10 – Risk Profile) ====================
+  e_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  e_kp_note (note): ℹ Questions E1–E4 appear only for key-population clients (FSW / MSM / TGH / PWID) selected in A14. [RELEVANT: (${a14_kp}='fsw' or ${a14_kp}='msm' or ${a14_kp}='tgh') or (${a14_kp}='pwid')]
+  e1_sexwork * (select_one yn): E1. In sex work? [RELEVANT: ${a14_kp}='fsw' or ${a14_kp}='msm' or ${a14_kp}='tgh']
+  e2_ost * (select_one yn): E2. On Opioid Substitution Therapy (OST)? [RELEVANT: ${a14_kp}='pwid']
+  e3_nsep * (select_one yn): E3. Registered with Needle Syringe Exchange Programme? [RELEVANT: ${a14_kp}='pwid']
+  e4_ost_type * (text): E4. Type of OST [RELEVANT: (${a14_kp}='pwid') and ${e2_ost}='yes']
+  e5_condom_know (select_one yn): E5. Knows how to use condoms? [RELEVANT: ${a04_age}>=15]
+  e_sex (note): Condom use with partners [RELEVANT: ${a04_age}>=15]
+  e6_casual (select_one condom): E6. Casual partner [RELEVANT: ${a04_age}>=15]
+  e7_regular (select_one condom): E7. Regular partner [RELEVANT: ${a04_age}>=15]
+  e8_paid (select_one condom): E8. Paid partner [RELEVANT: ${a04_age}>=15]
+  e_sub (note): E9. Substance use [RELEVANT: ${a04_age}>=10]
+  e9a_sub (select_one subfreq): E9a. Smoking [RELEVANT: ${a04_age}>=10]
+  e9b_sub (select_one subfreq): E9b. Oral drug [RELEVANT: ${a04_age}>=10]
+  e9c_sub (select_one subfreq): E9c. Chewing drug [RELEVANT: ${a04_age}>=10]
+  e9d_sub (select_one subfreq): E9d. Alcohol [RELEVANT: ${a04_age}>=10]
+  e9e_sub (select_one subfreq): E9e. Injecting drug [RELEVANT: ${a04_age}>=10]
+  e_ncd (note): Non-communicable diseases
+  e10_diabetes (select_one yn): E10. Diabetes
+  e10_details (text): Details [RELEVANT: ${e10_diabetes}='yes']
+  e11_htn (select_one yn): E11. Hypertension
+  e11_details (text): Details [RELEVANT: ${e11_htn}='yes']
+
+==================== SECTION: sec_f (Section F of 10 – Stigma and Discrimination) ====================
+  f_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  f1_discrimination * (select_one yn): F1. Ever faced any discrimination?
+  f2_from * (select_multiple disc_from): F2. From whom? [RELEVANT: ${f1_discrimination}='yes']
+
+==================== SECTION: sec_g (Section G of 10 – Disability Information) ====================
+  g_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  g1_disability * (select_one yn): G1. Does the client have any disability?
+  g2_type * (select_multiple disability): G2. Which disability? [RELEVANT: ${g1_disability}='yes']
+  g3_certificate * (select_one yn_applied): G3. Has a disability certificate? [RELEVANT: ${g1_disability}='yes']
+  g4_benefit * (select_one yndk): G4. Receives any government disability benefit / scheme? [RELEVANT: ${g1_disability}='yes']
+  g4_scheme * (text): Name of the scheme [RELEVANT: ${g1_disability}='yes' and ${g4_benefit}='yes']
+
+==================== SECTION: sec_h (Section H of 10 – Death Information) ====================
+  h_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  h0_deceased (select_one yn): H0. Has the client died?
+  h1_death_date * (date): H1. Date of death [RELEVANT: ${h0_deceased}='yes'] [CONSTRAINT: . <= today()]
+  h2_reason * (select_one death_reason): H2. Reason for death [RELEVANT: ${h0_deceased}='yes']
+  h2_reason_other * (text): Specify other reason [RELEVANT: ${h0_deceased}='yes' and ${h2_reason}='5']
+  h3_info_date * (date): H3. Date information received [RELEVANT: ${h0_deceased}='yes'] [CONSTRAINT: (. <= today()) and (${h1_death_date}='' or . >= ${h1_death_date})]
+  h4_reported * (select_one yn): H4. Reported to ARTC? [RELEVANT: ${h0_deceased}='yes']
+  h5_artc_death_date * (date): H5. Date of death as per ARTC [RELEVANT: ${h0_deceased}='yes' and ${h4_reported}='yes'] [CONSTRAINT: . <= today()]
+  h6_place * (select_one death_place): H6. Death at [RELEVANT: ${h0_deceased}='yes']
+  h6_place_other * (text): Specify other place [RELEVANT: ${h0_deceased}='yes' and ${h6_place}='4']
+  h7_lfu * (select_one mis_lfu): H7. Was the client in MIS / LFU line list? [RELEVANT: ${h0_deceased}='yes']
+  h8_certificate (select_one yn): H8. Death certificate / blood-relation letter available? [RELEVANT: ${h0_deceased}='yes']
+  h_remarks (text): Remarks [RELEVANT: ${h0_deceased}='yes']
+
+==================== SECTION: sec_i (Section I of 10 – Follow-up Client Update Sheet) ====================
+
+==================== SECTION: i_p1 () ====================
+  i_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  i_note (note): ℹ Add one row for every follow-up visit.
+  REPEAT: i_updates
+
+==================== SECTION: i_in () ====================
+  ia_visit_date * (date): Ia. Date of visit / follow-up [CONSTRAINT: . <= today()]
+  ib_place * (select_one place): Ib. Place of contact
+  ic_art_status * (select_one art_status2): Ic. ART status
+  ie_regimen * (select_one art_line): Ie. ART regimen [RELEVANT: ${ic_art_status}='2']
+  id_cd4 (integer): Id. CD4 count [RELEVANT: ${a04_age}>=18] [CONSTRAINT: . >= 0 and . <= 5000]
+  id_cd4_pct (decimal): Id. CD4 % (children) [RELEVANT: (${a04_age}<18)] [CONSTRAINT: . >= 0 and . <= 100]
+  if_weight (decimal): If. Weight (kg) [CONSTRAINT: . >= 1 and . <= 200]
+  ig_height (decimal): Ig. Height (cm) [CONSTRAINT: . >= 30 and . <= 230]
+  ih_muac (decimal): Ih. MUAC (cm) [RELEVANT: ${a04_age}<5] [CONSTRAINT: . > 0 and . <= 30]
+  ii_sws_any (select_one yn): Ii. Linked to a social welfare scheme this period?
+  ii_sws * (select_multiple sws): Which schemes? [RELEVANT: ${ii_sws_any}='yes']
+  ij_se (select_multiple se_status): Ij. Social entitlements held
+  ik_stigma (select_one yn): Ik. Faced stigma / discrimination?
+  il_att (select_one yn): Il. Presently on ATT?
+  ik_stigma_from * (select_multiple disc_from_i): Discrimination faced from [RELEVANT: ${ik_stigma}='yes']
+  REPEAT: 
+
+==================== SECTION: sec_j (Section J of 10 – CRF Verification & Service Plan) ====================
+
+==================== SECTION: j_p1 () ====================
+  j_ctx (note): ${ctx_banner} [RELEVANT: ${a03_name}!='']
+  j1_checked (date): J1. CRF checked on [CONSTRAINT: . <= today()]
+  j2_clh (text): J2. Name of CLH
+  j3_coord (text): J3. Name of CSC Coordinator
+  j4_comments (text): J4. Comments / observations
+  j_docs (note): Supporting documents
+  j_doc_hiv (select_one yn): A. HIV test report copy attached?
+  j_doc_addr (select_one yn): B. Address proof copy attached?
+  j_doc_art (select_one yn): C. ART green card / ART book copy attached? [RELEVANT: ${c8_art_status}='1']
+  j_dln (select_one yn): Registered in a District Level Network (DLN / CBO / TI)?
+  j_dln_name * (text): Name of the DLN / CBO / TI [RELEVANT: ${j_dln}='yes']
+  j5_hdr (note): J5. Services planning sheet – tap "Add" for each planned follow-up
+  REPEAT: j5_plan
+
+==================== SECTION: j5_in () ====================
+  j5_planned_date * (date): Planned follow-up date
+  j5_purpose * (select_one purpose): Purpose (J.2)
+  j5_cat * (select_one svc_cat): Service category
+  j5_service * (select_multiple svc): Service(s) needed [RELEVANT: ${j5_cat}!='']
+  j5_done_date (date): Actual follow-up date (fill when done) [CONSTRAINT: . <= today()]
+  j5_done_purpose (select_one purpose): Actual purpose [RELEVANT: ${j5_done_date}!='']
+  REPEAT: 
+
+==================== SECTION: j_p3 () ====================
+  closing_note (note): All done, ${a03_name}'s CRF is ready.

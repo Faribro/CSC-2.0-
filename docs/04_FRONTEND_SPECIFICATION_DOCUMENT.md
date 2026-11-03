@@ -632,6 +632,42 @@ flowchart TD
 
 ---
 
+### 3m. Beneficiary Registration & Record View / Edit (Enketo-Style CRF)
+
+**Routes:**
+- Create: `/clients/new`
+- View: `/clients/[id]?tab=registration` (mode=`view`)
+- Edit: `/clients/[id]?tab=registration` (mode=`edit`)
+
+**Purpose:** Complete, user-friendly 187-field intake and profile management instrument following the XLSForm CRF specification and KoboToolbox / Enketo paper-form design principles.
+
+**Form Design & Layout Constraints:**
+- **Centered Paper Layout:** Framed inside `max-w-4xl mx-auto` container with high-contrast card elevation (`bg-white dark:bg-slate-900 border shadow-sm`), mimicking paper survey aesthetics. Desktop sidebars are eliminated from the form viewport to maximize focus and minimize cognitive clutter.
+- **Horizontal Progress Jump Navigation:** Top sticky tab bar listing all active sections (A through J) with completion checkmarks and dynamic validation error badges.
+- **Dynamic Relevance & Skipping Engine (`lib/crfLogic.ts`):** Evaluates XLSForm `${field} = 'val'` expressions in real-time. Inactive questions are completely removed from DOM and skipped from validation calculations.
+- **Repeat Table Groups:**
+  - `B2 Family Members`: Table of dependents/relatives with add/edit/soft-remove and individual HIV status tracking.
+  - `D5 Scheme Referrals`: Referral requests with facility, target due date, and status.
+  - `J5 Service Plan`: Canonical planned services ('1'..'13') with scheduled review dates.
+- **Optimistic Concurrency & Revision History:**
+  - Edit mode loads the active `expectedVersion` and revision hash.
+  - Requires mandatory `changeReason` and `Idempotency-Key` header.
+  - Generates immutable `ProfileRevision` entity, field-level JSON diff, outbox event, and audit event.
+  - On 409 Conflict: Detects concurrent server edits, displays a side-by-side field diff against the latest server version, and preserves user draft.
+
+**State Handling:**
+
+| State | UI Behaviour |
+|---|---|
+| **loading** | Centered paper skeleton card with tab placeholders |
+| **validation** | Real-time red border + bilingual error message; horizontal tab badge shows error count |
+| **view** | All inputs disabled/read-only; clean data typography; "Edit Record" button in header |
+| **edit** | Active inputs with amber "Editing Record" banner; unsaved changes indicator; revision history panel |
+| **conflict** | 409 modal showing conflicting fields diff, preserving local inputs with merge/overwrite prompts |
+| **server-accepted** | Redirect to `/clients/[id]?tab=registration&created=true` with green confirmation notice |
+
+---
+
 ## 4. Design Tokens
 
 > [!NOTE]

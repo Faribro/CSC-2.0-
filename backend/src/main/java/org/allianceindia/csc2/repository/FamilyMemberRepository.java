@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface FamilyMemberRepository extends JpaRepository<FamilyMember, UUID> {
     List<FamilyMember> findByClientId(UUID clientId);
+    List<FamilyMember> findByClientIdAndDeletedFalse(UUID clientId);
 }

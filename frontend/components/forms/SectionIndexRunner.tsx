@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 export interface SectionProgress {
   id: string;
@@ -81,7 +82,7 @@ export const SectionIndexRunner: React.FC<SectionIndexRunnerProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     {isSectionDone ? (
                       <span className={`text-[10px] ${isActive ? 'text-emerald-200' : 'text-emerald-700 font-bold'}`}>
-                        ✓
+                        <Icon name="check" className="w-3 h-3" />
                       </span>
                     ) : (
                       <span className={`text-[10px] font-mono ${isActive ? 'text-emerald-200' : 'text-slate-400'}`}>

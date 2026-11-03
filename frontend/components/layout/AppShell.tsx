@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 import {
   getStoredSession,
   clearSessionPreservingDrafts,
@@ -173,18 +174,8 @@ export const AppShell: React.FC<AppShellProps> = ({
               })}
             </nav>
 
-            {/* Controls: Quick Register, Role/User Chip, Language Toggle, Sign Out */}
+            {/* Controls: Role/User Chip, Language Toggle, Sign Out */}
             <div className="flex items-center space-x-2.5">
-              {/* "+ New Registration" Quick Action Button (if not already on /clients/new) */}
-              {pathname !== '/clients/new' && effectiveRole !== 'leadership' && effectiveRole !== 'state_reviewer' && (
-                <Link
-                  href="/clients/new"
-                  className="hidden sm:inline-flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs transition-colors"
-                >
-                  <span>+</span> {currentLang === 'hi' ? 'नया पंजीकरण' : 'New Registration'}
-                </Link>
-              )}
-
               {/* Current User Chip with Role + Scope */}
               {currentUser && (
                 <div className="hidden lg:flex items-center bg-slate-100 border border-slate-200 rounded-lg py-1 px-2.5 text-xs">
@@ -249,7 +240,9 @@ export const AppShell: React.FC<AppShellProps> = ({
                 <span className="hidden sm:inline px-1">
                   {currentLang === 'hi' ? 'लॉगआउट' : 'Sign Out'}
                 </span>
-                <span className="sm:hidden">⎋</span>
+                <span className="sm:hidden flex items-center justify-center">
+                  <Icon name="logout" className="w-3.5 h-3.5" />
+                </span>
               </button>
 
               {/* Mobile menu hamburger button */}
@@ -393,7 +386,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         >
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-left border border-slate-200">
             <div className="flex items-center gap-3 mb-3 text-amber-600">
-              <span className="text-2xl font-black">⚠️</span>
+              <Icon name="AlertTriangle" className="w-6 h-6 text-amber-600 shrink-0" />
               <h3 className="text-base font-bold text-slate-900">
                 {currentLang === 'hi' ? 'अपूर्ण ड्राफ्ट सूचना' : 'Unsaved Draft Registration Notice'}
               </h3>

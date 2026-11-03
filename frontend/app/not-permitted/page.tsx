@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getStoredSession, StoredUser } from '@/lib/auth';
+import { Icon } from '@/components/ui/Icon';
 
 export default function NotPermittedPage() {
   const router = useRouter();
@@ -17,8 +18,8 @@ export default function NotPermittedPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-        <div className="w-16 h-16 bg-rose-100 text-rose-700 rounded-full flex items-center justify-center mx-auto text-2xl font-black mb-4">
-          ✕
+        <div className="w-16 h-16 bg-rose-100 text-rose-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Icon name="cancel" className="w-8 h-8 text-rose-700" />
         </div>
         <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-full">
           403 Access Restricted

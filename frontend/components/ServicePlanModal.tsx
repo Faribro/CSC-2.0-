@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 interface ServicePlanModalProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ export const ServicePlanModal: React.FC<ServicePlanModalProps> = ({
             className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
             aria-label="Close"
           >
-            ✕
+            <Icon name="cancel" className="w-4 h-4" />
           </button>
         </div>
 

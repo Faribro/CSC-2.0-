@@ -9,6 +9,7 @@ import { EncounterModal } from '@/components/EncounterModal';
 import { ServicePlanModal } from '@/components/ServicePlanModal';
 import { Language, translations } from '@/lib/translations';
 import { getStoredSession } from '@/lib/auth';
+import { Icon } from '@/components/ui/Icon';
 
 interface TaskItem {
   id: string;
@@ -494,7 +495,7 @@ export default function WorklistPage() {
             className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-lg shadow-2xl border border-slate-700 flex items-center gap-2"
             role="status"
           >
-            <span className="text-emerald-400">✓</span> {toastMessage}
+            <Icon name="check" className="w-4 h-4 text-emerald-400" /> {toastMessage}
           </div>
         )}
       </div>

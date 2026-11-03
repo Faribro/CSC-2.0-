@@ -244,4 +244,130 @@ public class DTOs {
             UUID resourceId,
             int version
     ) {}
+
+    public record ProfileRevisionDto(
+            UUID id,
+            int revisionNumber,
+            UUID authorId,
+            String authorName,
+            String changeReason,
+            String diff,
+            java.time.Instant createdAt
+    ) {}
+
+    public record FamilyMemberDto(
+            UUID id,
+            String name,
+            String relationship,
+            Integer age,
+            String gender,
+            String hivStatus,
+            String artNumber,
+            boolean deleted
+    ) {}
+
+    public record ReferralRequestDto(
+            UUID id,
+            LocalDate referralDate,
+            String serviceCategory,
+            String targetFacility,
+            String reason,
+            String status,
+            LocalDate outcomeDate,
+            String outcomeNotes,
+            boolean deleted
+    ) {}
+
+    public record ClientProfileDto(
+            UUID id,
+            String clientRef,
+            String centerId,
+            UUID assignedWorkerId,
+            LocalDate registrationDate,
+            String clientType,
+            String fullName,
+            String aliasName,
+            int age,
+            String gender,
+            String maritalStatus,
+            String caregiverName,
+            String primaryPhone,
+            String alternatePhone,
+            String inSchool,
+            String occupation,
+            String occupationOther,
+            String keyPopulation,
+            String addressCurrent,
+            String district,
+            String state,
+            String pincode,
+            String hivStatus,
+            String artNumber,
+            String artCenterName,
+            LocalDate artStartDate,
+            Integer cd4Count,
+            java.math.BigDecimal cd4Percentage,
+            Integer viralLoadCount,
+            java.math.BigDecimal muacCm,
+            boolean hasHivDocDeclaration,
+            boolean hasAddressDocDeclaration,
+            boolean hasArtDocDeclaration,
+            String docDeclarationNotes,
+            boolean homeVisitConsent,
+            boolean messagingConsent,
+            boolean sharingConsent,
+            String status,
+            int version,
+            int revisionCount,
+            List<FamilyMemberDto> familyMembers,
+            List<ReferralRequestDto> referralRequests,
+            List<ProfileRevisionDto> revisions
+    ) {}
+
+    public record UpdateProfileRequest(
+            int expectedVersion,
+            String changeReason,
+            String fullName,
+            String aliasName,
+            int age,
+            String gender,
+            String maritalStatus,
+            String caregiverName,
+            String primaryPhone,
+            String alternatePhone,
+            String inSchool,
+            String occupation,
+            String occupationOther,
+            String keyPopulation,
+            String addressCurrent,
+            String district,
+            String state,
+            String pincode,
+            String hivStatus,
+            String artNumber,
+            String artCenterName,
+            LocalDate artStartDate,
+            Integer cd4Count,
+            java.math.BigDecimal cd4Percentage,
+            Integer viralLoadCount,
+            java.math.BigDecimal muacCm,
+            boolean hasHivDocDeclaration,
+            boolean hasAddressDocDeclaration,
+            boolean hasArtDocDeclaration,
+            String docDeclarationNotes,
+            boolean homeVisitConsent,
+            boolean messagingConsent,
+            boolean sharingConsent,
+            List<FamilyMemberInput> familyMembers,
+            List<ReferralRequestInput> referralRequests,
+            String clientRef
+    ) {}
+
+    public record ProfileConflictResponse(
+            String error,
+            String message,
+            int currentVersion,
+            ClientProfileDto currentProfile,
+            String fieldDiff
+    ) {}
 }

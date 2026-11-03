@@ -1,0 +1,1891 @@
+{
+  "yn": [
+    {
+      "name": "yes",
+      "label_en": "Yes",
+      "label_hi": "हाँ"
+    },
+    {
+      "name": "no",
+      "label_en": "No",
+      "label_hi": "नहीं"
+    }
+  ],
+  "yndk": [
+    {
+      "name": "yes",
+      "label_en": "Yes",
+      "label_hi": "हाँ"
+    },
+    {
+      "name": "no",
+      "label_en": "No",
+      "label_hi": "नहीं"
+    },
+    {
+      "name": "dk",
+      "label_en": "Don't know",
+      "label_hi": "पता नहीं"
+    }
+  ],
+  "place": [
+    {
+      "name": "1",
+      "label_en": "CSC",
+      "label_hi": "CSC"
+    },
+    {
+      "name": "2",
+      "label_en": "Field/Home",
+      "label_hi": "फील्ड/घर"
+    },
+    {
+      "name": "3",
+      "label_en": "Helpdesk",
+      "label_hi": "हेल्पडेस्क"
+    }
+  ],
+  "gender": [
+    {
+      "name": "1",
+      "label_en": "Male",
+      "label_hi": "पुरुष"
+    },
+    {
+      "name": "2",
+      "label_en": "Female",
+      "label_hi": "महिला"
+    },
+    {
+      "name": "3",
+      "label_en": "Transgender",
+      "label_hi": "ट्रांसजेंडर"
+    }
+  ],
+  "res_type": [
+    {
+      "name": "1",
+      "label_en": "Owned",
+      "label_hi": "स्वामित्व"
+    },
+    {
+      "name": "2",
+      "label_en": "Rented",
+      "label_hi": "किराए पर"
+    },
+    {
+      "name": "3",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "client_type": [
+    {
+      "name": "1",
+      "label_en": "New Registration",
+      "label_hi": "नया पंजीकरण"
+    },
+    {
+      "name": "2",
+      "label_en": "Follow up Client",
+      "label_hi": "फ़ॉलोअप क्लाइंट"
+    }
+  ],
+  "kp": [
+    {
+      "name": "fsw",
+      "label_en": "FSW",
+      "label_hi": "FSW"
+    },
+    {
+      "name": "msm",
+      "label_en": "MSM",
+      "label_hi": "MSM"
+    },
+    {
+      "name": "tgh",
+      "label_en": "TGH",
+      "label_hi": "TGH"
+    },
+    {
+      "name": "pwid",
+      "label_en": "PWID",
+      "label_hi": "PWID"
+    },
+    {
+      "name": "migrant",
+      "label_en": "Migrants",
+      "label_hi": "प्रवासी"
+    },
+    {
+      "name": "trucker",
+      "label_en": "Truckers",
+      "label_hi": "ट्रक चालक"
+    },
+    {
+      "name": "na",
+      "label_en": "NA (not a KP)",
+      "label_hi": "लागू नहीं"
+    }
+  ],
+  "typ_other": [
+    {
+      "name": "inmate",
+      "label_en": "Inmates or OCS",
+      "label_hi": "बंदी या ओसीएस"
+    },
+    {
+      "name": "anc",
+      "label_en": "ANC",
+      "label_hi": "ANC"
+    },
+    {
+      "name": "others",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    },
+    {
+      "name": "na",
+      "label_en": "NA",
+      "label_hi": "लागू नहीं"
+    }
+  ],
+  "caretaker": [
+    {
+      "name": "1",
+      "label_en": "Parent",
+      "label_hi": "माता-पिता"
+    },
+    {
+      "name": "2",
+      "label_en": "Caregiver",
+      "label_hi": "देखभालकर्ता"
+    }
+  ],
+  "orphan": [
+    {
+      "name": "1",
+      "label_en": "Single orphan",
+      "label_hi": "एकल अनाथ"
+    },
+    {
+      "name": "2",
+      "label_en": "Double orphan",
+      "label_hi": "दोहरे अनाथ"
+    },
+    {
+      "name": "3",
+      "label_en": "Not an orphan",
+      "label_hi": "अनाथ नहीं"
+    }
+  ],
+  "education": [
+    {
+      "name": "1",
+      "label_en": "Illiterate",
+      "label_hi": "अशिक्षित"
+    },
+    {
+      "name": "2",
+      "label_en": "Primary (1-5)",
+      "label_hi": "प्राथमिक (1-5)"
+    },
+    {
+      "name": "3",
+      "label_en": "Secondary (6-10)",
+      "label_hi": "माध्यमिक (6-10)"
+    },
+    {
+      "name": "4",
+      "label_en": "Higher Secondary (11-12)",
+      "label_hi": "उच्च माध्यमिक (11-12)"
+    },
+    {
+      "name": "5",
+      "label_en": "College and above",
+      "label_hi": "कॉलेज और उससे ऊपर"
+    },
+    {
+      "name": "6",
+      "label_en": "Non-formal Education",
+      "label_hi": "गैर-औपचारिक शिक्षा"
+    },
+    {
+      "name": "7",
+      "label_en": "Not applicable (Children below 5 years)",
+      "label_hi": "लागू नहीं (5 वर्ष से कम आयु के बच्चे)"
+    }
+  ],
+  "occupation": [
+    {
+      "name": "1",
+      "label_en": "Agriculture labour",
+      "label_hi": "कृषि मजदूर"
+    },
+    {
+      "name": "2",
+      "label_en": "Non-Agriculture labour",
+      "label_hi": "गैर-कृषि मजदूर"
+    },
+    {
+      "name": "3",
+      "label_en": "Unemployed",
+      "label_hi": "बेरोजगार"
+    },
+    {
+      "name": "4",
+      "label_en": "Retired",
+      "label_hi": "सेवानिवृत्त"
+    },
+    {
+      "name": "5",
+      "label_en": "Housewife",
+      "label_hi": "गृहिणी"
+    },
+    {
+      "name": "6",
+      "label_en": "Sex work",
+      "label_hi": "यौन कार्य"
+    },
+    {
+      "name": "7",
+      "label_en": "Domestic servant",
+      "label_hi": "घरेलू कार्यकर्ता"
+    },
+    {
+      "name": "8",
+      "label_en": "Local Transport work (auto/taxi-driving/handcraft/rickshaw pulling)",
+      "label_hi": "स्थानीय परिवहन कार्य (ऑटो/टैक्सी चलाना/हस्तकला/रिक्शा चलाना)"
+    },
+    {
+      "name": "9",
+      "label_en": "Semi-skilled work",
+      "label_hi": "अर्ध-कुशल कार्य"
+    },
+    {
+      "name": "10",
+      "label_en": "Petty business/large business/small shop/self employed",
+      "label_hi": "छोटा व्यवसाय/बड़ा व्यवसाय/छोटी दुकान/स्वरोजगार"
+    },
+    {
+      "name": "11",
+      "label_en": "Hotel staff",
+      "label_hi": "होटल कर्मचारी"
+    },
+    {
+      "name": "12",
+      "label_en": "Agriculture cultivation/landholding",
+      "label_hi": "कृषि कार्य/भूमि स्वामित्व"
+    },
+    {
+      "name": "13",
+      "label_en": "Not applicable (Student/Child)",
+      "label_hi": "लागू नहीं (छात्र/बच्चा)"
+    },
+    {
+      "name": "14",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "marital": [
+    {
+      "name": "1",
+      "label_en": "Single",
+      "label_hi": "अविवाहित"
+    },
+    {
+      "name": "2",
+      "label_en": "Married",
+      "label_hi": "विवाहित"
+    },
+    {
+      "name": "3",
+      "label_en": "Live-in-relationship",
+      "label_hi": "बिना विवाह के साथ में रहना"
+    },
+    {
+      "name": "4",
+      "label_en": "Divorced/Separated",
+      "label_hi": "तलाकशुदा/अलग"
+    },
+    {
+      "name": "5",
+      "label_en": "Widow/Widower",
+      "label_hi": "विधवा/विधुर"
+    },
+    {
+      "name": "6",
+      "label_en": "Not applicable (child less than 15 years)",
+      "label_hi": "लागू नहीं (बच्चा / 15 वर्ष से कम आयु)"
+    }
+  ],
+  "income": [
+    {
+      "name": "1",
+      "label_en": "Less than ₹5,000",
+      "label_hi": "₹5,000 से कम"
+    },
+    {
+      "name": "2",
+      "label_en": "₹5,001 – ₹10,000",
+      "label_hi": "₹5,001 – ₹10,000"
+    },
+    {
+      "name": "3",
+      "label_en": "₹10,001 – ₹25,000",
+      "label_hi": "₹10,001 – ₹25,000"
+    },
+    {
+      "name": "4",
+      "label_en": "₹25,001 – ₹50,000",
+      "label_hi": "₹25,001 – ₹50,000"
+    },
+    {
+      "name": "5",
+      "label_en": "₹50,001 – ₹1,00,000",
+      "label_hi": "₹50,001 – ₹1,00,000"
+    },
+    {
+      "name": "6",
+      "label_en": "More than ₹1,00,000",
+      "label_hi": "₹1,00,000 से अधिक"
+    }
+  ],
+  "relation": [
+    {
+      "name": "1",
+      "label_en": "Father",
+      "label_hi": "पिता"
+    },
+    {
+      "name": "2",
+      "label_en": "Mother",
+      "label_hi": "माता"
+    },
+    {
+      "name": "3",
+      "label_en": "Spouse",
+      "label_hi": "पति/पत्नी"
+    },
+    {
+      "name": "4",
+      "label_en": "Partner",
+      "label_hi": "साथी"
+    },
+    {
+      "name": "5",
+      "label_en": "Child",
+      "label_hi": "बच्चा"
+    },
+    {
+      "name": "6",
+      "label_en": "Non-traditional family member (incl. other sexual partner)",
+      "label_hi": "गैर-पारंपरिक परिवार का सदस्य (अन्य यौन साथी सहित)"
+    }
+  ],
+  "living": [
+    {
+      "name": "1",
+      "label_en": "Alive",
+      "label_hi": "जीवित"
+    },
+    {
+      "name": "2",
+      "label_en": "Dead",
+      "label_hi": "मृत"
+    }
+  ],
+  "hivstat": [
+    {
+      "name": "1",
+      "label_en": "Positive",
+      "label_hi": "पॉज़िटिव"
+    },
+    {
+      "name": "2",
+      "label_en": "Negative",
+      "label_hi": "नेगेटिव"
+    },
+    {
+      "name": "3",
+      "label_en": "Not tested",
+      "label_hi": "परीक्षण नहीं हुआ"
+    },
+    {
+      "name": "4",
+      "label_en": "Don't know",
+      "label_hi": "पता नहीं"
+    }
+  ],
+  "artstat": [
+    {
+      "name": "1",
+      "label_en": "Not on ART",
+      "label_hi": "एआरटी पर नहीं"
+    },
+    {
+      "name": "2",
+      "label_en": "On ART",
+      "label_hi": "एआरटी पर"
+    },
+    {
+      "name": "3",
+      "label_en": "New PLHIV",
+      "label_hi": "नया PLHIV"
+    }
+  ],
+  "idtype": [
+    {
+      "name": "1",
+      "label_en": "Pre-ART registration no.",
+      "label_hi": "प्री-एआरटी पंजीकरण"
+    },
+    {
+      "name": "2",
+      "label_en": "On-ART registration no.",
+      "label_hi": "एआरटी पंजीकरण"
+    },
+    {
+      "name": "3",
+      "label_en": "ICTC PID no.",
+      "label_hi": "ICTC पीआईडी संख्या"
+    }
+  ],
+  "who": [
+    {
+      "name": "1",
+      "label_en": "Stage 1",
+      "label_hi": "चरण 1"
+    },
+    {
+      "name": "2",
+      "label_en": "Stage 2",
+      "label_hi": "चरण 2"
+    },
+    {
+      "name": "3",
+      "label_en": "Stage 3",
+      "label_hi": "चरण 3"
+    },
+    {
+      "name": "4",
+      "label_en": "Stage 4",
+      "label_hi": "चरण 4"
+    }
+  ],
+  "route": [
+    {
+      "name": "1",
+      "label_en": "Not specified / unknown",
+      "label_hi": "निर्दिष्ट नहीं / अज्ञात"
+    },
+    {
+      "name": "2",
+      "label_en": "Heterosexual: Regular partner / spouse",
+      "label_hi": "विषमलैंगिक: नियमित साथी/पति/पत्नी"
+    },
+    {
+      "name": "3",
+      "label_en": "Heterosexual: Casual / non-commercial, non-regular partner",
+      "label_hi": "विषमलैंगिक: आकस्मिक/गैर-व्यावसायिक, अनियमित साथी"
+    },
+    {
+      "name": "4",
+      "label_en": "Heterosexual: Commercial partner",
+      "label_hi": "विषमलैंगिक: व्यावसायिक साथी"
+    },
+    {
+      "name": "5",
+      "label_en": "Homosexual / Bisexual",
+      "label_hi": "समलैंगिक / बायसेक्शुअल"
+    },
+    {
+      "name": "6",
+      "label_en": "Through infected syringe and needles",
+      "label_hi": "संक्रमित सिरिंज और सुइयों के माध्यम से"
+    },
+    {
+      "name": "7",
+      "label_en": "Through blood and blood products",
+      "label_hi": "रक्त और रक्त उत्पादों के माध्यम से"
+    },
+    {
+      "name": "8",
+      "label_en": "Parent to child",
+      "label_hi": "माता-पिता से बच्चे को"
+    }
+  ],
+  "artc_type": [
+    {
+      "name": "1",
+      "label_en": "Public",
+      "label_hi": "सार्वजनिक"
+    },
+    {
+      "name": "2",
+      "label_en": "Private",
+      "label_hi": "निजी"
+    },
+    {
+      "name": "3",
+      "label_en": "NGO",
+      "label_hi": "एनजीओ"
+    },
+    {
+      "name": "4",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "art_init": [
+    {
+      "name": "1",
+      "label_en": "On ART",
+      "label_hi": "एआरटी पर"
+    },
+    {
+      "name": "2",
+      "label_en": "Not on ART",
+      "label_hi": "एआरटी पर नहीं"
+    }
+  ],
+  "tb_status": [
+    {
+      "name": "1",
+      "label_en": "Treatment completed",
+      "label_hi": "उपचार पूर्ण"
+    },
+    {
+      "name": "2",
+      "label_en": "Treatment discontinued",
+      "label_hi": "उपचार बंद"
+    },
+    {
+      "name": "3",
+      "label_en": "Cured",
+      "label_hi": "ठीक हुआ"
+    },
+    {
+      "name": "4",
+      "label_en": "Rx. Intensive phase",
+      "label_hi": "उपचार गहन चरण"
+    },
+    {
+      "name": "5",
+      "label_en": "Treatment failed",
+      "label_hi": "उपचार असफल"
+    },
+    {
+      "name": "6",
+      "label_en": "Rx. Continuation phase",
+      "label_hi": "उपचार निरंतर चरण"
+    }
+  ],
+  "schemes_linked": [
+    {
+      "name": "1",
+      "label_en": "Education",
+      "label_hi": "शिक्षा"
+    },
+    {
+      "name": "2",
+      "label_en": "Employment",
+      "label_hi": "रोजगार"
+    },
+    {
+      "name": "3",
+      "label_en": "Skill Building",
+      "label_hi": "कौशल विकास"
+    },
+    {
+      "name": "4",
+      "label_en": "Children Welfare",
+      "label_hi": "बाल कल्याण"
+    },
+    {
+      "name": "5",
+      "label_en": "Livelihood Support",
+      "label_hi": "आजीविका सहायता"
+    },
+    {
+      "name": "6",
+      "label_en": "Health",
+      "label_hi": "स्वास्थ्य"
+    },
+    {
+      "name": "7",
+      "label_en": "Housing",
+      "label_hi": "आवास"
+    },
+    {
+      "name": "8",
+      "label_en": "Insurance",
+      "label_hi": "बीमा"
+    },
+    {
+      "name": "9",
+      "label_en": "Women Welfare",
+      "label_hi": "महिला कल्याण"
+    },
+    {
+      "name": "10",
+      "label_en": "Legal Aid Support",
+      "label_hi": "कानूनी सहायता"
+    },
+    {
+      "name": "11",
+      "label_en": "Travel",
+      "label_hi": "यात्रा"
+    },
+    {
+      "name": "12",
+      "label_en": "Pension",
+      "label_hi": "पेंशन"
+    },
+    {
+      "name": "13",
+      "label_en": "Food & Nutrition",
+      "label_hi": "भोजन और पोषण"
+    },
+    {
+      "name": "14",
+      "label_en": "Disability Welfare",
+      "label_hi": "दिव्यांग कल्याण"
+    },
+    {
+      "name": "15",
+      "label_en": "Other (specify)",
+      "label_hi": "अन्य (विवरण दें)"
+    }
+  ],
+  "entitlements": [
+    {
+      "name": "1",
+      "label_en": "Ration Card",
+      "label_hi": "राशन कार्ड"
+    },
+    {
+      "name": "2",
+      "label_en": "Passport",
+      "label_hi": "पासपोर्ट"
+    },
+    {
+      "name": "3",
+      "label_en": "Birth Certificate",
+      "label_hi": "जन्म प्रमाण पत्र"
+    },
+    {
+      "name": "4",
+      "label_en": "Income Certificate",
+      "label_hi": "आय प्रमाण पत्र"
+    },
+    {
+      "name": "5",
+      "label_en": "Post Office Account",
+      "label_hi": "डाकघर खाता"
+    },
+    {
+      "name": "6",
+      "label_en": "PAN Card",
+      "label_hi": "पैन कार्ड"
+    },
+    {
+      "name": "7",
+      "label_en": "Voter ID",
+      "label_hi": "मतदाता पहचान पत्र"
+    },
+    {
+      "name": "8",
+      "label_en": "Death Certificate",
+      "label_hi": "मृत्यु प्रमाण पत्र"
+    },
+    {
+      "name": "9",
+      "label_en": "Legal Heir Certificate",
+      "label_hi": "वैध उत्तराधिकारी प्रमाण पत्र"
+    },
+    {
+      "name": "10",
+      "label_en": "Bank Account",
+      "label_hi": "बैंक खाता"
+    },
+    {
+      "name": "11",
+      "label_en": "Aadhaar Card",
+      "label_hi": "आधार कार्ड"
+    },
+    {
+      "name": "12",
+      "label_en": "Caste Certificate",
+      "label_hi": "जाति प्रमाण पत्र"
+    },
+    {
+      "name": "13",
+      "label_en": "Marriage Certificate",
+      "label_hi": "विवाह प्रमाण पत्र"
+    },
+    {
+      "name": "14",
+      "label_en": "Disability Certificate",
+      "label_hi": "दिव्यांगता प्रमाण पत्र"
+    },
+    {
+      "name": "15",
+      "label_en": "Other (specify)",
+      "label_hi": "अन्य (विवरण दें)"
+    }
+  ],
+  "condom": [
+    {
+      "name": "1",
+      "label_en": "Always",
+      "label_hi": "हमेशा"
+    },
+    {
+      "name": "2",
+      "label_en": "Sometimes",
+      "label_hi": "कभी-कभी"
+    },
+    {
+      "name": "3",
+      "label_en": "Never",
+      "label_hi": "कभी नहीं"
+    },
+    {
+      "name": "4",
+      "label_en": "No such partner",
+      "label_hi": "ऐसा कोई साथी नहीं"
+    }
+  ],
+  "subfreq": [
+    {
+      "name": "1",
+      "label_en": "Regular",
+      "label_hi": "नियमित"
+    },
+    {
+      "name": "2",
+      "label_en": "Occasional",
+      "label_hi": "कभी-कभी"
+    },
+    {
+      "name": "3",
+      "label_en": "Never",
+      "label_hi": "कभी नहीं"
+    },
+    {
+      "name": "4",
+      "label_en": "NA",
+      "label_hi": "लागू नहीं"
+    }
+  ],
+  "disc_from": [
+    {
+      "name": "1",
+      "label_en": "Health facilities",
+      "label_hi": "स्वास्थ्य सुविधाएं"
+    },
+    {
+      "name": "2",
+      "label_en": "Local goondas / anti-social elements",
+      "label_hi": "स्थानीय असामाजिक तत्व"
+    },
+    {
+      "name": "3",
+      "label_en": "Workplace",
+      "label_hi": "कार्यस्थल"
+    },
+    {
+      "name": "4",
+      "label_en": "Social gathering",
+      "label_hi": "सामाजिक कार्यक्रम"
+    },
+    {
+      "name": "5",
+      "label_en": "Family members",
+      "label_hi": "परिवार के सदस्य"
+    }
+  ],
+  "disability": [
+    {
+      "name": "1",
+      "label_en": "Blindness",
+      "label_hi": "दृष्टिहीनता"
+    },
+    {
+      "name": "2",
+      "label_en": "Muscular dystrophy",
+      "label_hi": "मांसपेशी अपक्षय"
+    },
+    {
+      "name": "3",
+      "label_en": "Low vision",
+      "label_hi": "कम दृष्टि"
+    },
+    {
+      "name": "4",
+      "label_en": "Acid attack victim",
+      "label_hi": "एसिड हमले से प्रभावित व्यक्ति"
+    },
+    {
+      "name": "5",
+      "label_en": "Leprosy-cured persons",
+      "label_hi": "कुष्ठ रोग से ठीक हुए व्यक्ति"
+    },
+    {
+      "name": "6",
+      "label_en": "Multiple disabilities (at least one visible, e.g. physical plus intellectual)",
+      "label_hi": "बहु-दिव्यांगता (कम से कम एक दिखाई देने वाली, जैसे शारीरिक और बौद्धिक)"
+    },
+    {
+      "name": "7",
+      "label_en": "Hearing impairment (deaf and hard of hearing)",
+      "label_hi": "श्रवण बाधिता (बधिर और कम सुनने वाले)"
+    },
+    {
+      "name": "8",
+      "label_en": "Parkinson's disease (advanced stage, visible tremors or mobility issues)",
+      "label_hi": "पार्किंसन रोग (उन्नत अवस्था में, दिखाई देने वाले कंपन या चलने-फिरने में कठिनाई)"
+    },
+    {
+      "name": "9",
+      "label_en": "Locomotor disability",
+      "label_hi": "चलने-फिरने में दिव्यांगता"
+    },
+    {
+      "name": "10",
+      "label_en": "Dwarfism",
+      "label_hi": "बौनापन"
+    },
+    {
+      "name": "11",
+      "label_en": "Cerebral palsy",
+      "label_hi": "सेरेब्रल पाल्सी (मस्तिष्क पक्षाघात)"
+    }
+  ],
+  "yn_applied": [
+    {
+      "name": "yes",
+      "label_en": "Yes",
+      "label_hi": "हाँ"
+    },
+    {
+      "name": "no",
+      "label_en": "No",
+      "label_hi": "नहीं"
+    },
+    {
+      "name": "applied",
+      "label_en": "Applied / In process",
+      "label_hi": "आवेदन किया गया / प्रक्रिया में"
+    }
+  ],
+  "death_reason": [
+    {
+      "name": "1",
+      "label_en": "TB",
+      "label_hi": "टीबी"
+    },
+    {
+      "name": "2",
+      "label_en": "Chronic diarrhoea",
+      "label_hi": "दीर्घकालिक दस्त"
+    },
+    {
+      "name": "3",
+      "label_en": "Anaemia",
+      "label_hi": "एनीमिया"
+    },
+    {
+      "name": "4",
+      "label_en": "Bacterial infection",
+      "label_hi": "बैक्टीरियल संक्रमण"
+    },
+    {
+      "name": "5",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "death_place": [
+    {
+      "name": "1",
+      "label_en": "Hospital",
+      "label_hi": "अस्पताल"
+    },
+    {
+      "name": "2",
+      "label_en": "Institutional care (hospice / care centre)",
+      "label_hi": "संस्थागत देखभाल (हॉस्पिस / देखभाल केंद्र)"
+    },
+    {
+      "name": "3",
+      "label_en": "Home",
+      "label_hi": "घर"
+    },
+    {
+      "name": "4",
+      "label_en": "Other (specify)",
+      "label_hi": "अन्य (विवरण दें)"
+    }
+  ],
+  "mis_lfu": [
+    {
+      "name": "1",
+      "label_en": "Yes",
+      "label_hi": "हाँ"
+    },
+    {
+      "name": "2",
+      "label_en": "No",
+      "label_hi": "नहीं"
+    },
+    {
+      "name": "3",
+      "label_en": "Institutional care (Hospital, Hospice, Care Centre)",
+      "label_hi": "संस्थागत देखभाल (अस्पताल, हॉस्पिस, देखभाल केंद्र)"
+    }
+  ],
+  "art_line": [
+    {
+      "name": "1",
+      "label_en": "First line",
+      "label_hi": "प्रथम पंक्ति"
+    },
+    {
+      "name": "2",
+      "label_en": "Alternate first line",
+      "label_hi": "वैकल्पिक प्रथम पंक्ति"
+    },
+    {
+      "name": "3",
+      "label_en": "Second line",
+      "label_hi": "द्वितीय पंक्ति"
+    }
+  ],
+  "art_status2": [
+    {
+      "name": "1",
+      "label_en": "Pre-ART",
+      "label_hi": "प्री-एआरटी"
+    },
+    {
+      "name": "2",
+      "label_en": "On ART",
+      "label_hi": "एआरटी पर"
+    }
+  ],
+  "sws": [
+    {
+      "name": "w1a",
+      "label_en": "Swarnajayanti Gram Swarozgar Yojana (SGSY)",
+      "label_hi": "स्वर्णजयंती ग्राम स्वरोजगार योजना (SGSY)"
+    },
+    {
+      "name": "w1b",
+      "label_en": "Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA)",
+      "label_hi": "महात्मा गांधी राष्ट्रीय ग्रामीण रोजगार गारंटी अधिनियम (MGNREGA)"
+    },
+    {
+      "name": "w1c",
+      "label_en": "Other income generation activity",
+      "label_hi": "अन्य आय सृजन गतिविधि"
+    },
+    {
+      "name": "w2a",
+      "label_en": "Sarva Shiksha Abhiyan (SSA)",
+      "label_hi": "सर्व शिक्षा अभियान (SSA)"
+    },
+    {
+      "name": "w2b",
+      "label_en": "Indira Gandhi Matritva Sahyog Yojana (IGMSY)",
+      "label_hi": "इंदिरा गांधी मातृत्व सहयोग योजना (IGMSY)"
+    },
+    {
+      "name": "w2c",
+      "label_en": "Other education support (ICDS)",
+      "label_hi": "अन्य शिक्षा सहायता (ICDS)"
+    },
+    {
+      "name": "w3a",
+      "label_en": "Antyodaya Anna Yojana (AAY)",
+      "label_hi": "अंत्योदय अन्न योजना (AAY)"
+    },
+    {
+      "name": "w3b",
+      "label_en": "Integrated Child Development Scheme (ICDS)",
+      "label_hi": "समेकित बाल विकास योजना (ICDS)"
+    },
+    {
+      "name": "w3c",
+      "label_en": "Other nutritional schemes",
+      "label_hi": "अन्य पोषण योजनाएं"
+    },
+    {
+      "name": "w4a",
+      "label_en": "Indira Gandhi National Widow Pension Scheme (IGNWPS)",
+      "label_hi": "इंदिरा गांधी राष्ट्रीय विधवा पेंशन योजना (IGNWPS)"
+    },
+    {
+      "name": "w4b",
+      "label_en": "Sanjay Gandhi Pension Yojana (SGPY)",
+      "label_hi": "संजय गांधी पेंशन योजना (SGPY)"
+    },
+    {
+      "name": "w4c",
+      "label_en": "Other pension schemes",
+      "label_hi": "अन्य पेंशन योजनाएं"
+    },
+    {
+      "name": "w5a",
+      "label_en": "Janani Suraksha Yojana (JSY)",
+      "label_hi": "जननी सुरक्षा योजना (JSY)"
+    },
+    {
+      "name": "w5b",
+      "label_en": "Rashtriya Swasthya Bima Yojana (RSBY)",
+      "label_hi": "राष्ट्रीय स्वास्थ्य बीमा योजना (RSBY)"
+    },
+    {
+      "name": "w5c",
+      "label_en": "Other health related schemes",
+      "label_hi": "अन्य स्वास्थ्य संबंधी योजनाएं"
+    },
+    {
+      "name": "w6a",
+      "label_en": "District Legal Services Authority (DLSA)",
+      "label_hi": "जिला विधिक सेवा प्राधिकरण (DLSA)"
+    },
+    {
+      "name": "w6b",
+      "label_en": "Other legal support",
+      "label_hi": "अन्य कानूनी सहायता"
+    },
+    {
+      "name": "w7a",
+      "label_en": "Integrated Child Protection Scheme (ICPS)",
+      "label_hi": "समेकित बाल संरक्षण योजना (ICPS)"
+    },
+    {
+      "name": "w7b",
+      "label_en": "Other children schemes",
+      "label_hi": "अन्य बाल योजनाएं"
+    },
+    {
+      "name": "w8",
+      "label_en": "Adolescent schemes",
+      "label_hi": "किशोर योजनाएं"
+    },
+    {
+      "name": "w9",
+      "label_en": "Women specific schemes",
+      "label_hi": "महिलाओं के लिए विशेष योजनाएं"
+    },
+    {
+      "name": "w10",
+      "label_en": "CLHIV provided education & nutritional assistance",
+      "label_hi": "सीएलएचआईवी को प्रदान की गई शिक्षा एवं पोषण सहायता"
+    },
+    {
+      "name": "w11",
+      "label_en": "CLHIV linked to care homes",
+      "label_hi": "सीएलएचआईवी को देखभाल गृहों से जोड़ा गया"
+    },
+    {
+      "name": "w12",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "se_status": [
+    {
+      "name": "1",
+      "label_en": "Ration card",
+      "label_hi": "राशन कार्ड"
+    },
+    {
+      "name": "2",
+      "label_en": "Voter card",
+      "label_hi": "मतदाता पहचान पत्र"
+    },
+    {
+      "name": "3",
+      "label_en": "Aadhaar card",
+      "label_hi": "आधार कार्ड"
+    },
+    {
+      "name": "4",
+      "label_en": "Passport",
+      "label_hi": "पासपोर्ट"
+    },
+    {
+      "name": "5",
+      "label_en": "PAN card",
+      "label_hi": "पैन कार्ड"
+    },
+    {
+      "name": "6",
+      "label_en": "Caste certificate",
+      "label_hi": "जाति प्रमाण पत्र"
+    },
+    {
+      "name": "7",
+      "label_en": "Birth certificate",
+      "label_hi": "जन्म प्रमाण पत्र"
+    },
+    {
+      "name": "8",
+      "label_en": "Death certificate of husband or parents (widow / orphans)",
+      "label_hi": "विधवा या अनाथ के लिए पति या माता-पिता का मृत्यु प्रमाण पत्र"
+    },
+    {
+      "name": "9",
+      "label_en": "Marriage certificate",
+      "label_hi": "विवाह प्रमाण पत्र"
+    },
+    {
+      "name": "10",
+      "label_en": "Income certificate",
+      "label_hi": "आय प्रमाण पत्र"
+    },
+    {
+      "name": "11",
+      "label_en": "Disability certificate",
+      "label_hi": "दिव्यांगता प्रमाण पत्र"
+    },
+    {
+      "name": "12",
+      "label_en": "Bank account",
+      "label_hi": "बैंक खाता"
+    },
+    {
+      "name": "13",
+      "label_en": "Post office account",
+      "label_hi": "डाकघर खाता"
+    }
+  ],
+  "disc_from_i": [
+    {
+      "name": "1",
+      "label_en": "Health facilities",
+      "label_hi": "स्वास्थ्य सुविधाएं"
+    },
+    {
+      "name": "2",
+      "label_en": "Family members",
+      "label_hi": "परिवार के सदस्य"
+    },
+    {
+      "name": "3",
+      "label_en": "Local goondas",
+      "label_hi": "स्थानीय गुंडे"
+    },
+    {
+      "name": "4",
+      "label_en": "Police & law enforcement authorities",
+      "label_hi": "पुलिस एवं कानून प्रवर्तन प्राधिकरण"
+    },
+    {
+      "name": "5",
+      "label_en": "Workplace",
+      "label_hi": "कार्यस्थल"
+    },
+    {
+      "name": "6",
+      "label_en": "Educational institution",
+      "label_hi": "शैक्षणिक संस्थान"
+    },
+    {
+      "name": "7",
+      "label_en": "Social gathering",
+      "label_hi": "सामाजिक कार्यक्रम"
+    },
+    {
+      "name": "8",
+      "label_en": "Service delivery point",
+      "label_hi": "सेवा प्रदान करने का स्थान"
+    },
+    {
+      "name": "9",
+      "label_en": "Others",
+      "label_hi": "अन्य"
+    }
+  ],
+  "purpose": [
+    {
+      "name": "1",
+      "label_en": "Counselling",
+      "label_hi": "परामर्श"
+    },
+    {
+      "name": "2",
+      "label_en": "Support group meeting",
+      "label_hi": "सहायता समूह बैठक"
+    },
+    {
+      "name": "3",
+      "label_en": "LFU tracked back to ART",
+      "label_hi": "LFU को एआरटी से पुनः जोड़ा गया"
+    },
+    {
+      "name": "4",
+      "label_en": "Missed case follow up",
+      "label_hi": "छूटे हुए मामलों का फ़ॉलोअप"
+    },
+    {
+      "name": "5",
+      "label_en": "Pre-ART registration",
+      "label_hi": "प्री-एआरटी पंजीकरण"
+    },
+    {
+      "name": "6",
+      "label_en": "CD4 follow up",
+      "label_hi": "सीडी4 फ़ॉलोअप"
+    },
+    {
+      "name": "7",
+      "label_en": "Link to TI",
+      "label_hi": "TI से जोड़ना"
+    },
+    {
+      "name": "8",
+      "label_en": "Testing of partner/spouse, children and family member",
+      "label_hi": "साथी/पति-पत्नी, बच्चों और परिवार के सदस्यों का परीक्षण"
+    },
+    {
+      "name": "9",
+      "label_en": "Hospital/clinical referrals (OI management, side effects, general ailment, TB, STI treatment)",
+      "label_hi": "अस्पताल/क्लिनिक रेफरल (ओआई प्रबंधन, दुष्प्रभाव, सामान्य बीमारी, टीबी, एसटीआई उपचार)"
+    },
+    {
+      "name": "10",
+      "label_en": "Support for legal aid",
+      "label_hi": "कानूनी सहायता के लिए समर्थन"
+    },
+    {
+      "name": "11",
+      "label_en": "Social protection",
+      "label_hi": "सामाजिक सुरक्षा"
+    },
+    {
+      "name": "12",
+      "label_en": "Social entitlements",
+      "label_hi": "सामाजिक अधिकार"
+    },
+    {
+      "name": "13",
+      "label_en": "Others (specify in remarks)",
+      "label_hi": "अन्य (टिप्पणी में विवरण दें)"
+    }
+  ],
+  "svc_cat": [
+    {
+      "name": "cc",
+      "label_en": "C-C Counsellor",
+      "label_hi": "C-C परामर्शदाता"
+    },
+    {
+      "name": "pc",
+      "label_en": "P-C Peer Counsellor",
+      "label_hi": "P-C सहकर्मी परामर्शदाता"
+    },
+    {
+      "name": "rh",
+      "label_en": "R-H Health / Non-health referrals",
+      "label_hi": "R-H स्वास्थ्य/गैर-स्वास्थ्य रेफरल"
+    },
+    {
+      "name": "re",
+      "label_en": "R-E Social entitlement schemes",
+      "label_hi": "R-E सामाजिक अधिकार योजनाएं"
+    },
+    {
+      "name": "sg",
+      "label_en": "S-G Support group meeting",
+      "label_hi": "S-G सहायता समूह बैठक"
+    },
+    {
+      "name": "rw",
+      "label_en": "R-W Social welfare schemes",
+      "label_hi": "R-W सामाजिक कल्याण योजनाएं"
+    },
+    {
+      "name": "os",
+      "label_en": "O-S Outreach services",
+      "label_hi": "O-S आउटरीच सेवाएं"
+    }
+  ],
+  "svc": [
+    {
+      "name": "cc1",
+      "label_en": "C-C-1 ART adherence",
+      "label_hi": "C-C-1 एआरटी का पालन"
+    },
+    {
+      "name": "cc2",
+      "label_en": "C-C-2 OI management",
+      "label_hi": "C-C-2 ओआई प्रबंधन"
+    },
+    {
+      "name": "cc3",
+      "label_en": "C-C-3 Nutrition",
+      "label_hi": "C-C-3 पोषण"
+    },
+    {
+      "name": "cc4",
+      "label_en": "C-C-4 Psycho-social",
+      "label_hi": "C-C-4 मनो-सामाजिक"
+    },
+    {
+      "name": "cc5",
+      "label_en": "C-C-5 Maternal health and early infant diagnosis",
+      "label_hi": "C-C-5 मातृ स्वास्थ्य और शिशु का प्रारंभिक निदान"
+    },
+    {
+      "name": "cc6",
+      "label_en": "C-C-6 HIV prevention",
+      "label_hi": "C-C-6 एचआईवी की रोकथाम"
+    },
+    {
+      "name": "cc7",
+      "label_en": "C-C-7 Health and hygiene",
+      "label_hi": "C-C-7 स्वास्थ्य और स्वच्छता"
+    },
+    {
+      "name": "cc8",
+      "label_en": "C-C-8 Sexual and reproductive health",
+      "label_hi": "C-C-8 यौन और प्रजनन स्वास्थ्य"
+    },
+    {
+      "name": "cc9",
+      "label_en": "C-C-9 Adolescence",
+      "label_hi": "C-C-9 किशोरावस्था"
+    },
+    {
+      "name": "cc10",
+      "label_en": "C-C-10 Discordant couple",
+      "label_hi": "C-C-10 असंगत दंपत्ति"
+    },
+    {
+      "name": "cc11",
+      "label_en": "C-C-11 Safe sex education",
+      "label_hi": "C-C-11 सुरक्षित यौन संबंध शिक्षा"
+    },
+    {
+      "name": "cc12",
+      "label_en": "C-C-12 Family planning",
+      "label_hi": "C-C-12 परिवार नियोजन"
+    },
+    {
+      "name": "cc13",
+      "label_en": "C-C-13 Disclosure",
+      "label_hi": "C-C-13 जानकारी साझा करना"
+    },
+    {
+      "name": "cc14",
+      "label_en": "C-C-14 Others (specify in remarks)",
+      "label_hi": "C-C-14 अन्य (टिप्पणी में विवरण दें)"
+    },
+    {
+      "name": "pc1",
+      "label_en": "P-C-1 ART adherence",
+      "label_hi": "P-C-1 एआरटी का पालन"
+    },
+    {
+      "name": "pc2",
+      "label_en": "P-C-2 OI management",
+      "label_hi": "P-C-2 ओआई प्रबंधन"
+    },
+    {
+      "name": "pc3",
+      "label_en": "P-C-3 Nutrition",
+      "label_hi": "P-C-3 पोषण"
+    },
+    {
+      "name": "pc4",
+      "label_en": "P-C-4 Psycho-social",
+      "label_hi": "P-C-4 मनो-सामाजिक"
+    },
+    {
+      "name": "pc5",
+      "label_en": "P-C-5 Maternal health and early infant diagnosis",
+      "label_hi": "P-C-5 मातृ स्वास्थ्य और शिशु का प्रारंभिक निदान"
+    },
+    {
+      "name": "pc6",
+      "label_en": "P-C-6 HIV prevention",
+      "label_hi": "P-C-6 एचआईवी की रोकथाम"
+    },
+    {
+      "name": "pc7",
+      "label_en": "P-C-7 Health and hygiene",
+      "label_hi": "P-C-7 स्वास्थ्य और स्वच्छता"
+    },
+    {
+      "name": "pc8",
+      "label_en": "P-C-8 Sexual and reproductive health",
+      "label_hi": "P-C-8 यौन और प्रजनन स्वास्थ्य"
+    },
+    {
+      "name": "pc9",
+      "label_en": "P-C-9 Adolescence",
+      "label_hi": "P-C-9 किशोरावस्था"
+    },
+    {
+      "name": "pc10",
+      "label_en": "P-C-10 Discordant couple",
+      "label_hi": "P-C-10 असंगत दंपत्ति"
+    },
+    {
+      "name": "pc11",
+      "label_en": "P-C-11 Safe sex education",
+      "label_hi": "P-C-11 सुरक्षित यौन संबंध शिक्षा"
+    },
+    {
+      "name": "pc12",
+      "label_en": "P-C-12 Family planning",
+      "label_hi": "P-C-12 परिवार नियोजन"
+    },
+    {
+      "name": "pc13",
+      "label_en": "P-C-13 Disclosure",
+      "label_hi": "P-C-13 जानकारी साझा करना"
+    },
+    {
+      "name": "pc14",
+      "label_en": "P-C-14 Others (specify in remarks)",
+      "label_hi": "P-C-14 अन्य (टिप्पणी में विवरण दें)"
+    },
+    {
+      "name": "rh1",
+      "label_en": "R-H-1 ART centre",
+      "label_hi": "R-H-1 एआरटी केंद्र"
+    },
+    {
+      "name": "rh2",
+      "label_en": "R-H-2 Link ART centre",
+      "label_hi": "R-H-2 लिंक एआरटी केंद्र"
+    },
+    {
+      "name": "rh3",
+      "label_en": "R-H-3 PPTCT centre",
+      "label_hi": "R-H-3 पीपीटीसीटी केंद्र"
+    },
+    {
+      "name": "rh4",
+      "label_en": "R-H-4 DOTS centre",
+      "label_hi": "R-H-4 डॉट्स केंद्र"
+    },
+    {
+      "name": "rh5",
+      "label_en": "R-H-5 NGO/CBO/PLHIV network",
+      "label_hi": "R-H-5 एनजीओ/सीबीओ/PLHIV नेटवर्क"
+    },
+    {
+      "name": "rh6",
+      "label_en": "R-H-6 Govt. hospital",
+      "label_hi": "R-H-6 सरकारी अस्पताल"
+    },
+    {
+      "name": "rh7",
+      "label_en": "R-H-7 STI clinic",
+      "label_hi": "R-H-7 एसटीआई क्लिनिक"
+    },
+    {
+      "name": "rh8",
+      "label_en": "R-H-8 Other healthcare facilities",
+      "label_hi": "R-H-8 अन्य स्वास्थ्य सुविधाएं"
+    },
+    {
+      "name": "rh9",
+      "label_en": "R-H-9 MSM TI",
+      "label_hi": "R-H-9 MSM टीआई"
+    },
+    {
+      "name": "rh10",
+      "label_en": "R-H-10 FSW TI",
+      "label_hi": "R-H-10 FSW टीआई"
+    },
+    {
+      "name": "rh11",
+      "label_en": "R-H-11 IDUs TI",
+      "label_hi": "R-H-11 आईडीयू टीआई"
+    },
+    {
+      "name": "rh12",
+      "label_en": "R-H-12 Truckers TI",
+      "label_hi": "R-H-12 ट्रक चालकों के लिए टीआई"
+    },
+    {
+      "name": "rh13",
+      "label_en": "R-H-13 Migrant TI",
+      "label_hi": "R-H-13 प्रवासी टीआई"
+    },
+    {
+      "name": "rh14",
+      "label_en": "R-H-14 TG/Hijra TI",
+      "label_hi": "R-H-14 टीजी/हिजड़ा टीआई"
+    },
+    {
+      "name": "rh15",
+      "label_en": "R-H-15 Core composite TI",
+      "label_hi": "R-H-15 कोर समेकित टीआई"
+    },
+    {
+      "name": "rh16",
+      "label_en": "R-H-16 Legal services",
+      "label_hi": "R-H-16 कानूनी सेवाएं"
+    },
+    {
+      "name": "rh17",
+      "label_en": "R-H-17 Family member/partner referred to ICTC",
+      "label_hi": "R-H-17 परिवार के सदस्य/साथी को ICTC के लिए संदर्भित किया गया"
+    },
+    {
+      "name": "rh18",
+      "label_en": "R-H-18 Newly identified discordant couple tested for HIV",
+      "label_hi": "R-H-18 नए पहचाने गए असंगत दंपत्ति का एचआईवी परीक्षण किया गया"
+    },
+    {
+      "name": "rh19",
+      "label_en": "R-H-19 Discordant couple followed up for HIV re-test",
+      "label_hi": "R-H-19 असंगत दंपत्ति का एचआईवी पुनः परीक्षण के लिए फ़ॉलोअप किया गया"
+    },
+    {
+      "name": "rh20",
+      "label_en": "R-H-20 Others (specify in remarks)",
+      "label_hi": "R-H-20 अन्य (टिप्पणी में विवरण दें)"
+    },
+    {
+      "name": "re1",
+      "label_en": "R-E-1 Ration card",
+      "label_hi": "R-E-1 राशन कार्ड"
+    },
+    {
+      "name": "re2",
+      "label_en": "R-E-2 Voter card",
+      "label_hi": "R-E-2 मतदाता पहचान पत्र"
+    },
+    {
+      "name": "re3",
+      "label_en": "R-E-3 Aadhaar card",
+      "label_hi": "R-E-3 आधार कार्ड"
+    },
+    {
+      "name": "re4",
+      "label_en": "R-E-4 Passport",
+      "label_hi": "R-E-4 पासपोर्ट"
+    },
+    {
+      "name": "re5",
+      "label_en": "R-E-5 PAN card",
+      "label_hi": "R-E-5 पैन कार्ड"
+    },
+    {
+      "name": "re6",
+      "label_en": "R-E-6 Caste certificate",
+      "label_hi": "R-E-6 जाति प्रमाण पत्र"
+    },
+    {
+      "name": "re7",
+      "label_en": "R-E-7 Birth certificate",
+      "label_hi": "R-E-7 जन्म प्रमाण पत्र"
+    },
+    {
+      "name": "re8",
+      "label_en": "R-E-8 Death certificate of husband (widow) or parents (orphans)",
+      "label_hi": "R-E-8 विधवा के लिए पति का या अनाथों के लिए माता-पिता का मृत्यु प्रमाण पत्र"
+    },
+    {
+      "name": "re9",
+      "label_en": "R-E-9 Marriage certificate",
+      "label_hi": "R-E-9 विवाह प्रमाण पत्र"
+    },
+    {
+      "name": "re10",
+      "label_en": "R-E-10 Income certificate",
+      "label_hi": "R-E-10 आय प्रमाण पत्र"
+    },
+    {
+      "name": "re11",
+      "label_en": "R-E-11 Disability certificate",
+      "label_hi": "R-E-11 दिव्यांगता प्रमाण पत्र"
+    },
+    {
+      "name": "re12",
+      "label_en": "R-E-12 Bank account",
+      "label_hi": "R-E-12 बैंक खाता"
+    },
+    {
+      "name": "re13",
+      "label_en": "R-E-13 Post office account",
+      "label_hi": "R-E-13 डाकघर खाता"
+    },
+    {
+      "name": "sg1",
+      "label_en": "S-G-1 Basics of HIV",
+      "label_hi": "S-G-1 एचआईवी की मूल जानकारी"
+    },
+    {
+      "name": "sg2",
+      "label_en": "S-G-2 Basic health and hygiene",
+      "label_hi": "S-G-2 बुनियादी स्वास्थ्य और स्वच्छता"
+    },
+    {
+      "name": "sg3",
+      "label_en": "S-G-3 Diet and nutrition",
+      "label_hi": "S-G-3 आहार और पोषण"
+    },
+    {
+      "name": "sg4",
+      "label_en": "S-G-4 Home based care",
+      "label_hi": "S-G-4 घर आधारित देखभाल"
+    },
+    {
+      "name": "sg5",
+      "label_en": "S-G-5 OI management and co-infection",
+      "label_hi": "S-G-5 ओआई प्रबंधन और सह-संक्रमण"
+    },
+    {
+      "name": "sg6",
+      "label_en": "S-G-6 Treatment education / adherence",
+      "label_hi": "S-G-6 उपचार संबंधी शिक्षा / पालन"
+    },
+    {
+      "name": "sg7",
+      "label_en": "S-G-7 Social entitlements and livelihood",
+      "label_hi": "S-G-7 सामाजिक अधिकार और आजीविका"
+    },
+    {
+      "name": "sg8",
+      "label_en": "S-G-8 Positive prevention / positive living",
+      "label_hi": "S-G-8 सकारात्मक रोकथाम / सकारात्मक जीवन"
+    },
+    {
+      "name": "sg9",
+      "label_en": "S-G-9 Yoga and meditation",
+      "label_hi": "S-G-9 योग और ध्यान"
+    },
+    {
+      "name": "sg10",
+      "label_en": "S-G-10 Side effects of ART and its management",
+      "label_hi": "S-G-10 एआरटी के दुष्प्रभाव और उनका प्रबंधन"
+    },
+    {
+      "name": "sg11",
+      "label_en": "S-G-11 Sexual reproductive health and rights and PPTCT",
+      "label_hi": "S-G-11 यौन और प्रजनन स्वास्थ्य एवं अधिकार तथा पीपीटीसीटी"
+    },
+    {
+      "name": "sg12",
+      "label_en": "S-G-12 Legal rights and referrals to legal aid",
+      "label_hi": "S-G-12 कानूनी अधिकार और कानूनी सहायता के लिए रेफरल"
+    },
+    {
+      "name": "sg13",
+      "label_en": "S-G-13 Marriage, addiction and psychosocial counselling",
+      "label_hi": "S-G-13 विवाह, नशा और मनो-सामाजिक परामर्श"
+    },
+    {
+      "name": "sg14",
+      "label_en": "S-G-14 Family support counselling",
+      "label_hi": "S-G-14 परिवार समर्थन परामर्श"
+    },
+    {
+      "name": "sg15",
+      "label_en": "S-G-15 Mainstreaming and linkages",
+      "label_hi": "S-G-15 मुख्यधारा में जोड़ना और समन्वय"
+    },
+    {
+      "name": "sg16",
+      "label_en": "S-G-16 Gender sensitisation and women empowerment",
+      "label_hi": "S-G-16 लैंगिक संवेदनशीलता और महिला सशक्तिकरण"
+    },
+    {
+      "name": "sg17",
+      "label_en": "S-G-17 CSR linkages with exposure visits to corporate houses incl. positive speaking",
+      "label_hi": "S-G-17 सीएसआर से जुड़ाव, कॉर्पोरेट संस्थानों के भ्रमण सहित"
+    },
+    {
+      "name": "sg18",
+      "label_en": "S-G-18 Safe sex education to all age groups except children incl. condom education",
+      "label_hi": "S-G-18 बच्चों को छोड़कर सभी आयु वर्ग के लिए सुरक्षित यौन संबंध शिक्षा, कंडोम शिक्षा सहित"
+    },
+    {
+      "name": "sg19",
+      "label_en": "S-G-19 Legal issues",
+      "label_hi": "S-G-19 कानूनी मुद्दे"
+    },
+    {
+      "name": "sg20",
+      "label_en": "S-G-20 Disclosure issues - children/spouse",
+      "label_hi": "S-G-20 जानकारी साझा करने से संबंधित मुद्दे - बच्चे/पति-पत्नी"
+    },
+    {
+      "name": "sg21",
+      "label_en": "S-G-21 Stigma and discrimination and GIPA",
+      "label_hi": "S-G-21 कलंक और भेदभाव तथा जीआईपीए"
+    },
+    {
+      "name": "sg22",
+      "label_en": "S-G-22 Peer leaders / positive speaking",
+      "label_hi": "S-G-22 सहकर्मी नेतृत्व / सकारात्मक बोलना"
+    },
+    {
+      "name": "os1",
+      "label_en": "O-S-1 Address verification",
+      "label_hi": "O-S-1 पते का सत्यापन"
+    },
+    {
+      "name": "os2",
+      "label_en": "O-S-2 Referral/follow-up for CD4 testing",
+      "label_hi": "O-S-2 सीडी4 परीक्षण के लिए रेफरल/फ़ॉलोअप"
+    },
+    {
+      "name": "os3",
+      "label_en": "O-S-3 ART adherence assessment and counselling",
+      "label_hi": "O-S-3 एआरटी पालन का मूल्यांकन और परामर्श"
+    },
+    {
+      "name": "os4",
+      "label_en": "O-S-4 Missed/LFU tracking",
+      "label_hi": "O-S-4 छूटे हुए/LFU मामलों की ट्रैकिंग"
+    },
+    {
+      "name": "os5",
+      "label_en": "O-S-5 Refer to medical service",
+      "label_hi": "O-S-5 चिकित्सा सेवाओं के लिए रेफर करना"
+    },
+    {
+      "name": "os6",
+      "label_en": "O-S-6 Home-based care",
+      "label_hi": "O-S-6 घर आधारित देखभाल"
+    },
+    {
+      "name": "os7",
+      "label_en": "O-S-7 Other (specify in remarks)",
+      "label_hi": "O-S-7 अन्य (टिप्पणी में विवरण दें)"
+    },
+    {
+      "name": "rw1a",
+      "label_en": "R-W-1a Swarnajayanti Gram Swarozgar Yojana (SGSY)",
+      "label_hi": "R-W-1a स्वर्णजयंती ग्राम स्वरोजगार योजना (SGSY)"
+    },
+    {
+      "name": "rw1b",
+      "label_en": "R-W-1b Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA)",
+      "label_hi": "R-W-1b महात्मा गांधी राष्ट्रीय ग्रामीण रोजगार गारंटी अधिनियम (MGNREGA)"
+    },
+    {
+      "name": "rw1c",
+      "label_en": "R-W-1c Other income generation activity",
+      "label_hi": "R-W-1c अन्य आय सृजन गतिविधि"
+    },
+    {
+      "name": "rw2a",
+      "label_en": "R-W-2a Sarva Shiksha Abhiyan (SSA)",
+      "label_hi": "R-W-2a सर्व शिक्षा अभियान (SSA)"
+    },
+    {
+      "name": "rw2b",
+      "label_en": "R-W-2b Indira Gandhi Matritva Sahyog Yojana (IGMSY)",
+      "label_hi": "R-W-2b इंदिरा गांधी मातृत्व सहयोग योजना (IGMSY)"
+    },
+    {
+      "name": "rw2c",
+      "label_en": "R-W-2c Other education support (ICDS)",
+      "label_hi": "R-W-2c अन्य शिक्षा सहायता (ICDS)"
+    },
+    {
+      "name": "rw3a",
+      "label_en": "R-W-3a Antyodaya Anna Yojana (AAY)",
+      "label_hi": "R-W-3a अंत्योदय अन्न योजना (AAY)"
+    },
+    {
+      "name": "rw3b",
+      "label_en": "R-W-3b Integrated Child Development Scheme (ICDS)",
+      "label_hi": "R-W-3b समेकित बाल विकास योजना (ICDS)"
+    },
+    {
+      "name": "rw3c",
+      "label_en": "R-W-3c Other nutritional schemes",
+      "label_hi": "R-W-3c अन्य पोषण योजनाएं"
+    },
+    {
+      "name": "rw4a",
+      "label_en": "R-W-4a Indira Gandhi National Widow Pension Scheme (IGNWPS)",
+      "label_hi": "R-W-4a इंदिरा गांधी राष्ट्रीय विधवा पेंशन योजना (IGNWPS)"
+    },
+    {
+      "name": "rw4b",
+      "label_en": "R-W-4b Sanjay Gandhi Pension Yojana (SGPY)",
+      "label_hi": "R-W-4b संजय गांधी पेंशन योजना (SGPY)"
+    },
+    {
+      "name": "rw4c",
+      "label_en": "R-W-4c Other pension schemes",
+      "label_hi": "R-W-4c अन्य पेंशन योजनाएं"
+    },
+    {
+      "name": "rw5a",
+      "label_en": "R-W-5a Janani Suraksha Yojana (JSY)",
+      "label_hi": "R-W-5a जननी सुरक्षा योजना (JSY)"
+    },
+    {
+      "name": "rw5b",
+      "label_en": "R-W-5b Rashtriya Swasthya Bima Yojana (RSBY)",
+      "label_hi": "R-W-5b राष्ट्रीय स्वास्थ्य बीमा योजना (RSBY)"
+    },
+    {
+      "name": "rw5c",
+      "label_en": "R-W-5c Other health related schemes",
+      "label_hi": "R-W-5c अन्य स्वास्थ्य संबंधी योजनाएं"
+    },
+    {
+      "name": "rw6a",
+      "label_en": "R-W-6a District Legal Services Authority (DLSA)",
+      "label_hi": "R-W-6a जिला विधिक सेवा प्राधिकरण (DLSA)"
+    },
+    {
+      "name": "rw6b",
+      "label_en": "R-W-6b Other legal support",
+      "label_hi": "R-W-6b अन्य कानूनी सहायता"
+    },
+    {
+      "name": "rw7a",
+      "label_en": "R-W-7a Integrated Child Protection Scheme (ICPS)",
+      "label_hi": "R-W-7a समेकित बाल संरक्षण योजना (ICPS)"
+    },
+    {
+      "name": "rw7b",
+      "label_en": "R-W-7b Other children schemes",
+      "label_hi": "R-W-7b अन्य बाल योजनाएं"
+    },
+    {
+      "name": "rw8",
+      "label_en": "R-W-8 Adolescent schemes",
+      "label_hi": "R-W-8 किशोर योजनाएं"
+    },
+    {
+      "name": "rw9",
+      "label_en": "R-W-9 Women specific schemes",
+      "label_hi": "R-W-9 महिलाओं के लिए विशेष योजनाएं"
+    },
+    {
+      "name": "rw10",
+      "label_en": "R-W-10 CLHIV provided education & nutritional assistance",
+      "label_hi": "R-W-10 सीएलएचआईवी को प्रदान की गई शिक्षा एवं पोषण सहायता"
+    },
+    {
+      "name": "rw11",
+      "label_en": "R-W-11 CLHIV linked to care homes",
+      "label_hi": "R-W-11 सीएलएचआईवी को देखभाल गृहों से जोड़ा गया"
+    },
+    {
+      "name": "rw12",
+      "label_en": "R-W-12 Others",
+      "label_hi": "R-W-12 अन्य"
+    }
+  ]
+}

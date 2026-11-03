@@ -14,11 +14,13 @@ import {
   DeliveredServiceDto,
 } from '@/components/forms/FollowUpTab';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 function ClientRecordContent({ clientId }: { clientId: string }) {
   const searchParams = useSearchParams();
   const initialTabParam = searchParams.get('tab');
   const isNewlyCreated = searchParams.get('created') === 'true';
+  const initialEditMode = searchParams.get('edit') === 'true';
 
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
@@ -29,8 +31,11 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     return 'followup';
   });
 
+  const [formMode, setFormMode] = useState<'view' | 'edit'>(initialEditMode ? 'edit' : 'view');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showCreatedNotice, setShowCreatedNotice] = useState(isNewlyCreated);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [conflictDiff, setConflictDiff] = useState<any | null>(null);
 
   // Sync tab with browser popstate (back/forward)
   useEffect(() => {
@@ -57,7 +62,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     }
   };
 
-  // Synthetic Baseline Beneficiary
+  // Baseline Beneficiary State
   const [client, setClient] = useState({
     id: clientId,
     clientRef: "CSC-DL-0001",
@@ -104,7 +109,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
       clientRef: "CSC-DL-0001",
       clientName: "Aarav Sharma",
       centerId: "CENTER_DELHI_01",
-      taskType: "1", // Purpose code 1: ART adherence
+      taskType: "1",
       title: "Purpose 01: ART adherence support and pill count verification",
       description: "Routine monthly adherence counseling and pill count check.",
       dueDate: new Date().toISOString().split('T')[0],
@@ -118,7 +123,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
       clientRef: "CSC-DL-0001",
       clientName: "Aarav Sharma",
       centerId: "CENTER_DELHI_01",
-      taskType: "8", // Purpose code 8: Social protection
+      taskType: "8",
       title: "Purpose 08: Social protection scheme linkage assistance",
       description: "Ration card linkage and food security assistance.",
       dueDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
@@ -213,15 +218,82 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         if (data.plannedServices) setPlannedServices(data.plannedServices);
         if (data.deliveredServices) setDeliveredServices(data.deliveredServices);
       }
-    } catch (ignored) {}
+    } catch (_ignored) {}
   };
 
   useEffect(() => {
     loadClientData();
   }, [clientId]);
 
-  const handleRegistrationSubmit = async (formData: RegistrationFormData) => {
-    showToast("Registration updates recorded in client audit trail.");
+  // Handle Profile Modification (PUT /api/v1/clients/{id}/profile)
+  const handleProfileSubmit = async (formData: RegistrationFormData, changeReason?: string) => {
+    setIsSubmitting(true);
+    setConflictDiff(null);
+    try {
+      const idempotencyKey = `edit-${clientId}-${Date.now()}`;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
+
+      const payload = {
+        expectedVersion: client.version,
+        changeReason: changeReason || 'Routine profile update',
+        fullName: formData.a03_name || formData.a01_full_name || client.fullName,
+        age: Number(formData.a04_age || formData.a03_age) || client.age,
+        gender: formData.a05_gender || formData.a04_gender || client.gender,
+        maritalStatus: formData.a06_marital || formData.a05_marital_status || client.maritalStatus,
+        primaryPhone: formData.a11_phone || formData.a06_phone || client.primaryPhone,
+        addressCurrent: formData.a09_address || formData.a07_address_current || client.addressCurrent,
+        hivStatus: formData.c1_hiv_confirmed === 'yes' ? 'positive' : client.hivStatus,
+        artNumber: formData.c9_art_no || formData.c03_art_number || client.artNumber,
+        artCenterName: formData.c6_artc_name || formData.c04_art_center || client.artCenterName,
+        cd4Count: formData.c12b_cd4_count ? Number(formData.c12b_cd4_count) : client.cd4Count,
+        cd4Percentage: formData.c12b_cd4_pct || client.cd4Percentage,
+        viralLoadCount: formData.c13b_vl_count ? Number(formData.c13b_vl_count) : client.viralLoadCount,
+        hasHivDocDeclaration: Boolean(formData.j_doc_hiv ?? formData.j_hiv_doc_sighted),
+        hasAddressDocDeclaration: Boolean(formData.j_doc_addr ?? formData.j_address_doc_sighted),
+        hasArtDocDeclaration: Boolean(formData.j_doc_art ?? formData.j_art_doc_sighted),
+        docDeclarationNotes: formData.j4_comments || formData.j_verifier_notes || client.docDeclarationNotes,
+        homeVisitConsent: Boolean(formData.a01_consent ?? formData.a08_consent_home),
+        messagingConsent: Boolean(formData.a01_consent ?? formData.a08_consent_sms),
+        familyMembers: formData.b2_members || [],
+        referralRequests: formData.d5_referrals || [],
+      };
+
+      const res = await fetch(`/api/v1/clients/${clientId}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 409) {
+        const errJson = await res.json().catch(() => null);
+        setConflictDiff(errJson || { message: 'Version conflict: Record was updated by another user.' });
+        showToast('Version conflict (409): Another user modified this record concurrently.');
+        return;
+      }
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Profile update failed');
+      }
+
+      const updated = await res.json();
+      setClient((prev) => ({
+        ...prev,
+        version: updated.version || prev.version + 1,
+        fullName: updated.fullName || prev.fullName,
+      }));
+      setFormMode('view');
+      showToast('Profile revision successfully saved and recorded in audit log.');
+      loadClientData();
+    } catch (err: any) {
+      alert(`Error updating profile: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -245,7 +317,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
             role="status"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-xl">✓</span>
+              <Icon name="check" className="w-5 h-5 text-emerald-700 shrink-0" />
               <div>
                 <strong className="font-bold text-sm block">
                   Beneficiary Registration Successfully Completed!
@@ -259,8 +331,35 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
               onClick={() => setShowCreatedNotice(false)}
               className="text-emerald-800 hover:text-emerald-950 font-bold px-2 py-1"
             >
-              ✕
+              <Icon name="cancel" className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* 409 Conflict Notice Banner */}
+        {conflictDiff && (
+          <div
+            className="bg-rose-50 border-2 border-rose-400 rounded-xl p-4 text-xs text-rose-950 shadow-md space-y-2"
+            role="alert"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="AlertTriangle" className="w-5 h-5 text-rose-600" />
+                <strong className="text-sm font-bold">
+                  Concurrency Conflict (HTTP 409): Record Modified on Server
+                </strong>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConflictDiff(null)}
+                className="text-rose-700 hover:text-rose-900 font-bold"
+              >
+                <Icon name="cancel" className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-rose-800">
+              The record version has advanced on the server. Your current edits have been preserved in the form below. Please review changes before resubmitting.
+            </p>
           </div>
         )}
 
@@ -270,7 +369,8 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
             href="/clients"
             className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 flex items-center gap-1.5 transition-colors"
           >
-            ← {lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}
+            <Icon name="back" className="w-3.5 h-3.5" />
+            <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
           </Link>
           <div className="flex items-center space-x-2">
             <span className="text-[11px] font-mono text-slate-500">ID: {client.id}</span>
@@ -281,7 +381,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         </div>
 
         {/* Client Header Overview Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center space-x-3">
@@ -319,77 +419,112 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
           </div>
 
           {/* TWO TABS NAVIGATION SELECTOR */}
-          <div className="border-t border-slate-100 pt-4 flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={() => handleTabChange('followup')}
-              className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
-                activeTab === 'followup'
-                  ? 'bg-emerald-700 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-              }`}
-            >
-              <span>📌</span> {t.tabFollowUp}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('registration')}
-              className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
-                activeTab === 'registration'
-                  ? 'bg-emerald-700 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-              }`}
-            >
-              <span>📝</span> {t.tabRegistration}
-            </button>
+          <div className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => handleTabChange('followup')}
+                className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
+                  activeTab === 'followup'
+                    ? 'bg-emerald-700 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                }`}
+              >
+                <Icon name="Activity" className="w-4 h-4" />
+                <span>{t.tabFollowUp}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange('registration')}
+                className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all min-h-[44px] flex items-center gap-2 ${
+                  activeTab === 'registration'
+                    ? 'bg-emerald-700 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                }`}
+              >
+                <Icon name="file" className="w-4 h-4" />
+                <span>{t.tabRegistration}</span>
+              </button>
+            </div>
+
+            {/* Mode Toggle when in Registration Tab */}
+            {activeTab === 'registration' && (
+              <div className="flex items-center gap-2">
+                {formMode === 'view' ? (
+                  <button
+                    type="button"
+                    onClick={() => setFormMode('edit')}
+                    className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-300 transition-colors min-h-[44px]"
+                  >
+                    <Icon name="edit" className="w-4 h-4" />
+                    <span>{lang === 'hi' ? 'संशोधन करें (Edit)' : 'Edit Registration'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setFormMode('view')}
+                    className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-300 transition-colors min-h-[44px]"
+                  >
+                    <Icon name="view" className="w-4 h-4" />
+                    <span>{lang === 'hi' ? 'केवल देखें (View Mode)' : 'View Mode'}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Toast Notification */}
         {toastMessage && (
           <div
-            className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-lg shadow-2xl border border-slate-700 flex items-center gap-2"
+            className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2"
             role="status"
           >
-            <span className="text-emerald-400">✓</span> {toastMessage}
+            <Icon name="check" className="w-4 h-4 text-emerald-400" />
+            <span>{toastMessage}</span>
           </div>
         )}
 
-        {/* TAB 1: REGISTRATION (Sections A–H and J on one scrollable page) */}
+        {/* TAB 1: REGISTRATION (Sections A–H and J on one scrollable centered page) */}
         {activeTab === 'registration' && (
           <div className="space-y-4">
             <div className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 text-xs text-amber-900 flex items-center gap-2">
-              <span>ℹ️</span>
+              <Icon name="help" className="w-4 h-4 text-amber-700 shrink-0" />
               <span>
                 <strong>{t.tabRegistration}:</strong> Showing baseline registration data from intake.
                 Per CSC guidelines, routine visits and encounters do not re-record registration.
               </span>
             </div>
+
             <RegistrationForm
+              mode={formMode}
+              version={client.version}
+              clientRef={client.clientRef}
               initialData={{
-                a01_full_name: client.fullName,
-                a03_age: String(client.age),
-                a04_gender: client.gender,
-                a05_marital_status: client.maritalStatus,
-                a06_phone: client.primaryPhone,
-                a07_address_current: client.addressCurrent,
-                a08_consent_status: true,
-                a08_consent_home: client.homeVisitConsent,
-                a08_consent_sms: client.messagingConsent,
-                c01_hiv_status: client.hivStatus,
-                c03_art_number: client.artNumber,
-                c04_art_center: client.artCenterName,
-                c06_cd4_count: String(client.cd4Count),
-                c07_cd4_percent: client.cd4Percentage,
-                c08_viral_load: String(client.viralLoadCount),
-                j_hiv_doc_sighted: client.hasHivDocDeclaration,
-                j_address_doc_sighted: client.hasAddressDocDeclaration,
-                j_art_doc_sighted: client.hasArtDocDeclaration,
-                j_verifier_notes: client.docDeclarationNotes,
+                a03_name: client.fullName,
+                a04_age: String(client.age),
+                a05_gender: client.gender,
+                a06_marital: client.maritalStatus,
+                a11_phone: client.primaryPhone,
+                a09_address: client.addressCurrent,
+                a01_consent: client.homeVisitConsent,
+                c1_hiv_confirmed: client.hivStatus === 'positive' ? 'yes' : 'no',
+                c9_art_no: client.artNumber,
+                c6_artc_name: client.artCenterName,
+                c12b_cd4_count: String(client.cd4Count),
+                c12b_cd4_pct: client.cd4Percentage,
+                c13b_vl_count: String(client.viralLoadCount),
+                j_doc_hiv: client.hasHivDocDeclaration,
+                j_doc_addr: client.hasAddressDocDeclaration,
+                j_doc_art: client.hasArtDocDeclaration,
+                j4_comments: client.docDeclarationNotes,
               }}
               lang={lang}
-              onDataChange={() => {}}
-              onSubmit={handleRegistrationSubmit}
+              onSubmit={handleProfileSubmit}
+              onCancel={() => setFormMode('view')}
+              onSwitchToEdit={() => setFormMode('edit')}
+              canEdit={true}
+              isSubmitting={isSubmitting}
             />
           </div>
         )}

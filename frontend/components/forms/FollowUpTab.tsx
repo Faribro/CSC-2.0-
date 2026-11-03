@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Language, translations } from '@/lib/translations';
 import { CHOICE_LISTS } from '@/lib/crfDefinitions';
+import { Icon } from '@/components/ui/Icon';
 
 export interface TaskSummary {
   id: string;
@@ -549,7 +550,8 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>📋</span> {t.openTasksTitle} ({filteredTasks.length})
+              <Icon name="file" className="w-4 h-4 text-emerald-800" />
+              <span>{t.openTasksTitle} ({filteredTasks.length})</span>
             </h4>
             <p className="text-xs text-slate-500">
               Tasks derived from canonical purpose codes or administrator directives.
@@ -693,7 +695,8 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>⏱️</span> {t.timelineTitle} ({filteredTimeline.length})
+              <Icon name="Clock" className="w-4 h-4 text-emerald-800" />
+              <span>{t.timelineTitle} ({filteredTimeline.length})</span>
             </h4>
             <p className="text-xs text-slate-500">
               Chronological log of visits, contact attempts, service plans, and deliveries.
@@ -813,7 +816,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 
@@ -988,8 +991,9 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
 
               {/* NON-NEGOTIABLE ACTION RADIO: Complete vs Leave Open */}
               <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 space-y-2">
-                <span className="text-xs font-bold text-amber-900 block">
-                  ⚙️ Follow-Up Task Closure Decision:
+                <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <Icon name="Activity" className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Follow-Up Task Closure Decision:</span>
                 </span>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <label className="flex items-center space-x-2 text-xs font-semibold text-slate-800 cursor-pointer">
@@ -1063,7 +1067,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 
@@ -1191,7 +1195,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 
@@ -1305,7 +1309,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 
@@ -1349,9 +1353,9 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                   onChange={(e) => setAttemptOutcome(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-md px-3 py-2 min-h-[44px] bg-white"
                 >
-                  <option value="reached">✓ {t.reached}</option>
-                  <option value="not_reached">✗ {t.not_reached}</option>
-                  <option value="refused">⛔ {t.refused}</option>
+                  <option value="reached">{t.reached}</option>
+                  <option value="not_reached">{t.not_reached}</option>
+                  <option value="refused">{t.refused}</option>
                 </select>
               </div>
 
@@ -1413,7 +1417,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 
@@ -1490,7 +1494,7 @@ export const FollowUpTab: React.FC<FollowUpTabProps> = ({
                 onClick={() => setActiveModal(null)}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
-                ✕
+                <Icon name="cancel" className="w-4 h-4" />
               </button>
             </div>
 

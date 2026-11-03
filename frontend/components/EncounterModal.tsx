@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Language, translations } from '@/lib/translations';
+import { Icon } from '@/components/ui/Icon';
 
 interface EncounterModalProps {
   isOpen: boolean;
@@ -65,7 +66,7 @@ export const EncounterModal: React.FC<EncounterModalProps> = ({
             className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
             aria-label="Close"
           >
-            ✕
+            <Icon name="cancel" className="w-4 h-4" />
           </button>
         </div>
 

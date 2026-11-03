@@ -414,6 +414,29 @@ The following matrix documents the authentication mechanisms, credential types, 
    - The system MUST NOT silently wipe or destroy unsaved field drafts upon session logout, preventing catastrophic loss of offline field interviews [PROPOSED].
    - Upon confirmed termination, the `HttpOnly` session cookie is cleared with an expired date header, and the JWT `jti` is submitted to the revocation registry [PROPOSED].
 
+### 3.3 Implemented Onboarding & Session Model (Rebuilt in Spring Boot / PostgreSQL)
+
+1. **State Manager Registration & Verification (`/v1/auth/state-manager/register`)**:
+   - Registration inputs: first name, optional last name, work email, state, organisation.
+   - Pre-approval via configurable domain/email allowlist (`csc2.security.allowlist.domains`, `emails`); unlisted domains enter `PENDING_APPROVAL`.
+   - On initial signup for a state, generates exactly one state code `ALN-<STATE>-XXXX-XXXX` from an unambiguous charset (`23456789ABCDEFGHJKLMNPQRSTUVWXYZ`).
+   - Plaintext code is sent once via email and NEVER stored in the database; only HMAC-SHA256 verifier with server-side pepper is stored (`csc2.state_code.code_verifier`).
+   - OTP challenge: 6 numeric digits, 10-minute expiry, locked out after 5 consecutive failed attempts (`csc2.otp_challenge`). Constant-time comparison prevents timing side-channels.
+   - Administrative approval/rejection is strictly an authenticated POST endpoint (`/v1/admin/registrations/{id}/review`), never an unauthenticated GET link.
+
+2. **Field Worker Onboarding & State Code Redemption (`/v1/auth/field-user/onboard`)**:
+   - Google Sign-In with minimal scopes (`openid`, `email`, `profile`).
+   - Onboarding payload: first name, last name, state, district, state code.
+   - Atomic redemption: Validates code status (`ACTIVE`), expiry, coordinator approval, and remaining redemptions. Uses pessimistic locking `findByCodeVerifierForUpdate` in PostgreSQL.
+   - Code is consumed once per field worker upon initial registration; returning logins authenticate directly without re-consuming redemptions.
+
+3. **Persistent Server-Side Sessions & Token Rotation (RFC 6819)**:
+   - Persisted in table `csc2.session` with SHA-256 hashed refresh tokens.
+   - Cookie flags: `HttpOnly`, `Secure`, `SameSite=Lax/Strict`.
+   - Sliding idle expiry (default 30 days) and hard absolute expiration cap (90 days).
+   - Refresh token rotation: Presenting a valid refresh token revokes the old session row and issues a new session with new token hashes.
+   - **Reuse Detection**: Presenting an already-revoked refresh token indicates token theft; immediately triggers user-wide session revocation (`revokeAllSessionsForUser`), invalidating all active devices.
+
 ---
 
 ## §4 — Authorization: Permission Matrix

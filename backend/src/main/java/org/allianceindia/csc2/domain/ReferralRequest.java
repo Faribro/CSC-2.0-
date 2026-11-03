@@ -40,6 +40,9 @@ public class ReferralRequest {
     @Column(name = "outcome_notes", columnDefinition = "TEXT")
     private String outcomeNotes;
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -78,6 +81,8 @@ public class ReferralRequest {
     public void setOutcomeDate(LocalDate outcomeDate) { this.outcomeDate = outcomeDate; }
     public String getOutcomeNotes() { return outcomeNotes; }
     public void setOutcomeNotes(String outcomeNotes) { this.outcomeNotes = outcomeNotes; }
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

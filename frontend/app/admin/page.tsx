@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Language, translations } from '@/lib/translations';
 import { getStoredSession } from '@/lib/auth';
+import { Icon } from '@/components/ui/Icon';
 
 interface AdminStatus {
   sheetsDeploymentId: string;
@@ -120,12 +121,14 @@ export default function AdminPage() {
               <span className="text-xs text-slate-500 font-semibold">pending sync</span>
             </div>
             <div className="mt-3 flex items-center gap-2 text-[11px]">
-              <span className="text-emerald-700 font-bold">
-                ✓ {status ? status.outboxPublished : 0} published
+              <span className="text-emerald-700 font-bold flex items-center gap-1">
+                <Icon name="check" className="w-3 h-3 text-emerald-700" />
+                <span>{status ? status.outboxPublished : 0} published</span>
               </span>
               <span className="text-slate-300">•</span>
-              <span className="text-rose-700 font-bold">
-                ✗ {status ? status.outboxFailed : 0} failed
+              <span className="text-rose-700 font-bold flex items-center gap-1">
+                <Icon name="cancel" className="w-3 h-3 text-rose-700" />
+                <span>{status ? status.outboxFailed : 0} failed</span>
               </span>
             </div>
           </div>
@@ -163,7 +166,8 @@ export default function AdminPage() {
         {/* Recent Outbox Events Table */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
           <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <span>⚡</span> Transactional Outbox Events (Async Mirroring)
+            <Icon name="Activity" className="w-4 h-4 text-amber-600" />
+            <span>Transactional Outbox Events (Async Mirroring)</span>
           </h2>
 
           <div className="overflow-x-auto">
@@ -207,7 +211,8 @@ export default function AdminPage() {
         {/* Audit Log Table */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
           <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <span>🛡️</span> Immutable Audit Trail (Append-Only)
+            <Icon name="ShieldCheck" className="w-4 h-4 text-emerald-700" />
+            <span>Immutable Audit Trail (Append-Only)</span>
           </h2>
 
           <div className="overflow-x-auto">

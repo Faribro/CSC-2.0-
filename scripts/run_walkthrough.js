@@ -50,7 +50,8 @@ async function runWalkthrough({ isMobile = false, lang = 'en' } = {}) {
     // STEP 1: Entry & Sign-In
     // -----------------------------------------------------------------
     console.log(`[Step 1] Navigating to http://localhost:3000/ ...`);
-    await page.goto('http://localhost:3000/', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
     assert(page.url().includes('/sign-in'), `Unauthenticated visit to / must redirect to /sign-in, got ${page.url()}`);
     
     // Toggle language if needed
@@ -163,7 +164,8 @@ async function runWalkthrough({ isMobile = false, lang = 'en' } = {}) {
     // STEP 7: Beneficiary Linelist Directory (/clients)
     // -----------------------------------------------------------------
     console.log(`[Step 7] Navigating to Beneficiary Directory (/clients)...`);
-    await page.goto('http://localhost:3000/clients', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/clients', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
     assert(page.url().includes('/clients'), `Must be on /clients route, got ${page.url()}`);
     await page.waitForSelector('table', { timeout: 10000 });
     
@@ -176,29 +178,26 @@ async function runWalkthrough({ isMobile = false, lang = 'en' } = {}) {
     // STEP 8: Register a New Client (Single-Page CRF)
     // -----------------------------------------------------------------
     console.log(`[Step 8] Registering new beneficiary on /clients/new...`);
-    await page.goto('http://localhost:3000/clients/new', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/clients/new', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
     assert(page.url().includes('/clients/new'), `Must be on /clients/new, got ${page.url()}`);
 
     // Fill Section A: Full Name
     const uniqueSuffix = Date.now().toString().slice(-4);
     const newName = `Ramesh Verma ${uniqueSuffix}`;
-    await page.fill('input[name="a01_full_name"], input[placeholder*="Name"], input[type="text"]:first-of-type', newName);
-    
-    // Fill Section C: ART Number
-    const artInputs = page.locator('input[name="c03_art_number"], input[placeholder*="ART"]');
-    if (await artInputs.count() > 0) {
-      await artInputs.first().fill(`DL-LNJP-${uniqueSuffix}`);
+    const nameInput = page.locator('input#field-a03_name, input[name="a01_full_name"], input[placeholder*="Name"], input[type="text"]').first();
+    await nameInput.fill(newName);
+
+    // Scroll to bottom and click Submit
+    const submitBtn = page.locator('button[type="submit"], button:has-text("Submit Registration"), button:has-text("पंजीकरण जमा करें"), button:has-text("Review Before Submit")').last();
+    await submitBtn.scrollIntoViewIfNeeded();
+    await submitBtn.click();
+
+    // If review modal is shown, confirm it
+    if (await page.locator('div[role="dialog"]').isVisible()) {
+      const confirmBtn = page.locator('div[role="dialog"] button:has-text("Confirm"), div[role="dialog"] button:has-text("सबमिट"), div[role="dialog"] button[type="submit"]').last();
+      await confirmBtn.click();
     }
-
-    // Scroll to bottom and click "Review Before Submit"
-    const reviewBtn = page.locator('button:has-text("Review Before Submit"), button:has-text("समीक्षा")').last();
-    await reviewBtn.scrollIntoViewIfNeeded();
-    await reviewBtn.click();
-    await page.waitForSelector('div[role="dialog"]', { timeout: 6000 });
-
-    // Confirm submission in modal
-    const confirmBtn = page.locator('div[role="dialog"] button:has-text("Confirm"), div[role="dialog"] button:has-text("सबमिट")').last();
-    await confirmBtn.click();
 
     // Must redirect to /clients/[id]?tab=registration&created=true
     await page.waitForURL(/.*clients\/.*created=true/, { timeout: 15000 });
@@ -213,7 +212,8 @@ async function runWalkthrough({ isMobile = false, lang = 'en' } = {}) {
     // STEP 9: Find the New Client in Linelist
     // -----------------------------------------------------------------
     console.log(`[Step 9] Searching for newly created client in Linelist...`);
-    await page.goto('http://localhost:3000/clients', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/clients', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
     const searchInput = page.locator('input[type="text"]').first();
     await searchInput.fill(newName);
     await page.waitForTimeout(600);
