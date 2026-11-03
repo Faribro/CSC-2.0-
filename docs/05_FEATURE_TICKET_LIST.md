@@ -3709,5 +3709,11 @@ Key intra-slice dependencies: `[PROPOSED]`
 | **TCK-041** | Persistent Sessions & Token Reuse Detection | 3 | `HEAD` | `AuthAndProfileIntegrationTest.testRefreshTokenReuseRevocation` | RFC 6819 refresh token rotation, user-wide revocation on token reuse, HttpOnly cookies | **DONE** `[VERIFIED]` |
 | **TCK-CRF** | Enketo-Style Centered CRF Form | UI | `HEAD` | `run_walkthrough.js` (4 matrices), `verify_controls_and_emoji.js` | 187 fields, centered paper layout without sidebar, horizontal progress tabs | **DONE** `[VERIFIED]` |
 | **TCK-EMOJI**| Zero Emojis & Lucide Icons Migration | UI | `HEAD` | `lint_no_emoji.js` (28 files), `verify_controls_and_emoji.js` | 100% emojis removed, replaced with `lucide-react@0.475.0` | **DONE** `[VERIFIED]` |
-
-
+| **TCK-070** | Flyway V5 Schema Migration | 6 | `b4e8758` | `V5__three_tabs_field_phone_and_evaluation.sql` | 8 relational tables added for phone auth, sessions, SMS outbox, and evaluation | **DONE** `[VERIFIED]` |
+| **TCK-071** | Field User Phone Verification API | 6 | `b4e8758` | `ThreeTabsAndFieldPhoneIntegrationTest` | 6-digit CSPRNG OTP, pepper secret, 5-attempt lockout, 30-day sliding cookie session | **DONE** `[VERIFIED]` |
+| **TCK-072** | SMS Gateway Adapter Architecture | 6 | `b4e8758` | `TextBeeSmsAdapter`, `MockSmsAdapter`, `SmsOutboxService` | Multi-adapter SmsProvider interface, outbox durability, fail-closed in prod | **DONE** `[VERIFIED]` |
+| **TCK-073** | Evaluation Tab & Leadership Allowlist API | 6 | `b4e8758` | `EvaluationService`, `EvaluationController` | Allowlist-gated OTP and Argon2id state supervisor authentication | **DONE** `[VERIFIED]` |
+| **TCK-074** | Three Top-Level Tabs Navigation Shell | 6 | `b4e8758` | `AppShell.tsx`, `EvaluationLoginModal.tsx` | Forms (default), Records & Follow-ups, Evaluation with shackle unlock animation | **DONE** `[VERIFIED]` |
+| **TCK-075** | Calm Comic Theme Design Tokens | 6 | `b4e8758` | `tokens.css`, `verify_wcag_tokens.js` | 100% WCAG 2.2 AA compliant, warm canvas, coral/plum accents, 48px touch targets | **DONE** `[VERIFIED]` |
+| **TCK-076** | Zero Banned Colors & Zero Emojis Linters | 6 | `b4e8758` | `lint_no_banned_colors.js`, `lint_no_emoji.js` | 0 blue/dark-green occurrences, 0 unicode emojis across frontend files | **DONE** `[VERIFIED]` |
+| **TCK-077** | GPS Live Address Fetch Component | 6 | `b4e8758` | `LocationFetchButton.tsx`, `RegistrationForm.tsx` | Multi-tier geocoding fallback chain auto-populating grouped address fields | **DONE** `[VERIFIED]` |

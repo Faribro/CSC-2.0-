@@ -480,7 +480,7 @@ export function LocationFetchButton({
             ? (lang === 'hi' ? 'पता खोजा जा रहा है...' : 'Resolving Live Address...')
             : status === 'success'
             ? (lang === 'hi' ? `सत्यापित: ${locatedDetail || 'पता प्राप्त हुआ'}` : `Detected: ${locatedDetail || 'Address Filled'}`)
-            : (lang === 'hi' ? '📍 जीपीएस से पता भरें (Fetch Address)' : '📍 Fetch Live Address from GPS')}
+            : (lang === 'hi' ? 'जीपीएस से पता भरें (Fetch Address)' : 'Fetch Live Address from GPS')}
         </span>
       </button>
 

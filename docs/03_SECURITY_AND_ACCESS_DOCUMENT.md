@@ -826,3 +826,25 @@ The following self-check confirms compliance with all mandatory documentation, t
 ---
 
 *End of DOC-03 — Security and Access Document (v0.1.1 DRAFT)*
+
+---
+
+## 11. Field User Phone Authentication & Device Session Security Architecture
+
+### 11.1 Threat Model & Attack Vectors
+- **OTP Brute-Force Enumeration**: Attackers attempting sequential code guesses across distributed IP addresses.
+- **SMS Toll Fraud & Flooding**: Attackers triggering SMS dispatch to unapproved numbers to deplete telecom balances.
+- **Credential Extraction from Browser Storage**: Malicious extensions or XSS payloads extracting tokens from `localStorage` or `sessionStorage`.
+- **Session Hijacking on Shared Devices**: Frontline workers sharing hardware where an unauthenticated session could access prior beneficiary records.
+
+### 11.2 Security Controls & Technical Countermeasures
+1. **CSPRNG 6-Digit OTP Generation**: Generated via Java `SecureRandom` with cryptographic entropy ($10^6$ space). Plaintext is never stored in the database or written to application logs.
+2. **HMAC-SHA256 with Server Pepper**: Stored OTP values are computed via HMAC-SHA256 keyed with a mandatory server-side pepper secret (`app.security.otp.pepper`). The application fails closed at startup if the pepper is absent.
+3. **Constant-Time Comparison**: Code verification executes `MessageDigest.isEqual()` to prevent timing side-channel attacks during hash validation.
+4. **Durable Multi-Tier Rate Limiting**: Enforced durably in PostgreSQL via `csc2.phone_otp_challenge` and `csc2.auth_rate_limit`:
+   - **Per-Number Lockout**: Maximum 5 attempts per challenge; upon 5th failure, the challenge locks immediately.
+   - **Cooldown Interval**: 60 seconds minimum cooldown between consecutive OTP dispatch requests for the same number.
+   - **Time-to-Live (TTL)**: Strict 10-minute expiry; expired challenges fail closed.
+   - **Neutral Response**: Unrostered or unapproved phone numbers return the identical neutral message: *"If your phone number is registered with your State Team, a 6-digit code has been sent."* Zero enumeration side-channel.
+5. **Zero Tokens in Browser Storage**: No JWTs, bearer tokens, or session credentials are stored in `localStorage` or `sessionStorage`. Sessions are maintained via `HttpOnly`, `Secure`, `SameSite=Lax` cookies mapped to a server-side `csc2.device_session` row with a 30-day sliding idle expiry.
+6. **Data Tier Classification**: Phone numbers are classified as **Tier 2 Confidential Data**. Plaintext numbers are masked (`+91 98765****0`) in client-side displays, reports, and Google Sheets async exports unless explicitly authorized.

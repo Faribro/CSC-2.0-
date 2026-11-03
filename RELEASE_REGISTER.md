@@ -150,3 +150,51 @@ This register tracks all official milestone releases, baseline tags, and candida
 | **Gate 7 (STOP GATE)** | Merge to `main` | **HOLD** | Restricted; work strictly on branches |
 | **Gate 8 (STOP GATE)** | Production Deployments / Shared DB Migrations | **HOLD** | Restricted |
 
+---
+
+## Release Entry: Three Top-Level Tabs, Field Phone Auth & Calm Comic Theme
+
+| Attribute | Value |
+| :--- | :--- |
+| **Milestone** | **Three Top-Level Tabs, Field Phone Auth & Calm Comic Theme** |
+| **Release Version** | `v1.2.0-three-tabs-comic-rc1` |
+| **Release Date** | 2026-11-03 |
+| **Target Branch** | `feat/three-tabs-comic-theme` |
+| **Base Commit** | `b4e8758` |
+| **Environment** | PostgreSQL 16.15, Spring Boot 3.4.1 (Java 21 LTS), Next.js 15.1.7 (React 19, Node 24) |
+
+### 1. Shipped Artifacts
+
+| Component | Path / File | Description |
+| :--- | :--- | :--- |
+| **Flyway V5 Schema Migration** | `backend/src/main/resources/db/migration/V5__three_tabs_field_phone_and_evaluation.sql` | 8 relational tables: `field_user`, `field_roster`, `phone_otp_challenge`, `device_session`, `sms_outbox`, `state_reference`, `leadership_allowlist`, `password_credential`. |
+| **Field Phone Auth Engine** | `FieldUserAuthService.java`, `FieldUserAuthController.java` | 6-digit CSPRNG OTP challenge, pepper secret, constant-time compare, 5-attempt lock, 30-day sliding cookie session (`csc2_device_session`), dev test code `123456`. |
+| **SMS Gateway Adapter Suite** | `SmsProvider.java`, `TextBeeSmsAdapter.java`, `MockSmsAdapter.java`, `LicensedProviderStubAdapter.java` | Multi-adapter SMS dispatch, transactional outbox durability, fail-closed outside local profile. |
+| **Evaluation Oversight Engine** | `EvaluationService.java`, `EvaluationController.java` | Restricted supervisor and leadership access with email allowlist OTP, Argon2id passwords, and shackle unlock animation. |
+| **Calm Comic Design System** | `tokens.css`, `tailwind.config.ts`, `MOBILE_DESIGN_SYSTEM_CONTRACT.md` | Warm canvas (`#FFFBF5`), coral/plum accents, 48px touch targets, zero blue/dark green tokens, 100% WCAG 2.2 AA compliant. |
+| **GPS Live Address Fetch** | `LocationFetchButton.tsx`, `RegistrationForm.tsx` | Multi-tier geocoding fallback chain auto-filling grouped address fields (House/door no., street, city, district, state, pin). |
+| **Address Part Grouping** | `crfDefinitions.ts` | Contact number moved up to residence header; contiguous address fields grouped together ending with Address verified on and Fetch Address. |
+| **Automated Linters** | `lint_no_banned_colors.js`, `verify_wcag_tokens.js`, `lint_no_emoji.js` | Zero banned colors across 24 files; 100% WCAG contrast passing; zero unicode emojis across 31 frontend source files. |
+
+### 2. Test & Verification Evidence Summary
+
+| Test Domain | Target | Result | Evidence File / Proof |
+| :--- | :--- | :--- | :--- |
+| **Three Tabs & Phone Auth Tests** | 8 Spring Boot Integration Tests on PostgreSQL 16 | **8/8 Passed (0 failures, 0 errors)** | `ThreeTabsAndFieldPhoneIntegrationTest.java` |
+| **Overall Backend Suite** | 37 Spring Boot Integration & Unit Tests on PostgreSQL 16 | **37/37 Passed (0 failures, 0 errors)** | `mvn test` |
+| **Next.js Production Build** | Static generation & bundling for all 11 routes | **Build Success (11/11 pages compiled)** | `npx next build` |
+| **Banned Colors Linter** | 24 frontend source files | **100% PASS (0 violations)** | `node scripts/lint_no_banned_colors.js` |
+| **WCAG 2.2 AA Contrast Verifier** | 18 comic token pairs | **100% PASS (all >= 4.5:1 / 3:1)** | `node scripts/verify_wcag_tokens.js` |
+| **Emoji Elimination Linter** | 31 frontend source files | **100% PASS (0 emojis)** | `node scripts/lint_no_emoji.js` |
+
+### 3. Release Approval Gates
+
+| Gate | Description | Status | Sign-off / Verification |
+| :---: | :--- | :---: | :--- |
+| **Gate 1** | Three Top-Level Tabs & Comic Theme UI | **PASSED** | Verified on `http://localhost:3000` |
+| **Gate 2** | Field Phone Auth & Device Session Persistence | **PASSED** | 8/8 Integration Tests passing on PostgreSQL 16.15 |
+| **Gate 3** | TextBee SMS Gateway Audit & Outbox Durability | **PASSED** | `docs/SMS_GATEWAY.md`, outbox entity, tests |
+| **Gate 4** | GPS Address Fetch & Grouped Address Layout | **PASSED** | Integrated beside Address verified on in Section A |
+| **Gate 5 (STOP GATE)** | Push feature branch to GitHub (`feat/three-tabs-comic-theme`) | **HOLD** | Stopped at gate; awaiting user explicit approval |
+| **Gate 6 (STOP GATE)** | Merge to `main` | **HOLD** | Restricted; work strictly on branches |
+| **Gate 7 (STOP GATE)** | Production Deployments / Shared DB Migrations | **HOLD** | Restricted |

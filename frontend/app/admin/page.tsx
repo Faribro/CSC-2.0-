@@ -611,11 +611,11 @@ export default function EvaluationDashboardPage() {
                   <span className="text-xs text-ink-muted font-bold">pending sync</span>
                 </div>
                 <div className="mt-3 flex items-center gap-3 text-xs">
-                  <span className="text-success-ink font-bold">
-                    ✓ {systemStatus?.outboxPublished ?? 0} published
+                  <span className="text-success-ink font-bold flex items-center gap-1">
+                    <Icon name="check" className="w-3.5 h-3.5" /> <span>{systemStatus?.outboxPublished ?? 0} published</span>
                   </span>
-                  <span className="text-primary font-bold">
-                    ✕ {systemStatus?.outboxFailed ?? 0} failed
+                  <span className="text-primary font-bold flex items-center gap-1">
+                    <Icon name="AlertCircle" className="w-3.5 h-3.5" /> <span>{systemStatus?.outboxFailed ?? 0} failed</span>
                   </span>
                 </div>
               </div>

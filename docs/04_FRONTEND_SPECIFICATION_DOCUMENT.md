@@ -27,17 +27,21 @@
 
 ---
 
-## 2. Information Architecture
+## 2. Information Architecture (Three Top-Level Tabs)
 
-### 2.1 Navigation Access by Role
+CSC 2.0 adopts a streamlined three-tab top-level navigation model (desktop: top header tabs; mobile: bottom bar) tailored for frontline usability and clear administrative boundaries [SOURCE: Task Spec]:
 
-| Nav Item | field_worker | supervisor | state_reviewer | administrator | leadership |
-|---|---|---|---|---|---|
-| **My Work** | ✅ (own scope) | ✅ (area scope) | ❌ | ❌ | ❌ |
-| **Clients** | ✅ (own scope) | ✅ (area scope) | ✅ (read-only, state scope) | ❌ | ❌ |
-| **Follow-ups** | ✅ (own clients) | ✅ (area clients) | ❌ | ❌ | ❌ |
-| **Reports** | ❌ | ✅ (area) | ✅ (state) | ❌ | ✅ (dashboards only) |
-| **Admin** | ❌ | ❌ | ❌ | ✅ | ❌ |
+1. **Forms (`/work`)**: Default home for all field users. Displays "+ Start New Registration" primary CTA, 3-card metric overview (*Unfinished Forms*, *Queued Sync*, *Records & Follow-ups*), and *My In-Progress Drafts* with Resume and Delete actions. Features live connectivity pulsating dot and English/Hindi toggle.
+2. **Records & Follow-ups (`/clients`)**: Authoritative linelist directory of beneficiaries submitted by this device/user. Provides real-time search, filters, bounded pagination, and View/Edit actions that open the unified single-page CRF form. Edits create revision diffs with change reason; optimistic version conflict (409) protects local drafts.
+3. **Evaluation (`/admin`)**: State Team and Leadership oversight workspace. Inactive and locked by default with a Lock icon and `(Restricted)` badge. Tapping opens the Evaluation Login Modal; successful credential verification triggers a shackle unlock animation (`animate-unlock-pop`) before presenting scope-wide supervision, roster management, approvals, and aggregated reports.
+
+### 2.1 Navigation Access by Role Matrix
+
+| Top-Level Tab | field_worker | state_team | leadership | administrator |
+|---|---|---|---|---|
+| **Forms (`/work`)** | ✅ Primary Workspace | ✅ Read-only reference | ✅ Aggregated reference | ✅ Full access |
+| **Records & Follow-ups (`/clients`)** | ✅ Own Submissions Only | ✅ State-wide Submissions | ✅ Scope-wide Linelist | ✅ Full access |
+| **Evaluation (`/admin`)** | ❌ Locked / Restricted | ✅ Full State Supervision | ✅ Read-only Analytics | ✅ Full admin & system config |
 
 ### 2.2 Navigation Hierarchy — Mermaid Flowchart
 

@@ -195,3 +195,18 @@ This document provides a flow-by-flow architectural comparison between the legac
   - Atomic enqueuing within business transaction: email failure leaves zero orphaned challenges or records.
   - Adapters: Google Apps Script gateway (credential in body), SMTP, Resend, and local synthetic mock.
   - Plain, clean text formatting: zero emojis, clear visual hierarchy, accessible bilingual EN/HI templates.
+
+---
+
+## 8. Flow 7: Field User One-Time Phone Verification & Persistent Device Sessions
+
+### Evolution from Legacy Google OAuth / State-QR Flow
+- **Old Flow**: Required Google account OAuth + physical state-QR code scan on every registration attempt. Fragile in field areas with weak connectivity or shared devices where field workers lacked personal Google Workspace accounts.
+- **CSC 2.0 Flow**: Replaces Google OAuth / state-QR with a simple, robust phone verification screen: first name, optional last name, mobile number (+91 Indian format normalized to E.164), 6-digit CSPRNG OTP challenge, and 30-day sliding cookie session (`csc2_device_session`).
+
+### Security Invariants & Access Gate
+1. **Roster-Gated Status**: A verified phone number only proves possession. Field user status is `ACTIVE` only if the phone number is on the state-managed `field_roster`. Unrostered numbers receive `PENDING` status (can draft locally, but cannot submit until approved by the State Team).
+2. **Anti-Enumeration Neutral Response**: To prevent phone number enumeration and SMS toll fraud, both registered and unregistered numbers receive the identical neutral message: *"If your phone number is registered with your State Team, a 6-digit code has been sent."*
+3. **CSPRNG 6-Digit Challenge**: 6-digit codes generated via `SecureRandom`, stored only as HMAC-SHA256 with a server-side pepper secret (`app.security.otp.pepper`). Plaintext OTPs are never stored in the database or written to logs.
+4. **Durable Lockout & Cooldown**: Maximum 5 attempts per challenge before permanent lock; 60-second cooldown between resends; 10-minute expiration window.
+5. **Zero Browser Tokens**: No tokens in `localStorage`. Authenticated state is governed by HttpOnly Secure SameSite cookies mapping to the durable `csc2.device_session` table.

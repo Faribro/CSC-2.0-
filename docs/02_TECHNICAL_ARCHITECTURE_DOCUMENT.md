@@ -35,6 +35,10 @@
 | ADR-006 | Optimistic Locking with Version Column | Accepted |
 | ADR-007 | Soft Deletes for Beneficiary Data | Accepted |
 | ADR-008 | Cursor-Based Pagination | Accepted |
+| ADR-009 | Three Top-Level Tabs Architecture (Forms, Records & Follow-ups, Evaluation) | Accepted |
+| ADR-010 | Field User Phone Verification with 6-Digit CSPRNG OTP and 30-Day Device Session | Accepted |
+| ADR-011 | SMS Gateway Adapter Pattern (TextBee Android Gateway, Mock, and Carrier Stubs) | Accepted |
+| ADR-012 | Calm Comic Design Tokens with Zero Blue/Dark-Green and 100% WCAG 2.2 AA Contrast | Accepted |
 
 ### Evidence Tag Legend
 
@@ -1504,3 +1508,38 @@ flowchart LR
 *End of Technical Architecture Document v0.1.0*
 
 *All evidence tags: `[SOURCE]` from XLSForm/CRF, `[PROPOSED]` design decisions, `[ASSUMPTION]` working assumptions, `[OPEN]` needs owner decision, `[UNVERIFIED]` needs confirmation.*
+
+
+---
+
+## 14. Architecture Additions: Three Top-Level Tabs, Field Phone Auth & SMS Gateway (Flyway V5)
+
+### 14.1 Database Additions (`V5__three_tabs_field_phone_and_evaluation.sql`)
+- **`field_user`**: Primary frontline user entity (`id`, `first_name`, `last_name`, `phone_e164` UNIQUE, `status` PENDING/ACTIVE/SUSPENDED, `state`, `district`, `approved_by`, `created_at`).
+- **`field_roster`**: State-managed allowlist for phone registration (`phone`, `state`, `district`, `added_by`, `status`).
+- **`phone_otp_challenge`**: Durable OTP challenges with HMAC-SHA256 hashed codes, pepper secret, 5-attempt lockout, 60s cooldown, and 10-minute expiry.
+- **`device_session`**: 30-day sliding cookie session tracking authenticated devices without storing tokens in localStorage.
+- **`sms_outbox`**: Transactional outbox for SMS dispatch with bounded retries, exponential backoff, and statuses (`PENDING`, `ACCEPTED`, `FAILED`, `DELIVERED`, `DEAD`).
+- **`state_reference`**: Canonical ISO 3166-2:IN state codes with human-readable labels.
+- **`leadership_allowlist`**: Authoritative email allowlist for national and state leadership.
+- **`password_credential`**: Argon2id hashed credentials for state team supervision and administration.
+
+### 14.2 ADR-009: Three Top-Level Tabs Information Architecture
+- **Context**: Frontline field users require immediate access to registration and draft management without wading through administrative or supervision screens.
+- **Decision**: Structure entry points into three top-level tabs: Forms (`/work`), Records & Follow-ups (`/clients`), and Evaluation (`/admin`). Forms is default. Evaluation is locked and restricted to state team and leadership with shackle unlock animation upon credential verification.
+- **Status**: Accepted.
+
+### 14.3 ADR-010: Field User Phone OTP & Device Session
+- **Context**: Frontline workers share devices or work in low-connectivity areas. Traditional password signups create significant friction.
+- **Decision**: Phone verification (+91 E.164, 6-digit CSPRNG OTP challenge) required only on first device use. Issues a persistent HttpOnly Secure cookie session with 30-day sliding expiry. Number must be on state roster to achieve ACTIVE status; unrostered numbers remain PENDING and can draft locally but cannot submit.
+- **Status**: Accepted.
+
+### 14.4 ADR-011: SMS Gateway Adapter Pattern
+- **Context**: External telecom aggregators require registration and licensing, while pilots need flexible local and device-based SMS delivery.
+- **Decision**: Implement `SmsProvider` interface with `TextBeeSmsAdapter` (Android gateway candidate), `MockSmsAdapter` (local profile only, fails closed in production), and `LicensedProviderStubAdapter`.
+- **Status**: Accepted.
+
+### 14.5 ADR-012: Calm Comic Theme & Color Policy
+- **Context**: Standard enterprise themes are visually fatiguing in outdoor sunlight and can feel intimidating to frontline workers.
+- **Decision**: Implement a calm, friendly comic theme with warm canvas (`#FFFBF5`), coral primary (`#C8472F`), plum secondary (`#7B3F8C`), 48px touch targets, and 2px borders. Zero blue or dark-green tokens outside the brand mark. 100% WCAG 2.2 AA compliant.
+- **Status**: Accepted.
