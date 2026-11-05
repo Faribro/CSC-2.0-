@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Icon } from '@/components/ui/Icon';
 import { Language, translations } from '@/lib/translations';
 
@@ -57,6 +58,7 @@ export function FieldPhoneVerificationModal({
       const res = await fetch('/api/v1/auth/field/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ phone: cleanPhone, deviceId: 'browser-device' }),
       });
       const data = await res.json();
@@ -97,6 +99,7 @@ export function FieldPhoneVerificationModal({
       const res = await fetch('/api/v1/auth/field/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           phone: cleanPhone,
           code: cleanOtp,
@@ -112,26 +115,27 @@ export function FieldPhoneVerificationModal({
           ...data.user,
           phone: data.user.phone || data.user.phoneE164,
         };
+
+        if (typeof window !== 'undefined') {
+          if (data.tokens && data.tokens.sessionToken) {
+            localStorage.setItem('csc2_device_session_token', data.tokens.sessionToken);
+            localStorage.setItem('csc_token', data.tokens.sessionToken);
+          }
+          localStorage.setItem('csc2_field_user', JSON.stringify(verifiedUser));
+          window.dispatchEvent(new CustomEvent('csc2:field_user_updated', { detail: verifiedUser }));
+        }
+
         if (verifiedUser.status === 'PENDING') {
           setPendingWarning(
             lang === 'hi'
-              ? `आपका नंबर (${verifiedUser.phone}) पंजीकृत है, लेकिन राज्य टीम के अनुमोदन की प्रतीक्षा कर रहा है। आप इस डिवाइस पर स्थानीय ड्राफ्ट सहेज सकते हैं। अनुमोदन के बाद सर्वर सबमिशन सक्रिय हो जाएगा।`
+              ? `आपका नंबर (${verifiedUser.phone}) सत्यापित है, लेकिन राज्य टीम के अनुमोदन की प्रतीक्षा कर रहा है। आप स्थानीय ड्राफ्ट सहेज सकते हैं। अनुमोदन के बाद सर्वर सबमिशन सक्रिय हो जाएगा।`
               : `Your mobile number (${verifiedUser.phone}) has been verified, but is awaiting State Team approval. You can save local drafts on this device now; server submission will activate once approved.`
           );
-          // Store local identity and broadcast update
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('csc2_field_user', JSON.stringify(verifiedUser));
-            window.dispatchEvent(new CustomEvent('csc2:field_user_updated', { detail: verifiedUser }));
-          }
           setTimeout(() => {
             onSuccess(verifiedUser);
             onClose();
           }, 1500);
         } else {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('csc2_field_user', JSON.stringify(verifiedUser));
-            window.dispatchEvent(new CustomEvent('csc2:field_user_updated', { detail: verifiedUser }));
-          }
           onSuccess(verifiedUser);
           onClose();
         }
@@ -284,20 +288,28 @@ export function FieldPhoneVerificationModal({
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="123456"
+                placeholder="••••••"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
                 className="w-full text-center text-xl font-mono font-bold tracking-[0.3em] px-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum focus:ring-2 focus:ring-plum/20"
                 autoFocus
               />
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold text-plum bg-lavender px-2 py-0.5 rounded-full border border-border/30">
-                  Default Dev Code: 123456
-                </span>
+                <Link
+                  href="/dev-sinks"
+                  target="_blank"
+                  className="text-[11px] font-mono font-bold text-plum hover:underline bg-lavender px-2 py-0.5 rounded-full border border-border/30 flex items-center gap-1"
+                >
+                  <Icon name="external" className="w-3 h-3" />
+                  <span>Open Local SMS Sink</span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => setOtp('123456')}
                   className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                 >
-                  Fill 123456
+                  Fill 123456 (Dev)
                 </button>
               </div>
               <div className="flex items-center justify-between text-[11px] text-ink-muted mt-2">

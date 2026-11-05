@@ -31,6 +31,19 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     @Query("SELECT t FROM Task t JOIN FETCH t.client WHERE t.centerId IN :centerIds AND t.dueDate > :today AND t.status IN ('PENDING', 'DUE') ORDER BY t.dueDate ASC")
     List<Task> findUpcomingTasks(@Param("centerIds") Collection<String> centerIds, @Param("today") LocalDate today);
 
+    // Field Worker Ownership Scoped Worklist queries
+    @Query("SELECT t FROM Task t JOIN FETCH t.client WHERE t.centerId IN :centerIds AND (t.assignedWorkerId = :workerId OR (t.assignedWorkerId IS NULL AND t.client.fieldUserId = :workerId)) AND t.dueDate = :today AND t.status IN ('PENDING', 'DUE', 'OVERDUE') ORDER BY t.dueDate ASC")
+    List<Task> findTodayTasksByWorker(@Param("centerIds") Collection<String> centerIds, @Param("workerId") UUID workerId, @Param("today") LocalDate today);
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.client WHERE t.centerId IN :centerIds AND (t.assignedWorkerId = :workerId OR (t.assignedWorkerId IS NULL AND t.client.fieldUserId = :workerId)) AND t.dueDate < :today AND t.status IN ('PENDING', 'DUE', 'OVERDUE') ORDER BY t.dueDate ASC")
+    List<Task> findOverdueTasksByWorker(@Param("centerIds") Collection<String> centerIds, @Param("workerId") UUID workerId, @Param("today") LocalDate today);
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.client WHERE t.centerId IN :centerIds AND (t.assignedWorkerId = :workerId OR (t.assignedWorkerId IS NULL AND t.client.fieldUserId = :workerId)) AND t.dueDate > :today AND t.status IN ('PENDING', 'DUE') ORDER BY t.dueDate ASC")
+    List<Task> findUpcomingTasksByWorker(@Param("centerIds") Collection<String> centerIds, @Param("workerId") UUID workerId, @Param("today") LocalDate today);
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.client WHERE t.centerId IN :centerIds AND t.assignedWorkerId IS NULL AND t.status IN ('PENDING', 'DUE', 'OVERDUE') ORDER BY t.dueDate ASC")
+    List<Task> findUnassignedTasks(@Param("centerIds") Collection<String> centerIds);
+
     List<Task> findByClientIdOrderByDueDateAsc(UUID clientId);
     long countByClientIdAndStatusIn(UUID clientId, Collection<String> statuses);
     long countByStatusIn(Collection<String> statuses);

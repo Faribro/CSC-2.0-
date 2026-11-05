@@ -115,15 +115,29 @@ public interface SmsProvider {
   - Failure &rarr; Exponential backoff with jitter up to 3 attempts &rarr; `DEAD`
 - **Fault Tolerance:** If the SMS gateway is completely down, **core data collection, beneficiary registration, and offline drafting are NOT blocked**. The UI presents an honest message: *"SMS gateway temporarily unavailable. Please contact your State Supervisor for administrative manual approval."*
 
-### 5.4 SMS Text Template & Content Safety
-To maintain strict client confidentiality and avoid carrier content filtering:
-- **Standard Template:** `"[CSC 2.0] Your verification code is {code}. Valid for 10 minutes. Do not share."`
-- **Safety Constraints:**
-  - Zero beneficiary names or caseworker names.
-  - Zero clinical or diagnostic terms (no "HIV", "ART", "Clinic", "Care").
-  - Zero external links or URLs (which frequently trigger carrier spam blocks).
+### 5.4 SMS Text Template & Android WebOTP Auto-Fill Specification
+To maintain strict confidentiality, maximize deliverability, and provide zero-friction auto-fill on Android field devices:
+- **Standard Template (WebOTP Compliant):**
+  ```text
+  <#> Your CSC 2.0 verification code is: {code}. Valid for 10 minutes. Do not share.
 
-### 5.5 Privacy & Data Sovereignty
+  @csc2.allianceindia.org #{code}
+  ```
+- **Android Auto-Fill Support:**
+  - The leading `<#>` prefix and trailing `@<origin> #<code>` tag adhere strictly to the W3C WebOTP API and Google Play Services SMS Retriever API specifications.
+  - The frontend modal OTP input specifies `autocomplete="one-time-code"` and `inputmode="numeric"` with `pattern="[0-9]{6}"`.
+- **Confidentiality & Content Safety Constraints:**
+  - Zero beneficiary or caseworker names.
+  - Zero health, HIV, ART, clinic, or diagnostic terms.
+  - Codes are never exposed in application logs, subjects, query strings, or unauthenticated responses.
+
+### 5.5 Local Development Sink & Production Profile Guards
+- **Local Dev Sink Route:** A dev-only outbox viewer is accessible at `/dev-sinks` (and `/api/v1/dev-sinks/sms` / `/email`) exclusively in `local`, `dev`, and `test` Spring profiles.
+- **Fail-Closed Guard:** The `MockSmsAdapter` and mock notification dispatchers verify active profiles; if `prod`, `production`, or `staging` profiles are detected, any attempt to use mock adapters throws a security fatal error (`MOCK_DISABLED_IN_PROD`) and halts execution.
+- **PostgreSQL Rate Limiting:** Cooldown (60s), per-phone (5/hr), per-IP (15/hr), and global caps (1000/hr) are enforced durably in the `csc2.auth_rate_limit` table.
+- **Dead-Letter View & Retry Backoff:** Outbox items retry using bounded exponential backoff (`3^attempts + jitter`) up to 3 retries before transitioning to `DEAD` status for supervisor inspection.
+
+### 5.6 Privacy & Data Sovereignty
 - **Data in Transit:** Phone numbers and OTP hashes pass through the gateway. If using the multi-tenant TextBee cloud, numbers are routed through their infrastructure.
 - **Recommendation:** Self-host the TextBee gateway backend container inside Alliance India's private infrastructure to retain complete data sovereignty.
 - **Classification:** Phone numbers are classified as **Tier 2 Confidential PII**. When mirrored or exported to administrative views or Google Sheets, phone numbers are masked (`+91 98*** **210`).

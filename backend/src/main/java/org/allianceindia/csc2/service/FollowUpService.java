@@ -71,6 +71,16 @@ public class FollowUpService {
         }
     }
 
+    private void validateTaskOwnership(Task task, UserPrincipal user) {
+        if (user != null && ("FIELD_USER".equalsIgnoreCase(user.getRole()) || "OUTREACH_WORKER".equalsIgnoreCase(user.getRole()))) {
+            boolean isAssigned = task.getAssignedWorkerId() != null && task.getAssignedWorkerId().equals(user.getId());
+            boolean isCreator = task.getClient() != null && user.getId().equals(task.getClient().getFieldUserId());
+            if (!isAssigned && !isCreator) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside user ownership scope");
+            }
+        }
+    }
+
     // 1. RECORD CONTACT ATTEMPT
     // Rules: attempt keeps the task open; contact attempt != encounter
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -89,6 +99,8 @@ public class FollowUpService {
         // Authorize + lock task
         Task task = taskRepository.findByIdAndCenterIdInWithLock(req.taskId(), user.getAuthorizedCenters())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside authorized center scope"));
+
+        validateTaskOwnership(task, user);
 
         // Verify expected version (optimistic concurrency guard)
         if (req.expectedTaskVersion() != null && task.getVersion() != req.expectedTaskVersion()) {
@@ -163,6 +175,8 @@ public class FollowUpService {
         if (req.taskId() != null) {
             task = taskRepository.findByIdAndCenterIdInWithLock(req.taskId(), user.getAuthorizedCenters())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside authorized center scope"));
+
+            validateTaskOwnership(task, user);
 
             if (req.expectedTaskVersion() != null && task.getVersion() != req.expectedTaskVersion()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Task version conflict: expected " + req.expectedTaskVersion() + " but was " + task.getVersion());
@@ -374,6 +388,8 @@ public class FollowUpService {
         }
         Task task = taskRepository.findByIdAndCenterIdInWithLock(taskId, user.getAuthorizedCenters())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside authorized center scope"));
+
+        validateTaskOwnership(task, user);
 
         if (req.expectedTaskVersion() != null && task.getVersion() != req.expectedTaskVersion()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Task version conflict: expected " + req.expectedTaskVersion() + " but was " + task.getVersion());

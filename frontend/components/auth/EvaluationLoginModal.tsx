@@ -40,6 +40,7 @@ export function EvaluationLoginModal({
   const [signupEmail, setSignupEmail] = useState('');
   const [signupOrg, setSignupOrg] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
   // Leadership OTP form
   const [leaderEmail, setLeaderEmail] = useState('');
@@ -103,6 +104,10 @@ export function EvaluationLoginModal({
   const handleStateSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (signupPassword !== signupConfirmPassword) {
+      setError(lang === 'hi' ? 'पासवर्ड मेल नहीं खाते हैं' : 'Passwords do not match. Please verify your password.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch('/api/v1/evaluation/state-team/signup', {
@@ -451,12 +456,27 @@ export function EvaluationLoginModal({
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1">
+                    {lang === 'hi' ? 'पासवर्ड की पुष्टि करें' : 'Confirm Password (twice)'} *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    value={signupConfirmPassword}
+                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full text-xs font-medium px-3 py-2 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  disabled={loading || !signupEmail || signupPassword.length < 8}
+                  disabled={loading || !signupEmail || signupPassword.length < 8 || signupConfirmPassword.length < 8}
                   className="w-full min-h-[48px] px-4 py-3 bg-plum hover:bg-[#682e77] text-white text-xs font-black rounded-[12px] shadow-comic flex items-center justify-center gap-2 transition-transform active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
-                  <Icon name="UserPlus" className="w-4 h-4" />
+                  <Icon name="User" className="w-4 h-4" />
                   <span>{loading ? (lang === 'hi' ? 'बनाया जा रहा है...' : 'Creating...') : (lang === 'hi' ? 'राज्य टीम खाता बनाएं' : 'Create State Team Account')}</span>
                 </button>
               </form>
@@ -509,10 +529,24 @@ export function EvaluationLoginModal({
                     maxLength={6}
                     value={leaderOtp}
                     onChange={(e) => setLeaderOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="123456"
+                    placeholder="••••••"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
                     className="w-full text-center text-xl font-mono font-bold tracking-[0.3em] px-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum"
                     autoFocus
                   />
+                  <div className="mt-2 flex items-center justify-between">
+                    <a
+                      href="/dev-sinks"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-mono font-bold text-plum hover:underline bg-lavender px-2 py-0.5 rounded-full border border-border/30 flex items-center gap-1"
+                    >
+                      <Icon name="external" className="w-3 h-3" />
+                      <span>View Local Email Sink</span>
+                    </a>
+                  </div>
                 </div>
 
                 <button

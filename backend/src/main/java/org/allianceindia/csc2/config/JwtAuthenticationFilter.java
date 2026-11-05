@@ -44,8 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String forwardedActorId = request.getHeader("X-Actor-ID");
         String forwardedCenter = request.getHeader("X-Center-ID");
 
+        String token = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+            token = authHeader.substring(7);
+        } else if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                if ("csc_jwt".equals(c.getName())) {
+                    token = c.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (token != null && !token.trim().isEmpty()) {
             try {
                 UserPrincipal principal = tokenProvider.parseToken(token);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(

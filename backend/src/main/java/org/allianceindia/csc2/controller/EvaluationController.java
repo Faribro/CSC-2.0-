@@ -1,9 +1,12 @@
 package org.allianceindia.csc2.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.allianceindia.csc2.config.UserPrincipal;
 import org.allianceindia.csc2.domain.StateReference;
 import org.allianceindia.csc2.dto.DTOs;
 import org.allianceindia.csc2.service.EvaluationService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +32,20 @@ public class EvaluationController {
 
     @PostMapping("/state-team/signup")
     public ResponseEntity<EvaluationService.AuthResponse> stateTeamSignup(
-            @RequestBody EvaluationService.StateTeamSignupRequest req) {
-        return ResponseEntity.ok(evaluationService.signupStateTeam(req));
+            @RequestBody EvaluationService.StateTeamSignupRequest req,
+            HttpServletResponse response) {
+        EvaluationService.AuthResponse auth = evaluationService.signupStateTeam(req);
+        setJwtCookie(response, auth.token());
+        return ResponseEntity.ok(auth);
     }
 
     @PostMapping("/state-team/login")
     public ResponseEntity<EvaluationService.AuthResponse> stateTeamLogin(
-            @RequestBody EvaluationService.StateTeamLoginRequest req) {
-        return ResponseEntity.ok(evaluationService.loginStateTeam(req));
+            @RequestBody EvaluationService.StateTeamLoginRequest req,
+            HttpServletResponse response) {
+        EvaluationService.AuthResponse auth = evaluationService.loginStateTeam(req);
+        setJwtCookie(response, auth.token());
+        return ResponseEntity.ok(auth);
     }
 
     @PostMapping("/leadership/request-otp")
@@ -47,8 +56,23 @@ public class EvaluationController {
 
     @PostMapping("/leadership/verify-otp")
     public ResponseEntity<EvaluationService.AuthResponse> leadershipVerifyOtp(
-            @RequestBody EvaluationService.LeadershipVerifyRequest req) {
-        return ResponseEntity.ok(evaluationService.verifyLeadershipOtp(req.email(), req.otp()));
+            @RequestBody EvaluationService.LeadershipVerifyRequest req,
+            HttpServletResponse response) {
+        EvaluationService.AuthResponse auth = evaluationService.verifyLeadershipOtp(req.email(), req.otp());
+        setJwtCookie(response, auth.token());
+        return ResponseEntity.ok(auth);
+    }
+
+    private void setJwtCookie(HttpServletResponse response, String jwt) {
+        if (jwt == null) return;
+        ResponseCookie cookie = ResponseCookie.from("csc_jwt", jwt)
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(30 * 24 * 3600)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     // ROSTER MANAGEMENT
@@ -125,5 +149,32 @@ public class EvaluationController {
             }
         }
         return ResponseEntity.ok(evaluationService.getEvaluationSurveys(effectiveState, search, page, size));
+    }
+
+    @GetMapping("/supervision")
+    public ResponseEntity<List<EvaluationService.SupervisionTaskDto>> getSupervision(
+            @RequestParam(defaultValue = "OVERDUE") String view,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) UUID workerId,
+            @RequestParam(required = false) Integer threshold,
+            @AuthenticationPrincipal UserPrincipal user) {
+        String effectiveState = state;
+        if (effectiveState == null && user != null && !"LEADERSHIP".equalsIgnoreCase(user.getRole())) {
+            if (user.getAuthorizedCenters() != null && !user.getAuthorizedCenters().isEmpty()) {
+                effectiveState = user.getAuthorizedCenters().get(0).replace("CENTER_", "");
+            }
+        }
+        return ResponseEntity.ok(evaluationService.getSupervisionTasks(view, effectiveState, district, workerId, threshold));
+    }
+
+    @PostMapping("/tasks/{id}/reassign")
+    public ResponseEntity<DTOs.ActionReceipt> reassignTask(
+            @PathVariable UUID id,
+            @RequestBody EvaluationService.ReassignTaskRequest req,
+            @AuthenticationPrincipal UserPrincipal user,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+        DTOs.ActionReceipt receipt = evaluationService.reassignTask(id, req, user, httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(receipt);
     }
 }

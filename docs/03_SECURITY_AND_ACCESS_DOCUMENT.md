@@ -848,3 +848,30 @@ The following self-check confirms compliance with all mandatory documentation, t
    - **Neutral Response**: Unrostered or unapproved phone numbers return the identical neutral message: *"If your phone number is registered with your State Team, a 6-digit code has been sent."* Zero enumeration side-channel.
 5. **Zero Tokens in Browser Storage**: No JWTs, bearer tokens, or session credentials are stored in `localStorage` or `sessionStorage`. Sessions are maintained via `HttpOnly`, `Secure`, `SameSite=Lax` cookies mapped to a server-side `csc2.device_session` row with a 30-day sliding idle expiry.
 6. **Data Tier Classification**: Phone numbers are classified as **Tier 2 Confidential Data**. Plaintext numbers are masked (`+91 98765****0`) in client-side displays, reports, and Google Sheets async exports unless explicitly authorized.
+
+### 11.3 OWASP ASVS Level 2 & NIST SP 800-63B Implementation Standards [PROPOSED]
+1. **Password Policy (NIST SP 800-63B §5.1.1.2)**:
+   - Minimum length requirement of 12 characters (`PasswordValidatorService.MIN_PASSWORD_LENGTH = 12`).
+   - No arbitrary character composition rules (no mandatory symbols/uppercase requirements that encourage weak mnemonic substitutions).
+   - Screening against top compromised and common dictionary passwords (e.g. `password123456`, `india12345678`, `welcome123456`).
+   - Password confirmation match required upon account creation.
+2. **Password Storage (NIST SP 800-63B §5.1.1.2 / OWASP ASVS L2 §2.1)**:
+   - Key Derivation Function: Argon2id with parameters:
+     - Memory: 64 MiB ($65,536$ KiB)
+     - Iterations (Time): 3 passes
+     - Parallelism: 1 thread
+     - Salt length: 16 bytes CSPRNG
+     - Hash length: 32 bytes
+   - Verified format in PostgreSQL `csc2.password_credential`: `ARGON2ID|$argon2id$v=19$m=65536,t=3,p=1$...`
+3. **Origin & CSRF Defense (ASVS L2 §4.3)**:
+   - `MutationOriginFilter` inspects `Origin` and `Referer` headers on all state-modifying HTTP verbs (`POST`, `PUT`, `DELETE`, `PATCH`) targeting `/api/v1/**`.
+   - Requests with foreign or untrusted origins are immediately rejected with `403 Forbidden`.
+4. **Session Security & Refresh Token Rotation (ASVS L2 §3.3)**:
+   - Primary web authentication tokens stored in `HttpOnly`, `SameSite=Lax` cookies (`csc_jwt`, `csc_session`, `csc2_device_session`).
+   - Refresh tokens rotated upon every consumption.
+   - **Automated Reuse Revocation**: If a previously revoked refresh token is presented (indicating token theft or replay), all active sessions for that user account are automatically revoked across all devices.
+5. **Security Response Headers (ASVS L2 §14.4)**:
+   - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+   - `X-Frame-Options: DENY`
+   - `Referrer-Policy: strict-origin-when-cross-origin`
+   - `Permissions-Policy: camera=(), microphone=(), geolocation=()`

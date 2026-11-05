@@ -34,10 +34,25 @@ public class ClientController {
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @AuthenticationPrincipal UserPrincipal user,
             HttpServletRequest httpRequest) {
-        DTOs.ActionReceipt receipt = clientService.registerClient(
-                request, user, idempotencyKey, httpRequest.getRemoteAddr()
-        );
-        return ResponseEntity.ok(receipt);
+        try {
+            DTOs.ActionReceipt receipt = clientService.registerClient(
+                    request, user, idempotencyKey, httpRequest.getRemoteAddr()
+            );
+            return ResponseEntity.ok(receipt);
+        } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                for (int i = 0; i < 6; i++) {
+                    try {
+                        Thread.sleep(80);
+                    } catch (InterruptedException ignored) {}
+                    var replayed = clientService.getExistingReceipt(idempotencyKey);
+                    if (replayed.isPresent()) {
+                        return ResponseEntity.ok(replayed.get());
+                    }
+                }
+            }
+            throw dive;
+        }
     }
 
     @GetMapping

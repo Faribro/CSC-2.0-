@@ -8,5 +8,6 @@ import java.util.Optional;
 public interface StateReferenceRepository extends JpaRepository<StateReference, String> {
     Optional<StateReference> findByStateCode(String stateCode);
     Optional<StateReference> findByIsoCode(String isoCode);
+    Optional<StateReference> findByStateNameIgnoreCase(String stateName);
     List<StateReference> findByIsActiveTrueOrderByStateNameAsc();
 }

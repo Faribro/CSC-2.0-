@@ -51,10 +51,16 @@ async function verifyRoute({ page, route, role, lang }) {
     console.log(`  ✓ Control deduplication passed: Exactly 1 'New Registration' action on /work.`);
   }
 
-  if (route === '/clients') {
+  if (route === '/clients' || route.startsWith('/clients?')) {
+    // If not in All Records view, ensure we are on All Records
+    const allRecordsPill = page.locator('button:has-text("All Records"), button:has-text("सभी लाभार्थी"), button:has-text("सभी रिकॉर्ड")');
+    if (await allRecordsPill.isVisible()) {
+      await allRecordsPill.click();
+      await page.waitForTimeout(1500);
+    }
     // Assert Client list Actions column has "View" and "Edit"
     const viewButtons = page.locator('a:has-text("View"), a:has-text("देखें")');
-    const editButtons = page.locator('a:has-text("Edit"), a:has-text("संशोधन")');
+    const editButtons = page.locator('a:has-text("Edit"), a:has-text("संपादित करें"), a:has-text("संशोधन")');
     const viewCount = await viewButtons.count();
     const editCount = await editButtons.count();
     console.log(`  -> Client Linelist has ${viewCount} View action(s) and ${editCount} Edit action(s)`);
@@ -88,15 +94,20 @@ async function run() {
     await page.waitForURL('**/work', { timeout: 10000 });
 
     // Test routes in English
-    const routes = ['/work', '/clients', '/clients/new'];
+    const routes = ['/work', '/clients?view=all', '/clients/new'];
     for (const r of routes) {
       await verifyRoute({ page, route: r, role: 'field_worker', lang: 'en' });
     }
 
     // On /clients, click the first View action to open the real client page
     console.log('\nNavigating to first client record from /clients list...');
-    await page.goto('http://localhost:3000/clients', { waitUntil: 'domcontentloaded' });
+    await page.goto('http://localhost:3000/clients?view=all', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
+    const allPill = page.locator('button:has-text("All Records"), button:has-text("सभी लाभार्थी"), button:has-text("सभी रिकॉर्ड")');
+    if (await allPill.isVisible()) {
+      await allPill.click();
+      await page.waitForTimeout(500);
+    }
     const firstView = page.locator('a:has-text("View"), a:has-text("देखें")').first();
     await firstView.click();
     await page.waitForTimeout(1000);
@@ -110,12 +121,12 @@ async function run() {
 
     // Toggle Hindi and test /work and /clients
     console.log('\nToggling language to Hindi...');
-    const hiBtn = page.locator('button:has-text("हिन्दी")');
+    const hiBtn = page.locator('button:has-text("HI"), button:has-text("हिन्दी")').first();
     if (await hiBtn.isVisible()) {
       await hiBtn.click();
       await page.waitForTimeout(600);
       await verifyRoute({ page, route: '/work', role: 'field_worker', lang: 'hi' });
-      await verifyRoute({ page, route: '/clients', role: 'field_worker', lang: 'hi' });
+      await verifyRoute({ page, route: '/clients?view=all', role: 'field_worker', lang: 'hi' });
     }
 
     console.log('\n=================================================================');

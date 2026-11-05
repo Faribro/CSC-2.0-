@@ -19,6 +19,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -42,6 +43,8 @@ public class FieldUserAuthService {
     private final DeviceSessionRepository deviceSessionRepository;
     private final SmsOutboxService smsOutboxService;
     private final CryptoService cryptoService;
+    private final RateLimiterService rateLimiterService;
+    private final org.springframework.core.env.Environment environment;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public FieldUserAuthService(
@@ -50,13 +53,17 @@ public class FieldUserAuthService {
             PhoneOtpChallengeRepository otpChallengeRepository,
             DeviceSessionRepository deviceSessionRepository,
             SmsOutboxService smsOutboxService,
-            CryptoService cryptoService) {
+            CryptoService cryptoService,
+            RateLimiterService rateLimiterService,
+            org.springframework.core.env.Environment environment) {
         this.fieldUserRepository = fieldUserRepository;
         this.fieldRosterRepository = fieldRosterRepository;
         this.otpChallengeRepository = otpChallengeRepository;
         this.deviceSessionRepository = deviceSessionRepository;
         this.smsOutboxService = smsOutboxService;
         this.cryptoService = cryptoService;
+        this.rateLimiterService = rateLimiterService;
+        this.environment = environment;
     }
 
     public record SendPhoneOtpResult(boolean success, String message, boolean cooldownActive) {}
@@ -107,42 +114,41 @@ public class FieldUserAuthService {
             }
         }
 
-        // 2. Rate limit checks
-        Instant oneHourAgo = now.minus(1, ChronoUnit.HOURS);
-        long phoneCount = otpChallengeRepository.countByPhoneE164AndCreatedAtAfter(phoneE164, oneHourAgo);
-        if (phoneCount >= MAX_OTP_PER_PHONE_HOUR) {
+        // 2. Rate limit checks via durable PostgreSQL rate limits
+        if (!rateLimiterService.checkAndRecord("PHONE:otp:" + phoneE164, MAX_OTP_PER_PHONE_HOUR, java.time.Duration.ofHours(1))) {
             return new SendPhoneOtpResult(false, "Too many OTP requests for this number. Please try again after an hour.", false);
         }
 
         if (ipAddress != null) {
-            long ipCount = otpChallengeRepository.countByIpAddressAndCreatedAtAfter(ipAddress, oneHourAgo);
-            if (ipCount >= MAX_OTP_PER_IP_HOUR) {
+            if (!rateLimiterService.checkAndRecord("IP:otp:" + ipAddress, MAX_OTP_PER_IP_HOUR, java.time.Duration.ofHours(1))) {
                 return new SendPhoneOtpResult(false, "Too many verification requests from this network. Please try again later.", false);
             }
         }
+        rateLimiterService.checkAndRecord("GLOBAL:otp", 1000, java.time.Duration.ofHours(1));
 
-        // 3. Roster Check (Neutral enumeration prevention)
-        Optional<FieldRoster> rosterEntry = fieldRosterRepository.findByPhoneE164AndStatus(phoneE164, "ACTIVE");
-
-        // 4. Generate 6-digit OTP (Default 123456 for active development testing, per request)
-        String otp = "123456";
+        // 3. Generate 6-digit CSPRNG OTP
+        String otp = cryptoService.generate6DigitOtp();
         byte[] saltBytes = new byte[32];
         secureRandom.nextBytes(saltBytes);
         String saltHex = HexFormat.of().formatHex(saltBytes);
         String otpHash = cryptoService.hashOtp(otp, saltHex);
 
         Instant expiresAt = now.plus(OTP_EXPIRY_MINUTES, ChronoUnit.MINUTES);
+        otpChallengeRepository.invalidatePendingChallenges(phoneE164, now);
         PhoneOtpChallenge challenge = new PhoneOtpChallenge(phoneE164, otpHash, saltHex, expiresAt, ipAddress, deviceId);
         otpChallengeRepository.save(challenge);
 
-        // 5. Enqueue SMS in outbox & attempt immediate delivery if on roster
+        // 4. Enqueue SMS in outbox & attempt immediate delivery ONLY if phone is on roster (prevents SMS abuse and account enumeration)
+        Optional<FieldRoster> rosterEntry = fieldRosterRepository.findByPhoneE164(phoneE164);
         if (rosterEntry.isPresent()) {
-            String smsMessage = "Your CSC 2.0 verification code is: " + otp + ". Valid for 10 minutes. Do not share.";
+            String smsMessage = "<#> Your CSC 2.0 verification code is: " + otp + ". Valid for 10 minutes. Do not share.\n\n@csc2.allianceindia.org #" + otp;
             SmsOutbox outbox = smsOutboxService.enqueue(phoneE164, smsMessage);
             smsOutboxService.deliverNow(outbox);
+            log.info("Dispatched OTP challenge for rostered phone={}", phoneE164);
+        } else {
+            log.info("Phone {} not on roster; suppressed SMS dispatch while returning neutral response", phoneE164);
         }
 
-        log.info("Dispatched OTP challenge for phone={}", phoneE164);
         return new SendPhoneOtpResult(true, "If your phone number is registered with your State Team, a 6-digit code has been sent.", false);
     }
 
@@ -157,7 +163,12 @@ public class FieldUserAuthService {
             return new VerifyPhoneOtpResult(false, "Verification code must be exactly 6 digits.", null, null);
         }
 
-        boolean isDefaultDevCode = "123456".equals(code.trim());
+        boolean isDevEnvironment = environment != null && (
+                java.util.Arrays.asList(environment.getActiveProfiles()).contains("local") ||
+                java.util.Arrays.asList(environment.getActiveProfiles()).contains("test") ||
+                java.util.Arrays.asList(environment.getActiveProfiles()).contains("dev")
+        );
+        boolean isDefaultDevCode = isDevEnvironment && "123456".equals(code.trim());
         Instant now = Instant.now();
         Optional<PhoneOtpChallenge> challengeOpt = otpChallengeRepository
                 .findTopByPhoneE164AndConsumedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(phoneE164, now);
@@ -182,9 +193,12 @@ public class FieldUserAuthService {
                 return new VerifyPhoneOtpResult(false, "Invalid verification code. " + remaining + " attempts remaining.", null, null);
             }
 
-            // Mark consumed
-            challenge.setConsumedAt(now);
-            otpChallengeRepository.save(challenge);
+            // Atomically mark consumed to prevent concurrency race conditions
+            int updated = otpChallengeRepository.consumeChallengeAtomically(challenge.getId(), now);
+            log.info("[OTP VERIFY] challengeId={} updated={}", challenge.getId(), updated);
+            if (updated == 0) {
+                return new VerifyPhoneOtpResult(false, "Code has already been consumed.", null, null);
+            }
         } else if (!isDefaultDevCode) {
             return new VerifyPhoneOtpResult(false, "Code has expired or does not exist. Please request a new code.", null, null);
         }
@@ -263,5 +277,72 @@ public class FieldUserAuthService {
         deviceSessionRepository.save(session);
 
         return fieldUserRepository.findById(session.getFieldUserId());
+    }
+
+    /**
+     * Rotates device session refresh token with OWASP ASVS token reuse detection.
+     * Revokes all active sessions for the caseworker if a previously consumed token is replayed.
+     */
+    @Transactional(noRollbackFor = SecurityException.class)
+    public DeviceSessionTokens rotateDeviceSession(String rawRefreshToken) {
+        if (rawRefreshToken == null || rawRefreshToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Refresh token is required");
+        }
+        String hash = cryptoService.sha256Hex(rawRefreshToken.trim());
+        Instant now = Instant.now();
+        Optional<DeviceSession> opt = deviceSessionRepository
+                .findByRefreshTokenHashAndRevokedAtIsNullAndAbsoluteExpiresAtAfter(hash, now);
+
+        if (opt.isEmpty()) {
+            // Check if it was already revoked (token reuse / theft attempt)
+            Optional<DeviceSession> anyRevoked = deviceSessionRepository.findAll().stream()
+                    .filter(s -> hash.equals(s.getRefreshTokenHash()))
+                    .findFirst();
+            if (anyRevoked.isPresent()) {
+                revokeAllSessionsForFieldUser(anyRevoked.get().getFieldUserId());
+                throw new SecurityException("Refresh token reuse detected. All sessions revoked for security.");
+            }
+            throw new SecurityException("Invalid refresh token");
+        }
+
+        DeviceSession oldSession = opt.get();
+        int revokedCount = deviceSessionRepository.revokeSessionAtomically(oldSession.getId(), now);
+        if (revokedCount == 0) {
+            revokeAllSessionsForFieldUser(oldSession.getFieldUserId());
+            throw new SecurityException("Refresh token reuse detected. All sessions revoked for security.");
+        }
+
+        byte[] sessionBytes = new byte[32];
+        byte[] refreshBytes = new byte[32];
+        secureRandom.nextBytes(sessionBytes);
+        secureRandom.nextBytes(refreshBytes);
+
+        String sessionToken = HexFormat.of().formatHex(sessionBytes);
+        String refreshToken = HexFormat.of().formatHex(refreshBytes);
+        String sessionHash = cryptoService.sha256Hex(sessionToken);
+        String refreshHash = cryptoService.sha256Hex(refreshToken);
+
+        DeviceSession newSession = new DeviceSession(
+                oldSession.getFieldUserId(),
+                oldSession.getDeviceId(),
+                oldSession.getPhoneE164(),
+                sessionHash,
+                refreshHash,
+                now.plus(DEVICE_SESSION_IDLE_DAYS, ChronoUnit.DAYS),
+                oldSession.getAbsoluteExpiresAt()
+        );
+        newSession = deviceSessionRepository.save(newSession);
+
+        FieldUser user = fieldUserRepository.findById(oldSession.getFieldUserId()).orElse(null);
+        return new DeviceSessionTokens(sessionToken, refreshToken, newSession.getId(), user);
+    }
+
+    @Transactional
+    public void revokeAllSessionsForFieldUser(UUID fieldUserId) {
+        List<DeviceSession> sessions = deviceSessionRepository.findByFieldUserIdAndRevokedAtIsNull(fieldUserId);
+        for (DeviceSession s : sessions) {
+            s.setRevokedAt(Instant.now());
+        }
+        deviceSessionRepository.saveAll(sessions);
     }
 }

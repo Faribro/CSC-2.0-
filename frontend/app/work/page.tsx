@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { Icon } from '@/components/ui/Icon';
 import { Language, translations } from '@/lib/translations';
+import { ClientOnly } from '@/components/ui/ClientOnly';
 
 interface DraftRecord {
   id: string;
@@ -26,6 +27,8 @@ export default function FormsWorkspacePage() {
   const [drafts, setDrafts] = useState<DraftRecord[]>([]);
   const [waitingSyncCount, setWaitingSyncCount] = useState(0);
   const [submittedCount, setSubmittedCount] = useState(0);
+  const [todayFollowUpCount, setTodayFollowUpCount] = useState(0);
+  const [overdueFollowUpCount, setOverdueFollowUpCount] = useState(0);
 
   // Active user state
   const [fieldUser, setFieldUser] = useState<{ id: string; firstName: string; phone: string; status: string } | null>(null);
@@ -68,6 +71,17 @@ export default function FormsWorkspacePage() {
       .then((data) => {
         if (data && typeof data.totalElements === 'number') {
           setSubmittedCount(data.totalElements);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch worklist summary for today's agenda bar
+    fetch('/api/v1/work')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setTodayFollowUpCount(data.todayTasks?.length || 0);
+          setOverdueFollowUpCount(data.overdueTasks?.length || 0);
         }
       })
       .catch(() => {});
@@ -124,50 +138,147 @@ export default function FormsWorkspacePage() {
   };
 
   return (
-    <AppShell
-      currentLang={lang}
-      onLanguageChange={setLang}
+    <ClientOnly
+      fallback={
+        <div suppressHydrationWarning className="min-h-screen bg-canvas flex items-center justify-center p-8 text-xs font-bold text-slate-500">
+          Loading workspace...
+        </div>
+      }
     >
-      <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Playful Hero Illustration Banner */}
-        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-r from-mint/40 via-lavender/30 to-peach/40 border-2 border-border/40 p-6 sm:p-8 shadow-comic">
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <AppShell
+        currentLang={lang}
+        onLanguageChange={setLang}
+      >
+        <div className="space-y-6 max-w-5xl mx-auto">
+        {/* Purpose-Built Daily Outreach Agenda & Action Header */}
+        <section className="bg-surface rounded-[20px] border-2 border-border/40 p-5 sm:p-6 shadow-comic space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface text-plum text-[11px] font-black border border-border/40 mb-2 shadow-2xs">
-                <Icon name="Heart" className="w-3.5 h-3.5 text-primary" />
-                <span>{lang === 'hi' ? 'केयर एंड सपोर्ट सेंटर मिशन' : 'Care & Support Mission'}</span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lavender/60 text-plum text-[11px] font-black border border-border/30 mb-1.5">
+                <Icon name="Activity" className="w-3.5 h-3.5 text-plum" />
+                <span>{lang === 'hi' ? 'दैनिक फील्ड कार्यसूची' : "Today's Outreach Agenda"}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight font-comic">
-                CSC 2.0
-              </h1>
-              <p className="text-xs sm:text-sm text-ink-muted mt-1 max-w-xl">
+              <h1 className="text-xl sm:text-2xl font-black text-ink tracking-tight font-comic">
                 {lang === 'hi'
-                  ? 'दैनिक फील्ड विज़िट, पोषण मूल्यांकन, और कल्याणकारी सेवाओं की ट्रैकिंग के लिए अधिकृत पोर्टल।'
-                  : 'Fast, offline-ready intake and follow-up platform for community outreach workers.'}
+                  ? `नमस्ते, ${fieldUser?.firstName || 'फील्ड कार्यकर्ता'}`
+                  : `Hello, ${fieldUser?.firstName || 'Outreach Worker'}`}
+              </h1>
+              <p className="text-xs text-ink-muted mt-0.5">
+                {lang === 'hi'
+                  ? 'आज के निर्धारित फॉलो-अप, अतिदेय विज़िट और इन-फील्ड पंजीकरण।'
+                  : 'Prioritised daily follow-up visits and fast beneficiary registration.'}
               </p>
             </div>
 
-            {/* Primary CTA Button (48px Touch Target) */}
-            <button
-              type="button"
-              onClick={handleStartNewRegistration}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-sm font-black rounded-[14px] shadow-comic transition-all active:scale-[0.98] min-h-[48px] shrink-0 cursor-pointer"
-            >
-              <Icon name="Plus" className="w-5 h-5 stroke-[2.5]" />
-              <span>{lang === 'hi' ? '+ नया पंजीकरण शुरू करें' : '+ Start New Registration'}</span>
-            </button>
+            {/* Prominent Action: Start New Registration (Big Plus Icon Button) */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/clients/new"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleStartNewRegistration();
+                }}
+                aria-label={lang === 'hi' ? 'नया पंजीकरण शुरू करें' : 'Start New Registration'}
+                title={lang === 'hi' ? 'नया पंजीकरण शुरू करें' : 'Start New Registration'}
+                className="inline-flex items-center justify-center p-3 sm:p-3.5 bg-primary hover:bg-primary-hover text-white rounded-[16px] shadow-comic transition-all active:scale-[0.95] min-w-[52px] min-h-[52px] cursor-pointer group"
+              >
+                <Icon name="Plus" className="w-7 h-7 sm:w-8 sm:h-8 stroke-[3.5] shrink-0 text-white transition-transform group-hover:scale-110" />
+              </Link>
+            </div>
           </div>
 
-          {/* Decorative Comic Garden Graphics (Accessible aria-hidden) */}
-          <div className="absolute right-4 bottom-2 opacity-25 pointer-events-none hidden md:block" aria-hidden="true">
-            <svg width="180" height="70" viewBox="0 0 180 70" fill="none">
-              <circle cx="30" cy="50" r="20" fill="#BFEBDD" />
-              <circle cx="80" cy="45" r="25" fill="#FFD166" />
-              <circle cx="140" cy="48" r="22" fill="#E4D8F7" />
-              <path d="M10 65 Q 90 40 170 65" stroke="#7B3F8C" strokeWidth="3" strokeLinecap="round" />
-            </svg>
+          {/* Daily Triage Status Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-border/30">
+            {/* Today Due Pill (Navigates to Records & Follow-ups -> Today) */}
+            <button
+              type="button"
+              onClick={() => router.push('/clients?view=today')}
+              className="flex items-center justify-between p-2.5 rounded-[12px] bg-mint/30 border border-mint hover:bg-mint/50 transition-all text-left cursor-pointer group"
+              title={lang === 'hi' ? 'आज के फॉलो-अप देखें' : "View Today's Follow-up Visits"}
+            >
+              <div>
+                <span className="text-[10.5px] font-bold text-success-ink block group-hover:underline">
+                  {lang === 'hi' ? 'आज देय' : 'Due Today'}
+                </span>
+                <span className="text-xs font-semibold text-ink-muted">
+                  {lang === 'hi' ? 'विज़िट कार्य →' : 'Scheduled →'}
+                </span>
+              </div>
+              <span className="text-xl font-black text-success-ink font-mono">
+                {todayFollowUpCount}
+              </span>
+            </button>
+
+            {/* Overdue Pill (Navigates to Records & Follow-ups -> Overdue) */}
+            <button
+              type="button"
+              onClick={() => router.push('/clients?view=overdue')}
+              className={`flex items-center justify-between p-2.5 rounded-[12px] border transition-all text-left cursor-pointer group ${
+                overdueFollowUpCount > 0
+                  ? 'bg-pink/30 border-primary/30 text-primary hover:bg-pink/50'
+                  : 'bg-canvas/50 border-border/40 text-ink-muted hover:bg-surface'
+              }`}
+              title={lang === 'hi' ? 'अतिदेय फॉलो-अप देखें' : 'View Overdue Follow-up Visits'}
+            >
+              <div>
+                <span className="text-[10.5px] font-bold block group-hover:underline">
+                  {lang === 'hi' ? 'अतिदेय' : 'Overdue'}
+                </span>
+                <span className="text-xs font-semibold text-ink-muted">
+                  {overdueFollowUpCount > 0 ? (lang === 'hi' ? 'प्राथमिकता →' : 'Urgent →') : (lang === 'hi' ? 'शून्य लंबित' : 'Zero')}
+                </span>
+              </div>
+              <span className="text-xl font-black font-mono">
+                {overdueFollowUpCount}
+              </span>
+            </button>
+
+            {/* In-Progress Drafts Pill */}
+            <button
+              type="button"
+              onClick={() => {
+                const elem = document.getElementById('in-progress-drafts-section');
+                if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex items-center justify-between p-2.5 rounded-[12px] bg-lavender/30 border border-lavender hover:bg-lavender/50 transition-colors text-left cursor-pointer group"
+            >
+              <div>
+                <span className="text-[10.5px] font-bold text-plum block group-hover:underline">
+                  {lang === 'hi' ? 'स्थानीय ड्राफ्ट' : 'Local Drafts'}
+                </span>
+                <span className="text-xs font-semibold text-ink-muted">
+                  {lang === 'hi' ? 'अधूरे फॉर्म ↓' : 'Unfinished ↓'}
+                </span>
+              </div>
+              <span className="text-xl font-black text-plum font-mono">
+                {drafts.length}
+              </span>
+            </button>
+
+            {/* Outbox / Sync Pill */}
+            <button
+              type="button"
+              onClick={() => router.push('/clients?view=all')}
+              className={`flex items-center justify-between p-2.5 rounded-[12px] border transition-all text-left cursor-pointer group ${
+                waitingSyncCount > 0
+                  ? 'bg-sun/30 border-sun text-warning-ink hover:bg-sun/50'
+                  : 'bg-canvas/50 border-border/40 text-ink-muted hover:bg-surface'
+              }`}
+            >
+              <div>
+                <span className="text-[10.5px] font-bold block group-hover:underline">
+                  {lang === 'hi' ? 'सिंक कतार' : 'Sync Outbox'}
+                </span>
+                <span className="text-xs font-semibold text-ink-muted">
+                  {waitingSyncCount > 0 ? (lang === 'hi' ? 'ऑफ़लाइन कतार →' : 'Queued →') : (lang === 'hi' ? 'सब सिंक है' : 'All synced')}
+                </span>
+              </div>
+              <span className="text-xl font-black font-mono">
+                {waitingSyncCount}
+              </span>
+            </button>
           </div>
-        </div>
+        </section>
 
         {/* Status / Needs Attention Banner */}
         {fieldUser && fieldUser.status === 'PENDING' && (
@@ -188,110 +299,6 @@ export default function FormsWorkspacePage() {
           </div>
         )}
 
-        {/* 3 Summary Cards (Comic Style Tints, Rounded Corners, Soft Shadows) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card 1: Unfinished Forms (Local Drafts) */}
-          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-full bg-mint flex items-center justify-center text-ink border border-border/30">
-                  <Icon name="FileText" className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-mono font-bold bg-mint/50 text-ink px-2 py-0.5 rounded-full border border-mint">
-                  local
-                </span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
-                {lang === 'hi' ? 'अधूरे फॉर्म (ड्राफ्ट)' : 'Unfinished Forms'}
-              </h3>
-              <div className="text-3xl font-black text-ink font-mono mb-2">
-                {drafts.length}
-              </div>
-              <p className="text-[11px] text-ink-muted leading-relaxed">
-                {lang === 'hi'
-                  ? 'इस डिवाइस पर सहेजे गए ड्राफ्ट पूर्ण होने की प्रतीक्षा कर रहे हैं।'
-                  : 'Drafts saved on this device awaiting completion.'}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/30">
-              <button
-                type="button"
-                onClick={() => {
-                  const elem = document.getElementById('in-progress-drafts-section');
-                  if (elem) elem.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="text-xs font-bold text-plum hover:text-primary flex items-center gap-1 cursor-pointer"
-              >
-                <span>{lang === 'hi' ? 'ड्राफ्ट देखें' : 'Resume drafts'}</span>
-                <Icon name="ChevronRight" className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Queued / Retryable Sync (Local Outbox) */}
-          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-full bg-lavender flex items-center justify-center text-plum border border-border/30">
-                  <Icon name="Clock" className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-mono font-bold bg-lavender text-plum px-2 py-0.5 rounded-full border border-lavender">
-                  outbox
-                </span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
-                {lang === 'hi' ? 'सिंक कतार' : 'Queued Sync'}
-              </h3>
-              <div className="text-3xl font-black text-ink font-mono mb-2">
-                {waitingSyncCount}
-              </div>
-              <p className="text-[11px] text-ink-muted leading-relaxed">
-                {lang === 'hi'
-                  ? 'सर्वर कनेक्शन की प्रतीक्षा में कतारबद्ध रिकॉर्ड।'
-                  : 'Surveys queued to dispatch once online reconnection occurs.'}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/30">
-              <span className="text-xs font-bold text-ink-muted">
-                {waitingSyncCount === 0 ? (lang === 'hi' ? 'सब सिंक है' : 'All synced') : (lang === 'hi' ? 'कतार सक्रिय है' : 'Outbox active')}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Submitted (Server Confirmed) */}
-          <div className="bg-surface border-2 border-border/40 rounded-[16px] p-4 shadow-comic flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-full bg-peach flex items-center justify-center text-ink border border-border/30">
-                  <Icon name="CheckCircle" className="w-5 h-5" />
-                </div>
-                <span className="text-[10px] font-mono font-bold bg-peach/60 text-ink px-2 py-0.5 rounded-full border border-peach">
-                  confirmed
-                </span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-ink mb-1">
-                {lang === 'hi' ? 'रिकॉर्ड और फॉलो-अप' : 'Records & Follow-ups'}
-              </h3>
-              <div className="text-3xl font-black text-ink font-mono mb-2">
-                {submittedCount}
-              </div>
-              <p className="text-[11px] text-ink-muted leading-relaxed">
-                {lang === 'hi'
-                  ? 'सर्वर द्वारा पुष्ट किए गए आपके रिकॉर्ड और फॉलो-अप।'
-                  : 'Authoritative beneficiary records verified on server.'}
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border/30">
-              <Link
-                href="/clients"
-                className="text-xs font-bold text-plum hover:text-primary flex items-center gap-1 cursor-pointer"
-              >
-                <span>{lang === 'hi' ? 'रिकॉर्ड और फॉलो-अप खोलें' : 'View records & follow-ups'}</span>
-                <Icon name="ChevronRight" className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
 
         {/* Section: My In-Progress Drafts */}
         <section id="in-progress-drafts-section" className="bg-surface border-2 border-border/40 rounded-[16px] p-6 shadow-comic">
@@ -305,15 +312,17 @@ export default function FormsWorkspacePage() {
           </div>
 
           {drafts.length === 0 ? (
-            <div className="py-10 text-center text-ink-muted border-2 border-dashed border-border/40 rounded-[14px]">
-              <Icon name="FileText" className="w-8 h-8 mx-auto text-ink-muted/50 mb-2" />
-              <p className="text-xs font-bold">
-                {lang === 'hi' ? 'वर्तमान में इस डिवाइस पर कोई ड्राफ्ट नहीं है।' : 'No drafts saved on this device.'}
+            <div className="py-8 px-4 text-center text-ink-muted border-2 border-dashed border-border/40 rounded-[16px] bg-canvas/30 flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-mint/40 border border-mint flex items-center justify-center text-success-ink mb-2.5">
+                <Icon name="CheckCircle" className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <p className="text-xs font-black text-ink">
+                {lang === 'hi' ? 'सभी फॉर्म पूरे हैं!' : 'All Caught Up!'}
               </p>
-              <p className="text-[11px] text-ink-muted/80 mt-1">
+              <p className="text-[11px] text-ink-muted max-w-sm mt-0.5 leading-relaxed">
                 {lang === 'hi'
-                  ? 'नया फॉर्म शुरू करने के बाद आप किसी भी समय प्रगति सहेज सकते हैं।'
-                  : 'Forms auto-save locally so you never lose beneficiary responses.'}
+                  ? 'इस डिवाइस पर कोई अधूरा ड्राफ्ट नहीं है। नया पंजीकरण शुरू करने पर ड्राफ्ट यहाँ स्वतः सहेजे जाएंगे।'
+                  : 'No incomplete drafts on this device. New beneficiary registrations save automatically here.'}
               </p>
             </div>
           ) : (
@@ -360,5 +369,6 @@ export default function FormsWorkspacePage() {
         </section>
       </div>
     </AppShell>
-  );
+  </ClientOnly>
+);
 }

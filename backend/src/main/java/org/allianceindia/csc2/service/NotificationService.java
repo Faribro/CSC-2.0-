@@ -31,10 +31,12 @@ public class NotificationService {
     private final String resendApiKey;
     private final String appBaseUrl;
     private final HttpClient httpClient;
+    private final org.springframework.core.env.Environment environment;
 
     public NotificationService(
             NotificationOutboxRepository outboxRepository,
             ObjectMapper objectMapper,
+            org.springframework.core.env.Environment environment,
             @Value("${app.notification.provider:mock}") String providerMode,
             @Value("${app.notification.apps-script-url:}") String appsScriptUrl,
             @Value("${app.notification.apps-script-credential:}") String appsScriptCredential,
@@ -42,6 +44,7 @@ public class NotificationService {
             @Value("${app.base-url:http://localhost:3000}") String appBaseUrl) {
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
+        this.environment = environment;
         this.providerMode = providerMode;
         this.appsScriptUrl = appsScriptUrl;
         this.appsScriptCredential = appsScriptCredential;
@@ -105,6 +108,11 @@ public class NotificationService {
 
     private SendResult dispatchEmail(String recipient, String subject, String bodyText) {
         if ("mock".equalsIgnoreCase(providerMode)) {
+            String[] activeProfiles = environment.getActiveProfiles();
+            if (java.util.Arrays.asList(activeProfiles).contains("prod") || java.util.Arrays.asList(activeProfiles).contains("production") || java.util.Arrays.asList(activeProfiles).contains("staging")) {
+                log.error("SECURITY ALERT: Mock notification provider attempted in non-local profile! Failing closed.");
+                return new SendResult(false, false, "MOCK_DISABLED_IN_PROD", "Mock email provider is strictly forbidden in production profile.");
+            }
             // Local synthetic development mode only
             log.info("[MOCK_EMAIL] To: {} | Subject: {} | Body length: {}", recipient, subject, bodyText.length());
             return new SendResult(true, true, null, null);
@@ -189,6 +197,7 @@ public class NotificationService {
 
     private String getSubjectForTemplate(String template, Map<String, Object> data) {
         return switch (template) {
+            case "LEADERSHIP_OTP" -> "CSC 2.0 National Leadership Access Code";
             case "STATE_MANAGER_SIGNUP" -> "CSC 2.0 State Verification & Invitation Credentials";
             case "ADMIN_APPROVAL_REQUEST" -> "Action Required: New State Manager Registration Pending Review";
             case "APPLICANT_APPROVED" -> "CSC 2.0 Registration Approved - Access Activated";
@@ -201,6 +210,16 @@ public class NotificationService {
     private String renderBodyForTemplate(String template, Map<String, Object> data) {
         StringBuilder sb = new StringBuilder();
         switch (template) {
+            case "LEADERSHIP_OTP" -> {
+                String name = String.valueOf(data.getOrDefault("name", "Leadership Member"));
+                String otp = String.valueOf(data.getOrDefault("otp", ""));
+                sb.append("CSC 2.0 National Strategic Surveillance Access\n\n");
+                sb.append("Dear ").append(name).append(",\n\n");
+                sb.append("Your one-time strategic surveillance access code is: ").append(otp).append("\n\n");
+                sb.append("Validity: 10 minutes (Locked after 5 failed attempts).\n");
+                sb.append("Security Notice: This code is strictly personal. Do not forward or share.\n\n");
+                sb.append("Regards,\nCSC 2.0 National Security Authority\n");
+            }
             case "STATE_MANAGER_SIGNUP" -> {
                 String name = String.valueOf(data.getOrDefault("firstName", "State Manager"));
                 String state = String.valueOf(data.getOrDefault("state", "State"));

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AppShell } from '@/components/layout/AppShell';
 import { RegistrationForm, RegistrationFormData } from '@/components/forms/RegistrationForm';
+import { ClientOnly } from '@/components/ui/ClientOnly';
 import { Language, translations } from '@/lib/translations';
 import { Icon } from '@/components/ui/Icon';
 
@@ -134,68 +135,76 @@ export default function NewClientRegistrationPage() {
   };
 
   return (
-    <AppShell
-      currentLang={lang}
-      onLanguageChange={setLang}
-      activeClient={{
-        clientRef: 'DRAFT',
-        fullName: formData.a03_name || 'New Beneficiary (Unsaved)',
-        centerId: centerId,
-        age: Number(formData.a04_age) || 30,
-        gender: formData.a05_gender || 'female',
-        saveStatus: saveStatus,
-      }}
+    <ClientOnly
+      fallback={
+        <div suppressHydrationWarning className="min-h-screen bg-canvas flex items-center justify-center p-8 text-xs font-bold text-slate-500">
+          Loading registration form...
+        </div>
+      }
     >
-      <div className="space-y-6">
-        {/* Navigation Breadcrumb & Center Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
-          <Link
-            href="/clients"
-            className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
-          >
-            <Icon name="back" className="w-3.5 h-3.5" />
-            <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
-          </Link>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-semibold text-slate-500">Center:</span>
-            <select
-              value={centerId}
-              onChange={(e) => setCenterId(e.target.value)}
-              className="text-xs font-mono font-bold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white shadow-2xs focus:ring-2 focus:ring-plum focus:outline-hidden"
+      <AppShell
+        currentLang={lang}
+        onLanguageChange={setLang}
+        activeClient={{
+          clientRef: 'DRAFT',
+          fullName: formData.a03_name || 'New Beneficiary (Unsaved)',
+          centerId: centerId,
+          age: Number(formData.a04_age) || 30,
+          gender: formData.a05_gender || 'female',
+          saveStatus: saveStatus,
+        }}
+      >
+        <div className="space-y-6">
+          {/* Navigation Breadcrumb & Center Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
+            <Link
+              href="/clients"
+              className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
             >
-              <option value="CENTER_DELHI_01">CENTER_DELHI_01 (Delhi Central)</option>
-              <option value="CENTER_MUMBAI_01">CENTER_MUMBAI_01 (Mumbai South)</option>
-            </select>
+              <Icon name="back" className="w-3.5 h-3.5" />
+              <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
+            </Link>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold text-slate-500">Center:</span>
+              <select
+                value={centerId}
+                onChange={(e) => setCenterId(e.target.value)}
+                className="text-xs font-mono font-bold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white shadow-2xs focus:ring-2 focus:ring-plum focus:outline-hidden"
+              >
+                <option value="CENTER_DELHI_01">CENTER_DELHI_01 (Delhi Central)</option>
+                <option value="CENTER_MUMBAI_01">CENTER_MUMBAI_01 (Mumbai South)</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        {/* Centered Enketo Form Layout (No desktop sidebar) */}
-        <div className="w-full">
-          <RegistrationForm
-            mode="create"
-            initialData={formData}
-            lang={lang}
-            onDataChange={(data) => {
-              setFormData(data);
-              setSaveStatus('saved_locally');
-            }}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            onCancel={() => router.push('/clients')}
-          />
-        </div>
-
-        {/* Toast Message */}
-        {toastMessage && (
-          <div
-            className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2"
-            role="status"
-          >
-            <Icon name="check" className="w-4 h-4 text-emerald-400" />
-            <span>{toastMessage}</span>
+          {/* Centered Enketo Form Layout (No desktop sidebar) */}
+          <div className="w-full">
+            <RegistrationForm
+              mode="create"
+              initialData={formData}
+              lang={lang}
+              onDataChange={(data) => {
+                setFormData(data);
+                setSaveStatus('saved_locally');
+              }}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              onCancel={() => router.push('/clients')}
+            />
           </div>
-        )}
-      </div>
-    </AppShell>
+
+          {/* Toast Message */}
+          {toastMessage && (
+            <div
+              className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2"
+              role="status"
+            >
+              <Icon name="check" className="w-4 h-4 text-emerald-400" />
+              <span>{toastMessage}</span>
+            </div>
+          )}
+        </div>
+      </AppShell>
+    </ClientOnly>
   );
 }

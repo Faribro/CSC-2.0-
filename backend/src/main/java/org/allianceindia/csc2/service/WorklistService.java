@@ -29,9 +29,20 @@ public class WorklistService {
             return new DTOs.WorklistResponse(date, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), 0, 0, 0);
         }
 
-        List<Task> todayTasks = taskRepository.findTodayTasks(centers, date);
-        List<Task> overdueTasks = taskRepository.findOverdueTasks(centers, date);
-        List<Task> upcomingTasks = taskRepository.findUpcomingTasks(centers, date);
+        List<Task> todayTasks;
+        List<Task> overdueTasks;
+        List<Task> upcomingTasks;
+
+        if ("FIELD_USER".equalsIgnoreCase(user.getRole()) || "OUTREACH_WORKER".equalsIgnoreCase(user.getRole())) {
+            // Strict ownership scope: field user sees only tasks assigned to them (or registered by them)
+            todayTasks = taskRepository.findTodayTasksByWorker(centers, user.getId(), date);
+            overdueTasks = taskRepository.findOverdueTasksByWorker(centers, user.getId(), date);
+            upcomingTasks = taskRepository.findUpcomingTasksByWorker(centers, user.getId(), date);
+        } else {
+            todayTasks = taskRepository.findTodayTasks(centers, date);
+            overdueTasks = taskRepository.findOverdueTasks(centers, date);
+            upcomingTasks = taskRepository.findUpcomingTasks(centers, date);
+        }
 
         List<DTOs.TaskSummary> todaySummaries = todayTasks.stream().map(this::toSummary).toList();
         List<DTOs.TaskSummary> overdueSummaries = overdueTasks.stream().map(this::toSummary).toList();

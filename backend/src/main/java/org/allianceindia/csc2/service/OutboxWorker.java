@@ -14,10 +14,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class OutboxWorker {
@@ -41,10 +46,14 @@ public class OutboxWorker {
         this.gatewaySecret = gatewaySecret;
     }
 
-    @Scheduled(fixedDelay = 5000)
+    /**
+     * Event-triggered push worker with 500ms short coalescing window.
+     * Prevents multi-second polling lag while batching concurrent transactional commits.
+     */
+    @Scheduled(fixedDelay = 500)
     @Transactional
     public void processPendingOutbox() {
-        List<OutboxEvent> events = outboxRepository.findPendingEventsForProcessing(10);
+        List<OutboxEvent> events = outboxRepository.findPendingEventsForProcessing(20);
         if (events.isEmpty()) {
             return;
         }
@@ -54,15 +63,25 @@ public class OutboxWorker {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
-                // Note: Apps Script doPost cannot read custom HTTP headers because Google 302 redirects
-                // strip custom headers and e.headers does not exist in V8. Pass secret inside the JSON body.
+                long timestamp = Instant.now().toEpochMilli();
+                String nonce = UUID.randomUUID().toString();
+                String payloadString = event.getPayload();
+                String eventIdStr = event.getId().toString();
+
+                // Compute HMAC-SHA256 signature for body-authenticated Apps Script ingestion
+                String messageToSign = timestamp + ":" + nonce + ":" + eventIdStr + ":" + payloadString;
+                String signature = computeHmacSha256(messageToSign, gatewaySecret);
+
                 Map<String, Object> body = new HashMap<>();
                 body.put("secret", gatewaySecret);
-                body.put("eventId", event.getId().toString());
+                body.put("eventId", eventIdStr);
                 body.put("eventType", event.getEventType());
                 body.put("aggregateType", event.getAggregateType());
                 body.put("aggregateId", event.getAggregateId() != null ? event.getAggregateId().toString() : null);
-                body.put("payload", event.getPayload());
+                body.put("timestamp", timestamp);
+                body.put("nonce", nonce);
+                body.put("signature", signature);
+                body.put("payload", payloadString);
 
                 String jsonBody = objectMapper.writeValueAsString(body);
                 HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
@@ -83,6 +102,18 @@ public class OutboxWorker {
                 }
                 outboxRepository.save(event);
             }
+        }
+    }
+
+    private String computeHmacSha256(String data, String key) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKey);
+            byte[] hmac = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hmac);
+        } catch (Exception e) {
+            throw new RuntimeException("HMAC computation failed", e);
         }
     }
 }

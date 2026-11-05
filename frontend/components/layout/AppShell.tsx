@@ -8,6 +8,7 @@ import { Language, translations } from '@/lib/translations';
 import { Icon } from '@/components/ui/Icon';
 import { FieldPhoneVerificationModal } from '@/components/auth/FieldPhoneVerificationModal';
 import { EvaluationLoginModal } from '@/components/auth/EvaluationLoginModal';
+import { replaySyncQueue } from '@/lib/storage/syncManager';
 
 export type UserRole =
   | 'field_worker'
@@ -66,11 +67,19 @@ export function AppShell({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsOnline(navigator.onLine);
-      const handleOnline = () => setIsOnline(true);
+      const handleOnline = () => {
+        setIsOnline(true);
+        replaySyncQueue().catch(() => {});
+      };
       const handleOffline = () => setIsOnline(false);
 
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
+
+      // Trigger background sync if online on mount
+      if (navigator.onLine) {
+        replaySyncQueue().catch(() => {});
+      }
 
       // Restore field user from localStorage if verified
       const storedFieldUser = localStorage.getItem('csc2_field_user');
@@ -209,7 +218,7 @@ export function AppShell({
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-canvas text-ink font-sans antialiased pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-canvas text-ink font-sans antialiased pb-20 md:pb-0" suppressHydrationWarning>
       {/* Top Masthead (Desktop & Mobile Header) */}
       <header className="bg-surface border-b-2 border-border/40 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -296,18 +305,31 @@ export function AppShell({
 
             {/* Right Controls: Online/Sync Status, Language Toggle, Identity */}
             <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Online / Sync Status Indicator (Pill dot; shows 'Offline' badge only when disconnected) */}
+              {/* Online/Offline Status Indicator (Wifi / WifiOff) */}
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold border ${
+                className={`flex items-center justify-center w-8 h-8 rounded-[10px] border transition-colors select-none ${
                   isOnline
                     ? 'bg-mint/40 text-success-ink border-mint'
-                    : 'bg-sun/30 text-warning-ink border-sun'
+                    : 'bg-sun/40 text-warning-ink border-sun'
                 }`}
-                title={isOnline ? 'Connected to server' : 'Offline - Local storage active'}
-                aria-label={isOnline ? 'Connected' : 'Offline'}
+                role="status"
+                data-testid="header-network-indicator"
+                title={
+                  isOnline
+                    ? currentLang === 'hi'
+                      ? 'ऑनलाइन - सर्वर से जुड़ा है'
+                      : 'Online - Connected to server'
+                    : currentLang === 'hi'
+                    ? 'ऑफलाइन - डेटा डिवाइस पर सुरक्षित है'
+                    : 'Offline - Changes saved locally'
+                }
+                aria-label={isOnline ? 'Network Status: Online' : 'Network Status: Offline'}
+                suppressHydrationWarning
               >
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-success-ink animate-pulse' : 'bg-warning-ink'}`} />
-                {!isOnline && <span>Offline</span>}
+                <Icon
+                  name={isOnline ? 'Wifi' : 'WifiOff'}
+                  className={`w-4 h-4 ${isOnline ? 'text-success-ink' : 'text-warning-ink'}`}
+                />
               </div>
 
               {/* Language Switcher */}

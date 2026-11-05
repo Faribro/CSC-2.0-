@@ -1,14 +1,14 @@
 {
-  "id": "alliance-child-nutrition-pwa",
-  "name": "Alliance Child Nutrition & Education Support",
-  "short_name": "Child Nutrition",
-  "description": "Institutional Offline-First Child Nutrition & Education Assessment Platform for India HIV/AIDS Alliance",
-  "start_url": "/app",
+  "id": "csc2-alliance-india-pwa",
+  "name": "CSC 2.0 — Community Support Centre",
+  "short_name": "CSC 2.0",
+  "description": "Institutional Offline-First Beneficiary Registration & Follow-Up Platform for India HIV/AIDS Alliance",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F8FAFC",
-  "theme_color": "#1E3A8A",
+  "background_color": "#FAF7F2",
+  "theme_color": "#7B3F8C",
   "categories": ["medical", "health", "productivity", "government"],
   "icons": [
     {
@@ -26,17 +26,17 @@
   ],
   "shortcuts": [
     {
-      "name": "New Child Survey",
-      "short_name": "New Survey",
-      "description": "Start a new child nutrition & education survey",
-      "url": "/assessment/new",
+      "name": "Start New Registration",
+      "short_name": "New Client",
+      "description": "Register a new beneficiary in the confidential registry",
+      "url": "/clients/new",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Sync Pending Drafts",
-      "short_name": "Sync",
-      "description": "Synchronize pending drafts with the cloud database",
-      "url": "/assessment/sync",
+      "name": "Beneficiary Linelist",
+      "short_name": "Linelist",
+      "description": "View scheduled follow-up visits and registered linelist",
+      "url": "/clients",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]

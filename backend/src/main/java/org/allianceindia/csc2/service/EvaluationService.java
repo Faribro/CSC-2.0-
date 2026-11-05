@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -35,10 +36,15 @@ public class EvaluationService {
     private final OtpChallengeRepository otpChallengeRepo;
     private final ClientRepository clientRepository;
     private final TaskRepository taskRepository;
+    private final ContactAttemptRepository contactAttemptRepository;
+    private final AuditEventRepository auditEventRepository;
     private final CryptoService cryptoService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final FieldUserAuthService fieldUserAuthService;
+    private final NotificationService notificationService;
+    private final RateLimiterService rateLimiterService;
+    private final PasswordValidatorService passwordValidatorService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public EvaluationService(
@@ -51,10 +57,15 @@ public class EvaluationService {
             OtpChallengeRepository otpChallengeRepo,
             ClientRepository clientRepository,
             TaskRepository taskRepository,
+            ContactAttemptRepository contactAttemptRepository,
+            AuditEventRepository auditEventRepository,
             CryptoService cryptoService,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider tokenProvider,
-            FieldUserAuthService fieldUserAuthService) {
+            FieldUserAuthService fieldUserAuthService,
+            NotificationService notificationService,
+            RateLimiterService rateLimiterService,
+            PasswordValidatorService passwordValidatorService) {
         this.stateRefRepo = stateRefRepo;
         this.fieldRosterRepo = fieldRosterRepo;
         this.fieldUserRepo = fieldUserRepo;
@@ -64,14 +75,25 @@ public class EvaluationService {
         this.otpChallengeRepo = otpChallengeRepo;
         this.clientRepository = clientRepository;
         this.taskRepository = taskRepository;
+        this.contactAttemptRepository = contactAttemptRepository;
+        this.auditEventRepository = auditEventRepository;
         this.cryptoService = cryptoService;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.fieldUserAuthService = fieldUserAuthService;
+        this.notificationService = notificationService;
+        this.rateLimiterService = rateLimiterService;
+        this.passwordValidatorService = passwordValidatorService;
     }
 
     public record StateTeamSignupRequest(String firstName, String lastName, String workEmail,
-                                         String stateCode, String organization, String password) {}
+                                         String stateCode, String organization, String password,
+                                         String confirmPassword) {
+        public StateTeamSignupRequest(String firstName, String lastName, String workEmail,
+                                      String stateCode, String organization, String password) {
+            this(firstName, lastName, workEmail, stateCode, organization, password, null);
+        }
+    }
 
     public record StateTeamLoginRequest(String workEmail, String password, String stateCode) {}
 
@@ -101,8 +123,9 @@ public class EvaluationService {
         if (req.workEmail() == null || !req.workEmail().contains("@")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid work email is required.");
         }
-        if (req.password() == null || req.password().length() < 8) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at least 8 characters.");
+        PasswordValidatorService.ValidationResult validation = passwordValidatorService.validate(req.password(), req.confirmPassword());
+        if (!validation.valid()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, validation.errorMessage());
         }
 
         // Validate state code against ISO 3166-2:IN list
@@ -121,13 +144,13 @@ public class EvaluationService {
                 req.firstName(),
                 req.lastName() != null ? req.lastName() : "",
                 "STATE_MANAGER",
-                stateRef.getStateName()
+                stateRef.getStateCode()
         );
         user = appUserRepo.save(user);
 
-        // Save password hash
+        // Save password hash with Argon2id
         String hash = passwordEncoder.encode(req.password());
-        PasswordCredential cred = new PasswordCredential(user.getId(), hash, "BCRYPT");
+        PasswordCredential cred = new PasswordCredential(user.getId(), hash, "ARGON2ID");
         passwordCredRepo.save(cred);
 
         List<String> centers = List.of("CENTER_" + stateRef.getStateCode(), stateRef.getStateName());
@@ -136,11 +159,17 @@ public class EvaluationService {
     }
 
     /**
-     * State Team Login: authenticates email + password.
+     * State Team Login: authenticates email + password with lockout rate-limiting.
      */
     @Transactional
     public AuthResponse loginStateTeam(StateTeamLoginRequest req) {
         String email = req.workEmail().trim().toLowerCase();
+
+        // Rate limit: 5 failed attempts per 15 minutes per email
+        if (!rateLimiterService.checkAndRecord("STATE_LOGIN:" + email, 5, java.time.Duration.ofMinutes(15))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts. Account temporarily locked for 15 minutes.");
+        }
+
         AppUser user = appUserRepo.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid work email or password."));
 
@@ -151,9 +180,12 @@ public class EvaluationService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid work email or password.");
         }
 
-        List<String> centers = List.of("CENTER_" + (user.getState() != null ? user.getState() : "ALL"), user.getState() != null ? user.getState() : "ALL");
+        String stateCode = user.getState() != null ? user.getState() : "ALL";
+        Optional<StateReference> stateRef = stateRefRepo.findByStateCode(stateCode.toUpperCase());
+        String stateDisplay = stateRef.map(StateReference::getStateName).orElse(stateCode);
+        List<String> centers = List.of("CENTER_" + stateCode, stateDisplay);
         String jwt = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole(), centers);
-        return new AuthResponse(jwt, user.getRole(), user.getFullName(), user.getState(), "Authenticated successfully.");
+        return new AuthResponse(jwt, user.getRole(), user.getFullName(), stateDisplay, "Authenticated successfully.");
     }
 
     /**
@@ -166,10 +198,16 @@ public class EvaluationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid leadership email is required.");
         }
         String cleanEmail = email.trim().toLowerCase();
+
+        // Rate limit leadership OTP requests (5 per hour)
+        if (!rateLimiterService.checkAndRecord("LEADERSHIP:otp:" + cleanEmail, 5, java.time.Duration.ofHours(1))) {
+            return Map.of("message", "If your leadership email is registered, a 6-digit access code has been sent.");
+        }
+
         Optional<LeadershipAllowlist> leader = leadershipAllowlistRepo.findByEmailIgnoreCaseAndActiveTrue(cleanEmail);
 
         if (leader.isPresent()) {
-            String otp = String.format("%06d", secureRandom.nextInt(1000000));
+            String otp = cryptoService.generate6DigitOtp();
             byte[] salt = new byte[32];
             secureRandom.nextBytes(salt);
             String saltHex = HexFormat.of().formatHex(salt);
@@ -177,7 +215,15 @@ public class EvaluationService {
 
             OtpChallenge challenge = new OtpChallenge(cleanEmail, otpHash, saltHex, Instant.now().plus(10, ChronoUnit.MINUTES));
             otpChallengeRepo.save(challenge);
-            log.info("[LEADERSHIP OTP] Sent OTP to {} for National Leadership Oversight: {}", cleanEmail, otp);
+
+            // Enqueue email notification in outbox (codes never logged)
+            notificationService.enqueueEmail(cleanEmail, "LEADERSHIP_OTP", Map.of(
+                    "email", cleanEmail,
+                    "name", leader.get().getFullName() != null ? leader.get().getFullName() : "Leadership Team",
+                    "otp", otp
+            ));
+            notificationService.processPendingNotifications();
+            log.info("[LEADERSHIP OTP] Dispatched challenge for email {}", cleanEmail);
         } else {
             log.info("Leadership OTP requested for unlisted email {}. Returning neutral response.", cleanEmail);
         }
@@ -231,9 +277,15 @@ public class EvaluationService {
     // ROSTER MANAGEMENT
     @Transactional(readOnly = true)
     public List<RosterEntryDto> getRoster(String state) {
-        List<FieldRoster> roster = (state != null && !state.isEmpty())
-                ? fieldRosterRepo.findByStateOrderByCreatedAtDesc(state)
-                : fieldRosterRepo.findAll();
+        List<FieldRoster> roster;
+        if (state != null && !state.isEmpty() && !"NATIONAL".equalsIgnoreCase(state) && !"ALL".equalsIgnoreCase(state)) {
+            Optional<StateReference> ref = state.length() == 2 ? stateRefRepo.findByStateCode(state.toUpperCase()) : stateRefRepo.findByStateNameIgnoreCase(state);
+            String code = ref.map(StateReference::getStateCode).orElse(state);
+            String name = ref.map(StateReference::getStateName).orElse(state);
+            roster = fieldRosterRepo.findByStateInOrderByCreatedAtDesc(List.of(state, code, name));
+        } else {
+            roster = fieldRosterRepo.findAll();
+        }
 
         return roster.stream().map(r -> new RosterEntryDto(
                 r.getId(), r.getPhoneE164(), r.getState(), r.getDistrict(), r.getStatus(), r.getCreatedAt()
@@ -332,13 +384,19 @@ public class EvaluationService {
     // STATE SUPERVISION & STATS
     @Transactional(readOnly = true)
     public EvaluationStats getStats(String state) {
-        long totalBeneficiaries = (state != null && !state.isEmpty() && !"NATIONAL".equalsIgnoreCase(state))
-                ? clientRepository.countByState(state)
-                : clientRepository.count();
+        long totalBeneficiaries;
+        long activeCaseworkers;
 
-        long activeCaseworkers = (state != null && !state.isEmpty() && !"NATIONAL".equalsIgnoreCase(state))
-                ? fieldRosterRepo.countByState(state)
-                : fieldRosterRepo.count();
+        if (state != null && !state.isEmpty() && !"NATIONAL".equalsIgnoreCase(state) && !"ALL".equalsIgnoreCase(state)) {
+            Optional<StateReference> ref = state.length() == 2 ? stateRefRepo.findByStateCode(state.toUpperCase()) : stateRefRepo.findByStateNameIgnoreCase(state);
+            String code = ref.map(StateReference::getStateCode).orElse(state);
+            String name = ref.map(StateReference::getStateName).orElse(state);
+            totalBeneficiaries = clientRepository.countByState(name);
+            activeCaseworkers = fieldRosterRepo.countByStateIn(List.of(state, code, name));
+        } else {
+            totalBeneficiaries = clientRepository.count();
+            activeCaseworkers = fieldRosterRepo.count();
+        }
 
         long openFollowUps = taskRepository.countByStatusIn(List.of("PENDING", "DUE", "OVERDUE"));
 
@@ -379,5 +437,123 @@ public class EvaluationService {
         }).toList();
 
         return new DTOs.ClientListResponse(dtoList, pageResult.getTotalElements(), pageResult.getTotalPages(), page);
+    }
+
+    public record ReassignTaskRequest(UUID newWorkerId, String reason) {}
+
+    public record SupervisionTaskDto(
+            UUID taskId,
+            String taskRef,
+            UUID clientId,
+            String clientRef,
+            String clientName,
+            String district,
+            String centerId,
+            LocalDate dueDate,
+            String status,
+            UUID assignedWorkerId,
+            String assignedWorkerName,
+            int attemptCount,
+            int rescheduleCount,
+            LocalDate lastAttemptDate,
+            String lastAttemptOutcome
+    ) {}
+
+    @Transactional
+    public DTOs.ActionReceipt reassignTask(UUID taskId, ReassignTaskRequest req, UserPrincipal user, String ipAddress) {
+        if (req.newWorkerId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New worker ID is mandatory");
+        }
+        if (req.reason() == null || req.reason().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reassignment reason is mandatory");
+        }
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+
+        UUID previousWorkerId = task.getAssignedWorkerId();
+        task.setAssignedWorkerId(req.newWorkerId());
+        task.setUpdatedAt(Instant.now());
+        taskRepository.save(task);
+
+        AuditEvent audit = new AuditEvent(
+                user.getId(), user.getUsername(), task.getCenterId(),
+                "TASK_REASSIGNED", "TASK", task.getId(),
+                ipAddress, String.format("{\"previousWorkerId\":\"%s\",\"newWorkerId\":\"%s\",\"reason\":\"%s\"}",
+                previousWorkerId != null ? previousWorkerId : "UNASSIGNED", req.newWorkerId(), req.reason().replace("\"", "\\\""))
+        );
+        auditEventRepository.save(audit);
+
+        return new DTOs.ActionReceipt(null, "SUCCESS", "Task reassigned successfully.", task.getId(), task.getVersion());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SupervisionTaskDto> getSupervisionTasks(String view, String state, String district, UUID workerId, Integer threshold) {
+        int attemptThreshold = (threshold != null && threshold > 0) ? threshold : 3;
+        List<Task> allOpenTasks = taskRepository.findAll().stream()
+                .filter(t -> List.of("PENDING", "DUE", "OVERDUE").contains(t.getStatus()))
+                .filter(t -> state == null || state.isBlank() || "NATIONAL".equalsIgnoreCase(state) || (t.getClient() != null && state.equalsIgnoreCase(t.getClient().getState())))
+                .filter(t -> district == null || district.isBlank() || (t.getClient() != null && district.equalsIgnoreCase(t.getClient().getDistrict())))
+                .filter(t -> workerId == null || (t.getAssignedWorkerId() != null && t.getAssignedWorkerId().equals(workerId)))
+                .toList();
+
+        List<SupervisionTaskDto> result = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (Task t : allOpenTasks) {
+            List<ContactAttempt> attempts = contactAttemptRepository.findByTaskIdOrderByAttemptDateDesc(t.getId());
+            int attemptCount = attempts.size();
+            LocalDate lastAttemptDate = !attempts.isEmpty() ? attempts.get(0).getAttemptDate() : null;
+            String lastAttemptOutcome = !attempts.isEmpty() ? attempts.get(0).getOutcome() : null;
+
+            List<AuditEvent> reschedules = auditEventRepository.findByResourceIdAndAction(t.getId(), "TASK_RESCHEDULED");
+            int rescheduleCount = reschedules.size();
+
+            boolean include = false;
+            String effectiveView = view != null ? view.toUpperCase() : "OVERDUE";
+            switch (effectiveView) {
+                case "OVERDUE":
+                    include = t.getDueDate() != null && t.getDueDate().isBefore(today);
+                    break;
+                case "COULD_NOT_REACH":
+                    include = attemptCount >= attemptThreshold;
+                    break;
+                case "UNASSIGNED":
+                    include = t.getAssignedWorkerId() == null;
+                    break;
+                case "RESCHEDULED_OFTEN":
+                    include = rescheduleCount >= 2;
+                    break;
+                default:
+                    include = true;
+                    break;
+            }
+
+            if (include) {
+                String workerName = "Unassigned";
+                if (t.getAssignedWorkerId() != null) {
+                    workerName = fieldUserRepo.findById(t.getAssignedWorkerId())
+                            .map(u -> u.getFirstName() + (u.getLastName() != null ? " " + u.getLastName() : ""))
+                            .orElse("Worker " + t.getAssignedWorkerId().toString().substring(0, 8));
+                }
+                result.add(new SupervisionTaskDto(
+                        t.getId(),
+                        t.getTaskRef(),
+                        t.getClient() != null ? t.getClient().getId() : null,
+                        t.getClient() != null ? t.getClient().getClientRef() : "—",
+                        t.getClient() != null ? t.getClient().getFullName() : "—",
+                        t.getClient() != null ? t.getClient().getDistrict() : "—",
+                        t.getCenterId(),
+                        t.getDueDate(),
+                        t.getStatus(),
+                        t.getAssignedWorkerId(),
+                        workerName,
+                        attemptCount,
+                        rescheduleCount,
+                        lastAttemptDate,
+                        lastAttemptOutcome
+                ));
+            }
+        }
+        return result;
     }
 }

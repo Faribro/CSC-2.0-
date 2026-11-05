@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
 import { RegistrationForm, RegistrationFormData } from '@/components/forms/RegistrationForm';
 import {
@@ -13,10 +13,13 @@ import {
   PlannedServiceDto,
   DeliveredServiceDto,
 } from '@/components/forms/FollowUpTab';
+import { FollowUpModal } from '@/components/forms/FollowUpModal';
+import { ClientOnly } from '@/components/ui/ClientOnly';
 import { Language, translations } from '@/lib/translations';
 import { Icon } from '@/components/ui/Icon';
 
 function ClientRecordContent({ clientId }: { clientId: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTabParam = searchParams.get('tab');
   const isNewlyCreated = searchParams.get('created') === 'true';
@@ -36,6 +39,46 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
   const [showCreatedNotice, setShowCreatedNotice] = useState(isNewlyCreated);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [conflictDiff, setConflictDiff] = useState<any | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setToken(localStorage.getItem('csc_token'));
+    }
+  }, []);
+
+  // Fast & Friendly Follow-up Modal State
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [modalInitialMode, setModalInitialMode] = useState<'select' | 'attempt' | 'reschedule' | 'visit'>('select');
+  const [activeFollowUpTask, setActiveFollowUpTask] = useState<TaskSummary | null>(null);
+
+  // Handle opening follow up modal
+  const handleOpenFollowUp = (mode: 'select' | 'attempt' | 'reschedule' | 'visit', targetTask?: TaskSummary | null) => {
+    setModalInitialMode(mode);
+    setActiveFollowUpTask(targetTask || (tasks.length > 0 ? tasks[0] : null));
+    setIsFollowUpModalOpen(true);
+  };
+
+  // Handle navigating to next client in linelist
+  const handleNextClient = () => {
+    setIsFollowUpModalOpen(false);
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('csc2_filtered_client_ids');
+        if (stored) {
+          const ids: string[] = JSON.parse(stored);
+          const currentIndex = ids.indexOf(clientId);
+          if (currentIndex !== -1 && currentIndex + 1 < ids.length) {
+            router.push(`/clients/${ids[currentIndex + 1]}?tab=followup`);
+            return;
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    router.push('/work');
+  };
 
   // Sync tab with browser popstate (back/forward)
   useEffect(() => {
@@ -225,6 +268,41 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     loadClientData();
   }, [clientId]);
 
+  // Deep-link action handler (e.g. from Forms Tab "Record visit" CTA button)
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const taskId = searchParams.get('taskId');
+    if (action) {
+      if (action === 'record') setModalInitialMode('visit');
+      else if (action === 'attempt') setModalInitialMode('attempt');
+      else if (action === 'reschedule') setModalInitialMode('reschedule');
+      else setModalInitialMode('select');
+
+      if (taskId && tasks.length > 0) {
+        const found = tasks.find((t) => t.id === taskId);
+        if (found) setActiveFollowUpTask(found);
+      }
+      setIsFollowUpModalOpen(true);
+    }
+  }, [searchParams, tasks]);
+
+  // Calculate Last Contact Summary for header
+  const lastContactSummary = React.useMemo(() => {
+    if (encounters && encounters.length > 0) {
+      const latest = encounters[0];
+      return lang === 'hi'
+        ? `अंतिम संपर्क: ${latest.observationDate} (${latest.encounterType})`
+        : `Last contact: ${latest.observationDate} via ${latest.encounterType.replace('_', ' ')}`;
+    }
+    if (contactAttempts && contactAttempts.length > 0) {
+      const latest = contactAttempts[0];
+      return lang === 'hi'
+        ? `अंतिम संपर्क प्रयास: ${latest.attemptDate} (${latest.outcome})`
+        : `Last contact attempt: ${latest.attemptDate} (${latest.outcome})`;
+    }
+    return lang === 'hi' ? 'कोई पूर्व संपर्क दर्ज नहीं है' : 'No previous contact recorded';
+  }, [encounters, contactAttempts, lang]);
+
   // Handle Profile Modification (PUT /api/v1/clients/{id}/profile)
   const handleProfileSubmit = async (formData: RegistrationFormData, changeReason?: string) => {
     setIsSubmitting(true);
@@ -309,7 +387,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         saveStatus: 'saved_locally',
       }}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 pb-28 sm:pb-8">
         {/* Success Notice after New Registration */}
         {showCreatedNotice && (
           <div
@@ -363,16 +441,16 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
           </div>
         )}
 
-        {/* Navigation Breadcrumb */}
+        {/* Navigation Breadcrumb (Back button hidden on mobile since AppShell provides bottom navigation) */}
         <div className="flex items-center justify-between">
           <Link
             href="/clients"
-            className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
+            className="hidden md:flex text-xs font-semibold text-plum hover:text-primary items-center gap-1.5 transition-colors"
           >
             <Icon name="back" className="w-3.5 h-3.5" />
             <span>{lang === 'hi' ? 'वापस लाभार्थी सूची' : 'Back to Client Linelist'}</span>
           </Link>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end">
             <span className="text-[11px] font-mono text-slate-500">ID: {client.id}</span>
             <span className="text-xs font-bold bg-mint text-success-ink px-2.5 py-0.5 rounded-full border border-mint">
               {client.status}
@@ -384,19 +462,37 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight font-comic">
                   {client.fullName}
                 </h1>
                 <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
                   {client.clientRef}
                 </span>
+
+                {/* Call button: shown ONLY on this client detail page */}
+                {client.primaryPhone && (
+                  <a
+                    href={`tel:${client.primaryPhone}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-mint/50 hover:bg-mint text-success-ink font-bold text-xs border border-mint shadow-2xs transition-colors min-h-[40px] cursor-pointer"
+                    title={lang === 'hi' ? 'लाभार्थी को कॉल करें' : 'Call Beneficiary'}
+                  >
+                    <Icon name="Phone" className="w-4 h-4 text-success-ink" />
+                    <span>{lang === 'hi' ? 'कॉल करें' : 'Call'} ({client.primaryPhone})</span>
+                  </a>
+                )}
               </div>
               <p className="text-xs text-slate-500 mt-1">
                 {client.age} years • {client.gender.toUpperCase()} • Center:{' '}
                 <strong className="font-mono text-slate-800">{client.centerId}</strong> • Version:{' '}
                 <strong>v{client.version}</strong>
               </p>
+              <div className="mt-1 flex items-center gap-2 text-xs">
+                <span className="text-slate-400">•</span>
+                <span className="text-plum font-bold bg-lavender/40 px-2 py-0.5 rounded-md border border-border/30">
+                  {lastContactSummary}
+                </span>
+              </div>
             </div>
 
             {/* Quick Clinical Metrics */}
@@ -471,6 +567,39 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
                 )}
               </div>
             )}
+
+            {/* Quick Action Bar on Desktop when in Follow-up Tab */}
+            {activeTab === 'followup' && (
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  type="button"
+                  data-testid="action-record-visit"
+                  onClick={() => handleOpenFollowUp('visit')}
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black shadow-xs flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer"
+                >
+                  <Icon name="CheckCircle" className="w-4 h-4" />
+                  <span>{lang === 'hi' ? 'विज़िट दर्ज करें' : 'Record visit'}</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="action-could-not-reach"
+                  onClick={() => handleOpenFollowUp('attempt')}
+                  className="px-3 py-2 rounded-xl border border-border/40 bg-surface text-ink hover:bg-canvas text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer"
+                >
+                  <Icon name="PhoneOff" className="w-4 h-4 text-primary" />
+                  <span>{lang === 'hi' ? 'संपर्क नहीं हुआ' : 'Could not reach'}</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="action-reschedule"
+                  onClick={() => handleOpenFollowUp('reschedule')}
+                  className="px-3 py-2 rounded-xl border border-border/40 bg-surface text-ink hover:bg-canvas text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] cursor-pointer"
+                >
+                  <Icon name="Calendar" className="w-4 h-4 text-plum" />
+                  <span>{lang === 'hi' ? 'रीशेड्यूल' : 'Reschedule'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -539,11 +668,65 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
             plannedServices={plannedServices}
             deliveredServices={deliveredServices}
             lang={lang}
-            token={typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null}
+            token={token}
             onActionCompleted={loadClientData}
             showToast={showToast}
           />
         )}
+
+        {/* Sticky Bottom Action Bar on Mobile: Record visit | Could not reach | Reschedule */}
+        <div className="fixed bottom-14 inset-x-0 z-30 bg-surface/95 backdrop-blur-md border-t-2 border-border/40 p-3 sm:hidden shadow-comic flex items-center justify-around gap-2">
+          <button
+            type="button"
+            data-testid="action-record-visit"
+            onClick={() => handleOpenFollowUp('visit')}
+            className="flex-1 px-3 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black shadow-xs flex items-center justify-center gap-1 min-h-[48px] cursor-pointer"
+          >
+            <Icon name="Activity" className="w-4 h-4" />
+            <span>{lang === 'hi' ? 'विज़िट दर्ज करें' : 'Record visit'}</span>
+          </button>
+          <button
+            type="button"
+            data-testid="action-could-not-reach"
+            onClick={() => handleOpenFollowUp('attempt')}
+            className="flex-1 px-3 py-2.5 rounded-xl border border-border/40 bg-surface text-ink hover:bg-canvas text-xs font-bold flex items-center justify-center gap-1 min-h-[48px] cursor-pointer"
+          >
+            <Icon name="PhoneOff" className="w-4 h-4 text-primary" />
+            <span>{lang === 'hi' ? 'संपर्क नहीं हुआ' : 'Could not reach'}</span>
+          </button>
+          <button
+            type="button"
+            data-testid="action-reschedule"
+            onClick={() => handleOpenFollowUp('reschedule')}
+            className="flex-1 px-3 py-2.5 rounded-xl border border-border/40 bg-surface text-ink hover:bg-canvas text-xs font-bold flex items-center justify-center gap-1 min-h-[48px] cursor-pointer"
+          >
+            <Icon name="Calendar" className="w-4 h-4 text-plum" />
+            <span>{lang === 'hi' ? 'रीशेड्यूल' : 'Reschedule'}</span>
+          </button>
+        </div>
+
+        {/* Fast & Friendly Follow-Up Outcome Modal */}
+        <FollowUpModal
+          isOpen={isFollowUpModalOpen}
+          onClose={() => setIsFollowUpModalOpen(false)}
+          clientId={client.id}
+          clientRef={client.clientRef}
+          clientName={client.fullName}
+          task={activeFollowUpTask}
+          initialMode={modalInitialMode}
+          lastContactSummary={lastContactSummary}
+          previousClinicalValues={{
+            cd4: client.cd4Count,
+            cd4Pct: client.cd4Percentage,
+            viralLoad: client.viralLoadCount,
+          }}
+          lang={lang}
+          onSaved={(res) => {
+            showToast(res.message);
+            loadClientData();
+          }}
+          onNextClient={handleNextClient}
+        />
       </div>
     </AppShell>
   );
@@ -554,8 +737,16 @@ export default function ClientRecordPage({ params }: { params: Promise<{ id: str
   const clientId = unwrappedParams.id || "client-001";
 
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500">Loading client record...</div>}>
-      <ClientRecordContent clientId={clientId} />
-    </Suspense>
+    <ClientOnly
+      fallback={
+        <div suppressHydrationWarning className="min-h-screen bg-canvas flex items-center justify-center p-8 text-xs font-bold text-slate-500">
+          Loading client record...
+        </div>
+      }
+    >
+      <Suspense fallback={<div className="p-8 text-center text-xs text-slate-500">Loading client record...</div>}>
+        <ClientRecordContent clientId={clientId} />
+      </Suspense>
+    </ClientOnly>
   );
 }

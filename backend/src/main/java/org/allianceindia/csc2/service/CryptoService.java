@@ -105,21 +105,18 @@ public class CryptoService {
     }
 
     /**
-     * Computes SHA-256 hash of (saltHex + otp).
+     * Computes HMAC-SHA256 verifier of (saltHex + ":" + otp) using server-side stateCodePepper.
+     * Prevents offline brute-force attacks even if the database challenge table is leaked.
      */
     public String hashOtp(String otp, String saltHex) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(saltHex.getBytes(StandardCharsets.UTF_8));
-            byte[] digest = md.digest(otp.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (Exception e) {
-            throw new RuntimeException("SHA-256 digest failure", e);
+        if (otp == null || saltHex == null) {
+            throw new IllegalArgumentException("OTP and saltHex must not be null");
         }
+        return hmacSha256(saltHex + ":" + otp.trim(), stateCodePepper);
     }
 
     /**
-     * Constant-time check of submitted OTP against stored hash and salt.
+     * Constant-time check of submitted OTP against stored HMAC hash and salt.
      */
     public boolean verifyOtp(String submittedOtp, String storedHash, String saltHex) {
         if (submittedOtp == null || storedHash == null || saltHex == null) return false;

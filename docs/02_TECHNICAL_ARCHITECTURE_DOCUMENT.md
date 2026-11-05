@@ -22,6 +22,7 @@
 | Version | Date | Author | Description |
 |---|---|---|---|
 | v0.1.0 | 2026-11-02 | TBD | Initial canonical draft from XLSForm + stack decisions |
+| v0.1.2 | 2026-11-05 | Engineering | End-to-end hardening: Google Sheets Mirror, WebOTP, Dev Sinks, and ASVS L2 / NIST SP 800-63B auth |
 
 ### ADR Index
 
@@ -39,6 +40,9 @@
 | ADR-010 | Field User Phone Verification with 6-Digit CSPRNG OTP and 30-Day Device Session | Accepted |
 | ADR-011 | SMS Gateway Adapter Pattern (TextBee Android Gateway, Mock, and Carrier Stubs) | Accepted |
 | ADR-012 | Calm Comic Design Tokens with Zero Blue/Dark-Green and 100% WCAG 2.2 AA Contrast | Accepted |
+| ADR-013 | WebOTP Auto-Fill Format & Neutral Identity Enumeration Prevention | Accepted |
+| ADR-014 | Dev-Only Sinks for Local OTP and Mail Testing (Disabled in Production) | Accepted |
+| ADR-015 | Google Sheets Mirror Three-Tier Header & Body HMAC Signature Architecture | Accepted |
 
 ### Evidence Tag Legend
 

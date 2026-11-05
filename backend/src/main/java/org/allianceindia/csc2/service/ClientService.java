@@ -1,9 +1,11 @@
 package org.allianceindia.csc2.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.allianceindia.csc2.config.UserPrincipal;
 import org.allianceindia.csc2.domain.*;
 import org.allianceindia.csc2.dto.DTOs;
 import org.allianceindia.csc2.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,9 +15,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,17 +34,35 @@ public class ClientService {
     private final TaskRepository taskRepository;
     private final AuditEventRepository auditEventRepository;
     private final OutboxRepository outboxRepository;
+    private final ActorRepository actorRepository;
+    private final IdempotencyReceiptRepository idempotencyReceiptRepository;
+    private final ObjectMapper objectMapper;
+
+    @Autowired
+    public ClientService(ClientRepository clientRepository,
+                         ReferralRequestRepository referralRequestRepository,
+                         TaskRepository taskRepository,
+                         AuditEventRepository auditEventRepository,
+                         OutboxRepository outboxRepository,
+                         ActorRepository actorRepository,
+                         IdempotencyReceiptRepository idempotencyReceiptRepository,
+                         ObjectMapper objectMapper) {
+        this.clientRepository = clientRepository;
+        this.referralRequestRepository = referralRequestRepository;
+        this.taskRepository = taskRepository;
+        this.auditEventRepository = auditEventRepository;
+        this.outboxRepository = outboxRepository;
+        this.actorRepository = actorRepository;
+        this.idempotencyReceiptRepository = idempotencyReceiptRepository;
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+    }
 
     public ClientService(ClientRepository clientRepository,
                          ReferralRequestRepository referralRequestRepository,
                          TaskRepository taskRepository,
                          AuditEventRepository auditEventRepository,
                          OutboxRepository outboxRepository) {
-        this.clientRepository = clientRepository;
-        this.referralRequestRepository = referralRequestRepository;
-        this.taskRepository = taskRepository;
-        this.auditEventRepository = auditEventRepository;
-        this.outboxRepository = outboxRepository;
+        this(clientRepository, referralRequestRepository, taskRepository, auditEventRepository, outboxRepository, null, null, new ObjectMapper());
     }
 
     @Transactional
@@ -46,6 +72,17 @@ public class ClientService {
         }
         if (req.fullName() == null || req.fullName().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Full name is required");
+        }
+
+        // Check Idempotency Key
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            Optional<IdempotencyReceipt> receipt = idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey);
+            if (receipt.isPresent()) {
+                if (!receipt.get().getRequestHash().equals(computeHash(req))) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key reused with different payload");
+                }
+                return parseReceipt(receipt.get());
+            }
         }
         String centerId = (req.centerId() != null && !req.centerId().trim().isEmpty()) ? req.centerId().trim() : "CENTER_MAIN";
         if (!user.hasCenterAccess(centerId) && !user.getAuthorizedCenters().contains(centerId)) {
@@ -62,7 +99,9 @@ public class ClientService {
         Client client = new Client();
         client.setClientRef(clientRef);
         client.setCenterId(centerId);
-        client.setAssignedWorkerId(user.getId());
+        if (user.getId() != null && actorRepository.existsById(user.getId())) {
+            client.setAssignedWorkerId(user.getId());
+        }
         if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
             client.setFieldUserId(user.getId());
         }
@@ -126,6 +165,18 @@ public class ClientService {
         // Save Client & cascaded FamilyMembers
         client = clientRepository.save(client);
 
+        // Default owner of initial follow-up = assigned worker if present
+        Task initialTask = new Task(
+                "TSK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
+                client,
+                client.getAssignedWorkerId(),
+                client.getCenterId(),
+                "1",
+                "Monthly Adherence Counselling & Follow-up",
+                LocalDate.now().plusWeeks(1)
+        );
+        taskRepository.save(initialTask);
+
         // Referrals (D5)
         if (req.referralRequests() != null) {
             for (DTOs.ReferralRequestInput refInput : req.referralRequests()) {
@@ -152,18 +203,103 @@ public class ClientService {
         );
         auditEventRepository.save(audit);
 
-        // Outbox event in same transaction
+        // Outbox event in same transaction (Complete 38-column client mirror + repeats)
+        Map<String, Object> clientMirrorPayload = new HashMap<>();
+        clientMirrorPayload.put("clientId", client.getId().toString());
+        clientMirrorPayload.put("clientRef", client.getClientRef());
+        clientMirrorPayload.put("centerId", client.getCenterId());
+        clientMirrorPayload.put("fullName", client.getFullName());
+        clientMirrorPayload.put("aliasName", client.getAliasName());
+        clientMirrorPayload.put("age", client.getAge());
+        clientMirrorPayload.put("gender", client.getGender());
+        clientMirrorPayload.put("maritalStatus", client.getMaritalStatus());
+        clientMirrorPayload.put("inSchool", client.getInSchool());
+        clientMirrorPayload.put("occupation", client.getOccupation());
+        clientMirrorPayload.put("registrationDate", client.getRegistrationDate() != null ? client.getRegistrationDate().toString() : LocalDate.now().toString());
+        clientMirrorPayload.put("primaryPhone", client.getPrimaryPhone()); // Masked by Apps Script per classification
+        clientMirrorPayload.put("addressCurrent", client.getAddressCurrent());
+        clientMirrorPayload.put("district", client.getDistrict());
+        clientMirrorPayload.put("state", client.getState());
+        clientMirrorPayload.put("pincode", client.getPincode());
+        clientMirrorPayload.put("caregiverName", client.getCaregiverName());
+        clientMirrorPayload.put("hivStatus", client.getHivStatus());
+        clientMirrorPayload.put("artNumber", client.getArtNumber());
+        clientMirrorPayload.put("artCenterName", client.getArtCenterName());
+        clientMirrorPayload.put("artStartDate", client.getArtStartDate() != null ? client.getArtStartDate().toString() : null);
+        clientMirrorPayload.put("cd4Count", client.getCd4Count());
+        clientMirrorPayload.put("cd4Percentage", client.getCd4Percentage());
+        clientMirrorPayload.put("viralLoadCount", client.getViralLoadCount());
+        clientMirrorPayload.put("hasHivDoc", client.isHasHivDocDeclaration());
+        clientMirrorPayload.put("hasAddressDoc", client.isHasAddressDocDeclaration());
+        clientMirrorPayload.put("hasArtDoc", client.isHasArtDocDeclaration());
+        clientMirrorPayload.put("homeVisitConsent", client.isHomeVisitConsent());
+        clientMirrorPayload.put("messagingConsent", client.isMessagingConsent());
+        clientMirrorPayload.put("status", client.getStatus());
+
+        if (req.familyMembers() != null) {
+            clientMirrorPayload.put("familyMembers", req.familyMembers());
+        }
+        if (req.referralRequests() != null) {
+            clientMirrorPayload.put("referralRequests", req.referralRequests());
+        }
+
+        String fullPayloadJson;
+        try {
+            fullPayloadJson = objectMapper.writeValueAsString(clientMirrorPayload);
+        } catch (Exception e) {
+            fullPayloadJson = String.format("{\"clientRef\":\"%s\",\"centerId\":\"%s\",\"fullName\":\"%s\"}",
+                    client.getClientRef(), client.getCenterId(), client.getFullName());
+        }
+
         OutboxEvent outbox = new OutboxEvent(
-                "CLIENT_REGISTERED", "CLIENT", client.getId(),
-                String.format("{\"clientRef\":\"%s\",\"centerId\":\"%s\",\"fullName\":\"%s\"}",
-                client.getClientRef(), client.getCenterId(), client.getFullName())
+                "CLIENT_REGISTERED", "CLIENT", client.getId(), fullPayloadJson
         );
         outboxRepository.save(outbox);
 
-        return new DTOs.ActionReceipt(
+        DTOs.ActionReceipt receipt = new DTOs.ActionReceipt(
                 idempotencyKey, "SUCCESS", "Client registered successfully. Reference: " + client.getClientRef(),
                 client.getId(), client.getVersion()
         );
+
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            saveReceipt(idempotencyKey, user.getId(), "/api/v1/clients", computeHash(req), 200, receipt);
+        }
+
+        return receipt;
+    }
+
+    private String computeHash(Object obj) {
+        try {
+            String json = objectMapper.writeValueAsString(obj);
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(json.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            return "hash-fallback-" + System.currentTimeMillis();
+        }
+    }
+
+    private void saveReceipt(String key, UUID actorId, String endpoint, String hash, int status, DTOs.ActionReceipt receipt) {
+        try {
+            UUID safeActorId = (actorId != null && actorRepository.existsById(actorId)) ? actorId : null;
+            String body = objectMapper.writeValueAsString(receipt);
+            IdempotencyReceipt r = new IdempotencyReceipt(key, safeActorId, endpoint, hash, status, body);
+            idempotencyReceiptRepository.save(r);
+        } catch (Exception ignored) {}
+    }
+
+    public DTOs.ActionReceipt parseReceipt(IdempotencyReceipt receipt) {
+        try {
+            return objectMapper.readValue(receipt.getResponseBody(), DTOs.ActionReceipt.class);
+        } catch (Exception e) {
+            return new DTOs.ActionReceipt(receipt.getIdempotencyKey(), "SUCCESS", "Replayed idempotency receipt", null, 0);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DTOs.ActionReceipt> getExistingReceipt(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) return Optional.empty();
+        return idempotencyReceiptRepository.findByIdempotencyKey(idempotencyKey).map(this::parseReceipt);
     }
 
     @Transactional(readOnly = true)

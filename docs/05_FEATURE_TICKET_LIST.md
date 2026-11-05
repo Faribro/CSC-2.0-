@@ -3717,3 +3717,94 @@ Key intra-slice dependencies: `[PROPOSED]`
 | **TCK-075** | Calm Comic Theme Design Tokens | 6 | `b4e8758` | `tokens.css`, `verify_wcag_tokens.js` | 100% WCAG 2.2 AA compliant, warm canvas, coral/plum accents, 48px touch targets | **DONE** `[VERIFIED]` |
 | **TCK-076** | Zero Banned Colors & Zero Emojis Linters | 6 | `b4e8758` | `lint_no_banned_colors.js`, `lint_no_emoji.js` | 0 blue/dark-green occurrences, 0 unicode emojis across frontend files | **DONE** `[VERIFIED]` |
 | **TCK-077** | GPS Live Address Fetch Component | 6 | `b4e8758` | `LocationFetchButton.tsx`, `RegistrationForm.tsx` | Multi-tier geocoding fallback chain auto-populating grouped address fields | **DONE** `[VERIFIED]` |
+
+
+---
+
+# SLICE 6: Fast and Friendly Follow-Up Engine & Supervision (TCK-070 – TCK-077)
+
+### TCK-070: Follow-Up Home on Forms Workspace
+- **Status**: Complete / Verified
+- **Assigned**: Frontend & Backend Engineers
+- **Scope**: `<MyFollowUpsCard />` on `/work`.
+- **Acceptance Criteria**:
+  - Segmented into Today, Overdue, and Upcoming with live count badges.
+  - Rows display client reference, bilingual J5 purpose label (EN/HI), due date chip, and single primary "Record visit" CTA button.
+  - Zero health details, HIV/ART statuses, or phone numbers in linelists.
+  - Bounded pagination (10 items per page) with segment, page, and scroll offset restored from `sessionStorage` upon return.
+  - Default owner is the registering field caseworker; offline tasks cached per authenticated account.
+
+### TCK-071: Client Header with Call Button & Sticky Mobile Action Bar
+- **Status**: Complete / Verified
+- **Assigned**: Frontend Engineer
+- **Scope**: `/clients/[id]`
+- **Acceptance Criteria**:
+  - Beneficiary name, client reference, age, gender, and last contact summary chip in header.
+  - Direct "Call" link (`tel:`) rendered ONLY on the client detail page; never leaked into linelists.
+  - Mobile viewport sticky bottom action bar with 3 actions: `Record visit`, `Could not reach`, `Reschedule` (all 48px touch targets).
+  - Two primary tabs maintained: Registration Form (View/Edit) and Follow-up History.
+
+### TCK-072: Outcome Flow & Attempt State Invariance
+- **Status**: Complete / Verified
+- **Assigned**: Frontend & Backend Engineers
+- **Scope**: `<FollowUpModal />` Step 1
+- **Acceptance Criteria**:
+  - Step 1 displays 3 large choice cards: `Visited/spoke`, `Tried but could not reach`, `Reschedule`.
+  - Could Not Reach presents canonical reason choices (`no_answer`, `switched_off`, `wrong_number`, `refused`, `other`).
+  - Saving Could Not Reach saves a `ContactAttempt` record; task remains OPEN (`PENDING`/`DUE`/`OVERDUE`); increments attempt count chip.
+  - Reschedule requires a new due date (with date shortcuts `+1w`, `+2w`, `+1m`) and a mandatory reason; records audit entry.
+
+### TCK-073: Short Visit Form & Section I Clinical Parity (Non-Copy-Forward)
+- **Status**: Complete / Verified
+- **Assigned**: Frontend & Backend Engineers
+- **Scope**: Section I Collapsible Accordions in `<FollowUpModal />`
+- **Acceptance Criteria**:
+  - Short visit core: Date (default today), place of contact (remembered in `localStorage`), outcome notes.
+  - Collapsible accordions for Section I: Anthropometry (Weight, Height, MUAC), ART regimen line, separate CD4 count and CD4 %, Viral Load, TB/ATT status, SWS linkages multiselect, Stigma.
+  - **Clinical Non-Copy-Forward Rule**: Previous values shown as read-only hints (`prev: 450 cells/mm³`); never auto-populated into editable fields.
+
+### TCK-074: Next Action Scheduling & Explicit Task Completion
+- **Status**: Complete / Verified
+- **Assigned**: Frontend & Backend Engineers
+- **Scope**: `<FollowUpModal />` Step 2
+- **Acceptance Criteria**:
+  - Date shortcuts: `in 1 week`, `in 2 weeks`, `in 1 month`, `pick date` (none selected by default).
+  - Purpose selection from canonical 13 J5 options; service selection from 114 service codes filtered by category.
+  - Explicit Complete toggle: "Mark this follow-up task complete". Completing one task never completes others.
+  - Planned services remain `PLANNED` until an explicit delivered service record is submitted.
+
+### TCK-075: Save and Continue, Draft Autosave & Offline Queue
+- **Status**: Complete / Verified
+- **Assigned**: Frontend Engineer
+- **Scope**: `<FollowUpModal />`
+- **Acceptance Criteria**:
+  - Clear save status banner: "Saved on the server" (online) or "Saved on this device, will send when online" (offline).
+  - "Save & Next Client" button advances down the filtered linelist; "Save & Done" returns to linelist.
+  - Form drafts autosaved per client in `localStorage` (`csc2_draft_visit_${clientId}`) to prevent data loss.
+
+### TCK-076: Supervision Dashboard & One-Click Reassignment
+- **Status**: Complete / Verified
+- **Assigned**: Fullstack Engineers
+- **Scope**: Evaluation Tab (`/admin`)
+- **Acceptance Criteria**:
+  - 4 Supervision Views: `OVERDUE`, `COULD_NOT_REACH`, `UNASSIGNED`, `RESCHEDULED_OFTEN`.
+  - Filters for District, Worker, and configurable programme Escalation Threshold (default: 3 attempts).
+  - One-click Reassign modal with worker select from active roster and mandatory reassignment reason.
+  - Immutable audit trail logged in database with supervisor identity and IP address.
+
+### TCK-077: Form Typography & Contiguous Address Grouping Parity
+- **Status**: Complete / Verified
+- **Assigned**: Frontend Engineer
+- **Scope**: `globals.css`, `crfDefinitions.ts`, `RegistrationForm.tsx`
+- **Acceptance Criteria**:
+  - Applied `font-family: var(--font-josefin), 'Josefin Sans', sans-serif !important;` to all form controls.
+  - Swapped Contact number with House/Door number so all physical address fields form a contiguous block ending with Address verified on and live GPS fetch button (`<LocationFetchButton />`).
+
+
+### Slice Completion: Pre-Deployment Functional Hardening & Security (2026-11-05)
+- **TICKET-INT-001 (Diagnosis & Outbox Trace):** Root causes identified and resolved across form submit, Postgres outbox, SMS gateway, and Sheets mirror. Documented in docs/INTEGRATION_DIAGNOSIS.md.
+- **TICKET-INT-002 (Real WebOTP Delivery):** CSPRNG 6-digit OTP, SHA-256 HMAC pepper, Android @csc2.allianceindia.org #<code> WebOTP auto-fill format, neutral user enumeration defense, and profile-scoped dev-only sinks /api/v1/dev-sinks. Verified via scripts/test_sinks_and_auth_e2e.js (8/8 PASSED). Documented in docs/SMS_GATEWAY.md.
+- **TICKET-INT-003 (Google Sheets Mirror):** Google Apps Script Web App scripts/apps_script/Code.gs with 3-tier header, separate repeat sheets, body HMAC verification, formula escaping, and LockService concurrency guards. Verified via scripts/test_sheets_mirror.js (7/7 PASSED). Documented in docs/SHEETS_MIRROR.md.
+- **TICKET-INT-004 (OWASP ASVS L2 & NIST SP 800-63B Auth):** Argon2id hashing, 12-char passphrase enforcement, dictionary screening, HSTS, frame options, mutating origin CSRF check, rotating refresh tokens with automated reuse revocation. Verified via scripts/test_security_asvs.js (9/9 PASSED). Documented in docs/03_SECURITY_AND_ACCESS_DOCUMENT.md.
+- **TICKET-INT-005 (Concurrency & Double-Click Mitigation):** Row-level pessimistic locking on OTP and device sessions, database idempotency receipt caching, and duplicate transaction handling. Verified via scripts/test_concurrency_race.js (3/3 PASSED).
+- **TICKET-INT-006 (Purpose-Built UI Polish):** Mobile back-button suppression, plus-only registration button, wifi status indicator, follow-ups toolbar consolidation, and clean mobile bar stacking. Verified via Playwright suites (42/42 PASSED).

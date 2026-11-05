@@ -157,6 +157,22 @@ public class SessionManagementService {
         sessionRepository.saveAll(active);
     }
 
+    @Transactional(readOnly = true)
+    public List<UserSession> listActiveSessions(UUID userId) {
+        return sessionRepository.findByUserIdAndRevokedAtIsNull(userId);
+    }
+
+    @Transactional
+    public boolean revokeSessionForUser(UUID sessionId, UUID userId) {
+        Optional<UserSession> session = sessionRepository.findById(sessionId);
+        if (session.isPresent() && session.get().getUser().getId().equals(userId)) {
+            session.get().setRevokedAt(Instant.now());
+            sessionRepository.save(session.get());
+            return true;
+        }
+        return false;
+    }
+
     private String generateSecureTokenHex(int byteCount) {
         byte[] bytes = new byte[byteCount];
         secureRandom.nextBytes(bytes);

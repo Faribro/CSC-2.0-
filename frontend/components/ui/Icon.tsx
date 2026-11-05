@@ -44,6 +44,8 @@ import {
   Download,
   Share2,
   HelpCircle,
+  Wifi,
+  WifiOff,
   LucideProps,
 } from 'lucide-react';
 
@@ -153,6 +155,8 @@ export const Icon: React.FC<IconProps> = ({
     case 'edit':
       return <Pencil {...commonProps} />;
     case 'add':
+    case 'Plus':
+    case 'plus':
       return <Plus {...commonProps} />;
     case 'delete':
       return <Trash2 {...commonProps} />;
@@ -169,20 +173,28 @@ export const Icon: React.FC<IconProps> = ({
     case 'refresh':
       return <RefreshCw {...commonProps} />;
     case 'check':
+    case 'Check':
       return <Check {...commonProps} />;
     case 'logout':
+    case 'LogOut':
       return <LogOut {...commonProps} />;
     case 'calendar':
+    case 'Calendar':
       return <Calendar {...commonProps} />;
     case 'file':
+    case 'FileText':
       return <FileText {...commonProps} />;
     case 'phone':
+    case 'Phone':
       return <Phone {...commonProps} />;
     case 'location':
+    case 'MapPin':
       return <MapPin {...commonProps} />;
     case 'chevron-down':
+    case 'ChevronDown':
       return <ChevronDown {...commonProps} />;
     case 'chevron-up':
+    case 'ChevronUp':
       return <ChevronUp {...commonProps} />;
     case 'chevron-left':
     case 'ChevronLeft':
@@ -196,6 +208,12 @@ export const Icon: React.FC<IconProps> = ({
       return <Share2 {...commonProps} />;
     case 'help':
       return <HelpCircle {...commonProps} />;
+    case 'wifi':
+    case 'Wifi':
+      return <Wifi {...commonProps} />;
+    case 'wifi-off':
+    case 'WifiOff':
+      return <WifiOff {...commonProps} />;
 
     // Statuses
     case 'due':

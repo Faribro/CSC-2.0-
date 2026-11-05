@@ -1,0 +1,336 @@
+              {isSecB && (
+                <div className="mt-8 border-t border-slate-100 pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <span>B2. {isHi ? 'परिवार के सदस्य और आश्रित' : 'Family Members & Dependents'}</span>
+                        <span className="text-xs font-normal text-slate-500">
+                          ({formData.b2_members?.length || 0} {isHi ? 'सदस्य' : 'members'})
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Record HIV status, ART linkage, and CSC registration for each household member.
+                      </p>
+                    </div>
+
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={handleAddMember}
+                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
+                      >
+                        <Icon name="add" className="w-3.5 h-3.5" />
+                        <span>{isHi ? '+ सदस्य जोड़ें' : '+ Add Member'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {formData.b2_members && formData.b2_members.length > 0 ? (
+                    <div className="space-y-3">
+                      {formData.b2_members.map((member, idx) => (
+                        <div
+                          key={member.id}
+                          className="bg-slate-50/70 border border-slate-200 rounded-xl p-4 space-y-3"
+                        >
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <span className="text-xs font-bold text-slate-800 font-mono">
+                              #{idx + 1} • {member.name || (isHi ? 'नया सदस्य' : 'Family Member')}
+                            </span>
+                            {!isReadOnly && formData.b2_members.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMember(member.id)}
+                                className="text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center gap-1"
+                              >
+                                <Icon name="delete" className="w-3.5 h-3.5" />
+                                <span>{isHi ? 'हटाएं' : 'Remove'}</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'नाम' : 'Full Name'}
+                              </label>
+                              <input
+                                type="text"
+                                disabled={isReadOnly}
+                                value={member.name}
+                                onChange={(e) => handleUpdateMember(member.id, 'name', e.target.value)}
+                                placeholder="Name"
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'रिश्ता' : 'Relationship'}
+                              </label>
+                              <select
+                                disabled={isReadOnly}
+                                value={member.relationship}
+                                onChange={(e) => handleUpdateMember(member.id, 'relationship', e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              >
+                                {(CHOICE_LISTS['relation'] || []).map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {isHi ? c.labelHi : c.labelEn}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'उम्र (वर्ष)' : 'Age (years)'}
+                              </label>
+                              <input
+                                type="number"
+                                disabled={isReadOnly}
+                                value={member.age}
+                                onChange={(e) => handleUpdateMember(member.id, 'age', e.target.value)}
+                                placeholder="Age"
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'लिंग' : 'Gender'}
+                              </label>
+                              <select
+                                disabled={isReadOnly}
+                                value={member.gender}
+                                onChange={(e) => handleUpdateMember(member.id, 'gender', e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              >
+                                {(CHOICE_LISTS['gender'] || []).map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {isHi ? c.labelHi : c.labelEn}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'जीवित स्थिति' : 'Living Status'}
+                              </label>
+                              <select
+                                disabled={isReadOnly}
+                                value={member.living || '1'}
+                                onChange={(e) => handleUpdateMember(member.id, 'living', e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              >
+                                {(CHOICE_LISTS['living'] || [
+                                  { code: '1', labelEn: 'Alive', labelHi: 'जीवित' },
+                                  { code: '2', labelEn: 'Dead', labelHi: 'मृत' },
+                                ]).map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {isHi ? c.labelHi : c.labelEn}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'एचआईवी स्थिति' : 'HIV Status'}
+                              </label>
+                              <select
+                                disabled={isReadOnly}
+                                value={
+                                  member.hivStatus === 'positive'
+                                    ? '1'
+                                    : member.hivStatus === 'negative'
+                                    ? '2'
+                                    : member.hivStatus === 'unknown'
+                                    ? '4'
+                                    : member.hivStatus || '3'
+                                }
+                                onChange={(e) => handleUpdateMember(member.id, 'hivStatus', e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100 font-bold"
+                              >
+                                {(CHOICE_LISTS['hivstat'] || []).map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {c.code}. {isHi ? c.labelHi : c.labelEn}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                {isHi ? 'हाल के एचआईवी टेस्ट की तारीख' : 'Date of HIV Test'}
+                              </label>
+                              <input
+                                type="date"
+                                disabled={isReadOnly}
+                                value={member.hivDate || ''}
+                                onChange={(e) => handleUpdateMember(member.id, 'hivDate', e.target.value)}
+                                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                              />
+                            </div>
+
+                            {(member.hivStatus === 'positive' || member.hivStatus === '1') && member.living !== '2' && member.living !== 'dead' && (
+                              <>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'नवीनतम CD4 काउंट' : 'Latest CD4'}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    disabled={isReadOnly}
+                                    value={member.cd4 || ''}
+                                    onChange={(e) => handleUpdateMember(member.id, 'cd4', e.target.value)}
+                                    placeholder="0–5000"
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'नवीनतम वायरल लोड (VL)' : 'Latest Viral Load'}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    disabled={isReadOnly}
+                                    value={member.vl || ''}
+                                    onChange={(e) => handleUpdateMember(member.id, 'vl', e.target.value)}
+                                    placeholder="Copies / mL"
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'एआरटी स्थिति' : 'ART Status'}
+                                  </label>
+                                  <select
+                                    disabled={isReadOnly}
+                                    value={member.artStatus || '1'}
+                                    onChange={(e) => handleUpdateMember(member.id, 'artStatus', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  >
+                                    {(CHOICE_LISTS['artstat'] || []).map((c) => (
+                                      <option key={c.code} value={c.code}>
+                                        {isHi ? c.labelHi : c.labelEn}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'आईडी प्रकार' : 'ID Type'}
+                                  </label>
+                                  <select
+                                    disabled={isReadOnly}
+                                    value={member.idType || ''}
+                                    onChange={(e) => handleUpdateMember(member.id, 'idType', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  >
+                                    <option value="">{isHi ? '-- चुनें --' : '-- Select --'}</option>
+                                    {(CHOICE_LISTS['idtype'] || []).map((c) => (
+                                      <option key={c.code} value={c.code}>
+                                        {isHi ? c.labelHi : c.labelEn}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'आईडी संख्या' : 'ID Number'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    disabled={isReadOnly}
+                                    value={member.idNumber || ''}
+                                    onChange={(e) => handleUpdateMember(member.id, 'idNumber', e.target.value)}
+                                    placeholder="ID Number"
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                    {isHi ? 'CSC में पंजीकृत?' : 'Registered at CSC?'}
+                                  </label>
+                                  <select
+                                    disabled={isReadOnly}
+                                    value={member.registeredAtCsc || 'no'}
+                                    onChange={(e) => handleUpdateMember(member.id, 'registeredAtCsc', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                  >
+                                    <option value="no">{isHi ? 'नहीं' : 'No'}</option>
+                                    <option value="yes">{isHi ? 'हाँ' : 'Yes'}</option>
+                                  </select>
+                                </div>
+
+                                {member.registeredAtCsc === 'yes' && (
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                      {isHi ? 'क्लाइंट CSC आईडी' : 'Client CSC ID'}
+                                    </label>
+                                    <input
+                                      type="text"
+                                      disabled={isReadOnly}
+                                      value={member.cscId || ''}
+                                      onChange={(e) => handleUpdateMember(member.id, 'cscId', e.target.value)}
+                                      placeholder="CSC ID"
+                                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">
+                      {isHi ? 'कोई परिवार का सदस्य दर्ज नहीं है।' : 'No family members recorded.'}
+                    </p>
+                  )}
+
+                  {/* B3 & B4 Calculated Summary Badges */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="bg-canvas border border-border/40 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+                      <div>
+                        <span className="text-[11px] font-black text-ink-muted block uppercase tracking-wider">
+                          B3. {isHi ? 'परिवार में कुल PLHIV सदस्य' : 'Total PLHIV Family Members'}
+                        </span>
+                        <span className="text-xs text-ink/70">
+                          {isHi ? 'एचआईवी पॉजिटिव पाए गए सदस्यों की संख्या' : 'Calculated count of HIV-positive members'}
+                        </span>
+                      </div>
+                      <span className="text-base font-black font-mono text-plum px-3 py-1 rounded-lg bg-surface border border-border/40">
+                        {(formData.b2_members || []).filter((m) => m.hivStatus === 'positive' || m.hivStatus === '1').length}
+                      </span>
+                    </div>
+
+                    <div className="bg-canvas border border-border/40 rounded-xl p-3 flex items-center justify-between shadow-2xs">
+                      <div>
+                        <span className="text-[11px] font-black text-ink-muted block uppercase tracking-wider">
+                          B4. {isHi ? 'ICTC रेफरल हेतु पात्र सदस्य' : 'Eligible for ICTC Referral'}
+                        </span>
+                        <span className="text-xs text-ink/70">
+                          {isHi ? 'जीवित सदस्य जिनका परीक्षण नहीं हुआ / अज्ञात है' : 'Living members with unknown / untested status'}
+                        </span>
+                      </div>
+                      <span className="text-base font-black font-mono text-primary px-3 py-1 rounded-lg bg-surface border border-border/40">
+                        {(formData.b2_members || []).filter(
+                          (m) =>
+                            m.living !== '2' &&
+                            m.living !== 'dead' &&
+                            (m.hivStatus === 'unknown' || m.hivStatus === '3' || !m.hivStatus)
+                        ).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+

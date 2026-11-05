@@ -1,23 +1,22 @@
-// Alliance Child Nutrition & Education Support - High Reliability Offline PWA Service Worker
-const CACHE_NAME = 'alliance-pwa-v3.0.2';
+// CSC 2.0 — Community Support Centre Offline PWA Service Worker
+const CACHE_NAME = 'csc2-pwa-v1.0.0';
 const PRECACHE_URLS = [
   '/',
-  '/app',
-  '/assessment/new',
-  '/assessment/drafts',
-  '/assessment/sync',
+  '/work',
+  '/clients',
+  '/clients/new',
+  '/admin',
   '/manifest.json',
   '/alliance-india-logo.png',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/apple-touch-icon.png'
+  '/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.warn('[SW] Precache partial error (ignored for non-blocking):', err);
+        console.warn('[SW] Precache non-blocking partial error:', err);
       });
     }).then(() => self.skipWaiting())
   );
@@ -41,15 +40,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. Skip non-GET requests (POST, PATCH, PUT, DELETE) - strictly network-only
-  // POST /api/submissions and PATCH /api/submissions/:id are never intercepted or cached
+  // 1. Skip non-GET requests (POST, PUT, DELETE, PATCH) - strictly network-only
   if (request.method !== 'GET') return;
 
-  // 2. Skip cross-origin requests (e.g. CDNs, external analytics, Google scripts)
+  // 2. Skip cross-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // 3. Skip all API routes - API calls must remain strictly network-only
-  // Never intercept or cache /api/* requests or sensitive response bodies
+  // 3. Skip all API routes - API calls must remain strictly network-only to avoid stale data
   if (url.pathname.startsWith('/api/')) return;
 
   // 4. Handle navigation requests (HTML document requests)
@@ -64,34 +61,29 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(async () => {
-          // Try matching cached response, ignoring query params (e.g. ?status=syncing&ref=...)
           const cachedResponse = await caches.match(request, { ignoreSearch: true });
           if (cachedResponse) return cachedResponse;
 
-          // Route-specific cached shells
-          if (url.pathname.startsWith('/assessment/sync')) {
-            const syncShell = await caches.match('/assessment/sync');
-            if (syncShell) return syncShell;
-          }
-          if (url.pathname.startsWith('/assessment/new')) {
-            const newShell = await caches.match('/assessment/new');
+          // Route fallbacks
+          if (url.pathname.startsWith('/clients/new')) {
+            const newShell = await caches.match('/clients/new');
             if (newShell) return newShell;
           }
-          if (url.pathname.startsWith('/assessment/drafts')) {
-            const draftsShell = await caches.match('/assessment/drafts');
-            if (draftsShell) return draftsShell;
+          if (url.pathname.startsWith('/clients')) {
+            const clientsShell = await caches.match('/clients');
+            if (clientsShell) return clientsShell;
           }
-
-          // Fallback app or home shell
-          const fallbackApp = await caches.match('/app');
-          if (fallbackApp) return fallbackApp;
+          if (url.pathname.startsWith('/work')) {
+            const workShell = await caches.match('/work');
+            if (workShell) return workShell;
+          }
 
           const fallbackHome = await caches.match('/');
           if (fallbackHome) return fallbackHome;
 
-          // Guaranteed valid HTML offline Response (status 503)
+          // Guaranteed offline fallback response
           return new Response(
-            '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Offline - Childcare Support</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:2rem;text-align:center"><h1>Offline</h1><p>You are currently offline. Saved records remain safely stored on this device.</p></body></html>',
+            '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>CSC 2.0 - Offline Mode</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:sans-serif;padding:2rem;text-align:center;background:#FAF7F2;color:#2B2627"><h1>CSC 2.0 — Offline Mode</h1><p>You are currently offline. Your registered clients and draft follow-up visits remain safely stored on this device.</p></body></html>',
             {
               status: 503,
               statusText: 'Service Unavailable (Offline)',
@@ -103,58 +95,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Handle static assets & other same-origin GET requests (Stale-While-Revalidate)
+  // 5. Static assets: Stale-while-revalidate
   event.respondWith(
-    caches.match(request, { ignoreSearch: true }).then((cachedResponse) => {
-      if (cachedResponse) {
-        // If cached response exists, return it immediately and revalidate in background
-        fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const clone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
-            }
-          })
-          .catch(() => {/* background fetch failure is ignored when cachedResponse is already served */});
+    caches.match(request).then((cached) => {
+      const fetchPromise = fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+        }
+        return networkResponse;
+      }).catch(() => cached);
 
-        return cachedResponse;
-      }
-
-      // If not cached, fetch from network with guaranteed fallback Response on failure
-      return fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
-          }
-          return networkResponse;
-        })
-        .catch(async () => {
-          // If network fails and item is not in cache, check if route shell can satisfy it
-          if (url.pathname.startsWith('/assessment/new')) {
-            const newShell = await caches.match('/assessment/new');
-            if (newShell) return newShell;
-          }
-          if (url.pathname.startsWith('/assessment/drafts')) {
-            const draftsShell = await caches.match('/assessment/drafts');
-            if (draftsShell) return draftsShell;
-          }
-          if (url.pathname.startsWith('/assessment/sync')) {
-            const syncShell = await caches.match('/assessment/sync');
-            if (syncShell) return syncShell;
-          }
-          if (url.pathname === '/' || url.pathname === '/app') {
-            const appShell = (await caches.match('/app')) || (await caches.match('/'));
-            if (appShell) return appShell;
-          }
-
-          // NEVER return undefined, null, or rejected promise. Always return a valid Response.
-          return new Response('Resource offline or unavailable', {
-            status: 503,
-            statusText: 'Service Unavailable (Offline)',
-            headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' }),
-          });
-        });
+      return cached || fetchPromise;
     })
   );
 });

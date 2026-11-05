@@ -3,6 +3,7 @@ package org.allianceindia.csc2.service;
 import org.allianceindia.csc2.domain.AuthRateLimit;
 import org.allianceindia.csc2.repository.AuthRateLimitRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -17,7 +18,7 @@ public class RateLimiterService {
         this.rateLimitRepository = rateLimitRepository;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean checkAndRecord(String rateKey, int maxAttempts, Duration window) {
         Instant cutoff = Instant.now().minus(window);
         long count = rateLimitRepository.countByRateKeyAndAttemptAtAfter(rateKey, cutoff);
@@ -35,7 +36,7 @@ public class RateLimiterService {
         return count < maxAttempts;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordAttempt(String rateKey) {
         rateLimitRepository.save(new AuthRateLimit(rateKey));
     }

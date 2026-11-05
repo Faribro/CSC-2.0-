@@ -12,6 +12,8 @@ public interface FieldRosterRepository extends JpaRepository<FieldRoster, UUID> 
     Optional<FieldRoster> findByPhoneE164(String phoneE164);
     Optional<FieldRoster> findByPhoneE164AndStatus(String phoneE164, String status);
     List<FieldRoster> findByStateOrderByCreatedAtDesc(String state);
+    List<FieldRoster> findByStateInOrderByCreatedAtDesc(List<String> states);
     Page<FieldRoster> findByState(String state, Pageable pageable);
     long countByState(String state);
+    long countByStateIn(List<String> states);
 }

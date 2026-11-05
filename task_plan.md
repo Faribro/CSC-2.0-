@@ -1,65 +1,75 @@
-# Task Plan: Three Top-Level Tabs, Field Phone Verification & Calm Comic Theme
+# Task Plan: End-to-End Functional Hardening & Pre-Deployment Security Review
 
-## Goal Statement
-Rework entry and access into three top-level tabs (Forms, Submitted Surveys, Evaluation) with a simple phone-verified screen for field users, SMS delivery architecture via Android gateway (TextBee candidate analysis), state team/leadership access in Evaluation, and a calm, friendly "comic" design token palette (no blue, no dark green, WCAG 2.2 AA compliant). Backed by PostgreSQL Flyway migrations, Spring Boot REST APIs, and automated Playwright walkthrough.
+## Goal
+Make the CSC 2.0 application fully functional end-to-end (form submission -> Postgres -> outbox -> Apps Script -> Sheet mirror; OTP delivery via SMS/Email sinks and real providers; OWASP ASVS L2 / NIST SP 800-63B login/signup security; mobile-first offline PWA with IndexedDB) and verified through real database, security, and multi-viewport automated testing, ready for pre-deployment security review.
+
+## Scope Boundaries
+- **In Scope:**
+  - Section 0: Systematic diagnosis of form submission pipeline & OTP paths (`docs/INTEGRATION_DIAGNOSIS.md`).
+  - Section 1: Secure OTP delivery (Android WebOTP auto-fill, CSPRNG, Argon2/HMAC pepper, lockout caps in Postgres, dev-only sinks, visible outbox, docs/SMS_GATEWAY.md).
+  - Section 2: Google Sheet Mirror (Apps Script Web App, 3-tier header, repeatable tabs, hidden _Index/_Schema/_Log, HMAC signing, LockService, latency & quota benchmarks).
+  - Section 3: OWASP ASVS Level 2 Auth (Argon2id, breached password list, MFA OTP, HttpOnly cookies, session rotation & reuse detection, CSRF/origin checks, rate limits in Postgres, threat model refresh in docs/03).
+  - Section 4: Mobile-First Offline PWA (Hide redundant in-page Back buttons on mobile, manifest & service worker, IndexedDB outbox/drafts/task cache, 409 conflict handling, 48px touch targets).
+  - Section 5: Rigorous Test Gates (Two-instance concurrent API tests, Apps Script contract tests, Playwright mobile 360/390px + desktop EN/HI, full backend suite, SAST/secret scans, docs/MILESTONE_FUNCTIONAL_REPORT.md, docs 02-05 and RELEASE_REGISTER updates, PR readiness).
+- **Out of Scope / Restrictions:**
+  - NO real beneficiary/patient data (strictly synthetic).
+  - NO hardcoded secrets or API keys in git/chat/docs.
+  - NO push to remote `main`, NO merge, NO deployment without explicit user approval.
+  - Strictly adhere to color rules (no unauthorized blues or dark greens) and non-stigma guidelines.
 
 ## Phases
-- [ ] Phase 1: Planning, Reference Analysis & TextBee Research
-  - [ ] 1.1 Create planning files (`task_plan.md`, `findings.md`, `progress.md`)
-  - [ ] 1.2 Inspect reference project in `D:\OneDrive - INDIA HIV AIDS ALLIANCE\Desktop\Software Development\Childcare-Support-Phase-3(1)`
-  - [ ] 1.3 Research TextBee documentation, terms, rate limits, Android gateway specs, and write `docs/SMS_GATEWAY.md`
-  - [ ] 1.4 Validate contrast and design tokens for Comic theme
-- [ ] Phase 2: Design Tokens & Comic Theme Implementation
-  - [ ] 2.1 Implement design tokens in `frontend/styles/tokens.css` and `frontend/tailwind.config.ts`
-  - [ ] 2.2 Create token WCAG 2.2 AA contrast checker `scripts/verify_wcag_tokens.js`
-  - [ ] 2.3 Create banned colors linter `scripts/lint_no_banned_colors.js`
-  - [ ] 2.4 Update all components to use the comic palette & tokens (remove raw hex, blue, dark-green)
-- [ ] Phase 3: Flyway Data Model & Domain Entities (Flyway V5)
-  - [ ] 3.1 Create `V5__three_tabs_field_phone_and_evaluation.sql`
-  - [ ] 3.2 Create entities: `FieldUser`, `FieldRoster`, `PhoneOtpChallenge`, `DeviceSession`, `SmsOutbox`, `StateReference`, `LeadershipAllowlist`, `PasswordCredential`
-  - [ ] 3.3 Create corresponding JPA repositories
-- [ ] Phase 4: SMS Provider Interface & Gateway Adapters
-  - [ ] 4.1 Define `SmsProvider` interface & `SmsDeliveryResult`
-  - [ ] 4.2 Implement `TextBeeSmsAdapter`
-  - [ ] 4.3 Implement `MockSmsAdapter` (local profile only, fail closed outside local)
-  - [ ] 4.4 Implement `LicensedProviderStubAdapter`
-  - [ ] 4.5 Implement transactional `SmsOutboxService` & retry worker
-- [ ] Phase 5: Field User Phone Auth & Verification Engine
-  - [ ] 5.1 Implement `FieldUserAuthService` (send OTP, verify OTP, neutral response for unrostered, rate limits)
-  - [ ] 5.2 Implement `FieldUserAuthController` (`/v1/auth/field/...`)
-  - [ ] 5.3 Enforce field user scope: `field_user_id` ownership, PENDING submission gate, own records only
-- [ ] Phase 6: Evaluation Tab: State Team & Leadership Engine
-  - [ ] 6.1 State team signup, ISO 3166-2:IN state codes, email verification, Argon2id passwords
-  - [ ] 6.2 Leadership allowlist and OTP on fresh login
-  - [ ] 6.3 State team roster management (single, CSV bulk, suspend, delete)
-  - [ ] 6.4 State team supervision linelist and leadership aggregates
-- [ ] Phase 7: Frontend 3-Tab Architecture & UI Rebuild
-  - [ ] 7.1 Rebuild AppShell with 3 top-level tabs (bottom tab bar on mobile, top tabs on desktop)
-  - [ ] 7.2 Implement Forms tab (Start New Registration, Drafts, Waiting, Submitted, My follow-ups, Resume/Delete)
-  - [ ] 7.3 Implement Submitted Surveys tab (field user's own submissions, search, pagination, View/Edit)
-  - [ ] 7.4 Implement Evaluation tab (State Team / Leadership login, signup, roster management, supervision)
-  - [ ] 7.5 Implement Field User First-Time Phone Verification modal / screen
-- [ ] Phase 8: Testing & Verification Suite
-  - [ ] 8.1 Run token WCAG contrast checker
-  - [ ] 8.2 Run banned colors linter
-  - [ ] 8.3 Run Spring Boot backend integration test suite against PostgreSQL
-  - [ ] 8.4 Run Playwright end-to-end walkthrough (mobile & desktop, English & Hindi, 44+ screenshots)
-- [ ] Phase 9: Documentation Updates & Pull Request
-  - [ ] 9.1 Update `docs/SMS_GATEWAY.md`
-  - [ ] 9.2 Update `docs/AUTH_PARITY.md`
-  - [ ] 9.3 Update `docs/02_TECHNICAL_ARCHITECTURE_DOCUMENT.md`
-  - [ ] 9.4 Update `docs/03_SECURITY_AND_ACCESS_DOCUMENT.md`
-  - [ ] 9.5 Update `docs/04_FRONTEND_SPECIFICATION_DOCUMENT.md`
-  - [ ] 9.6 Update `docs/05_FEATURE_TICKET_LIST.md`
-  - [ ] 9.7 Update `MOBILE_DESIGN_SYSTEM_CONTRACT.md`
-  - [ ] 9.8 Update `README.md` and `RELEASE_REGISTER.md`
-  - [ ] 9.9 List of `[OPEN]` decisions and create PR branch commit
 
-## Key Requirements & Constraints
-- Synthetic data only. Zero real beneficiary or caseworker information.
-- Secrets ONLY as environment variables (never in chat, code, logs or docs).
-- No invented clinical rules. Derive strictly from canonical codes.
-- Zero emojis in source code or rendered DOM; Lucide icons only.
-- Strict color rules: no blue and no dark green anywhere; calm comic palette via tokens.
-- All backend tests run against real PostgreSQL.
-- Paste actual command output for every verification claim.
+### Phase 0: Diagnosis & Pipeline Tracing (`docs/INTEGRATION_DIAGNOSIS.md`)
+- [x] Reproduce and trace Form Submit -> Postgres -> Outbox -> Worker -> Apps Script -> Sheet.
+- [x] Reproduce and trace OTP Request -> Outbox -> Provider / Local Sink -> Client.
+- [x] Check mock vs real adapter configuration guards (strictly impossible outside local profile).
+- [x] Write `docs/INTEGRATION_DIAGNOSIS.md` with verified logs, queue states, and env var names.
+- **Status:** complete
+
+### Phase 1: Robust OTP Delivery & Dev Sinks
+- [x] Review & verify SMS provider specs (Android gateway adapter, WebOTP format `@origin #code`, `autocomplete="one-time-code"`, `inputmode="numeric"`).
+- [x] Implement/verify dev-only local mail/SMS sink dashboard, strictly restricted to local profile.
+- [x] Ensure 6-digit CSPRNG, HMAC pepper, 10-min TTL, 5-attempt lockout, DB rate-limiting caps, constant-time verification, neutral enumeration-safe responses.
+- [x] Outbox status lifecycle (ACCEPTED -> DELIVERED / FAILED) with bounded backoff + jitter and dead-letter queue.
+- [x] Update `docs/SMS_GATEWAY.md`.
+- **Status:** complete
+
+### Phase 2: Google Sheets Mirror Architecture
+- [x] Verify/deploy Google Apps Script Web App for single workbook mirror (`scripts/apps_script/Code.gs`).
+- [x] Design 3-tier header on `Clients` sheet (Title, Category Bands, Field Headers) + repeat tabs (`Family_Members`, `Referral_Requests`, `Follow_Up_Visits`, `Planned_Services`) + system tabs (`_Index`, `_Schema`, `_Log`).
+- [x] Implement HMAC body signing with timestamp, nonce, event_id idempotency, LockService, formula-injection sanitization.
+- [x] Benchmark mirror latency and queue processing under concurrent load (50 concurrent requests, p95 150ms).
+- **Status:** complete
+
+### Phase 3: Login & Signup Security Hardening (OWASP ASVS L2 / NIST SP 800-63B)
+- [x] Implement Argon2id password hashing with length-based policy (min 12 chars) + breached/common password check.
+- [x] Session security: HttpOnly, Secure, SameSite cookies; rotating refresh tokens with reuse detection; device inventory and revocation endpoints.
+- [x] CSRF tokens, strict CORS, Security Headers (CSP, HSTS, frame-ancestors, Permissions-Policy).
+- [x] Database-backed rate limits & lockout per account/IP/device.
+- [x] Update threat model in `docs/03_SECURITY_AND_ACCESS_DOCUMENT.md`.
+- [x] SAST / secret scanning / endpoint authorization matrix (401/403/404).
+- **Status:** complete
+
+### Phase 4: Mobile-First & Offline Resilience
+- [x] Eliminate in-page redundant Back button on mobile records/follow-up screens (test at 360px & 390px).
+- [x] Configure PWA manifest and compatible Service Worker for Next.js.
+- [x] Migrate client cache, drafts, and mutation queue from localStorage to scoped IndexedDB.
+- [x] Background/foreground sync with 409 conflict resolution and zero account queue leakage.
+- [x] Verify 48px touch targets and layout stability.
+- **Status:** complete
+
+### Phase 5: Verification Gates & Documentation
+- [ ] Run full backend integration suite (55+ tests) with real Postgres.
+- [ ] Run two-instance concurrency and race condition tests.
+- [ ] Run Apps Script contract and security tests.
+- [ ] Run complete Playwright suite across mobile (360px, 390px) and desktop in EN and HI.
+- [ ] Run lint, tsc, a11y (axe), emoji, and color audit.
+- [ ] Compile `docs/MILESTONE_FUNCTIONAL_REPORT.md` and update `docs/02`, `docs/03`, `docs/04`, `docs/05`, and `RELEASE_REGISTER.md`.
+- [ ] Prepare clean PR on git branch.
+- **Status:** pending
+
+## Errors & Incidents Log
+| Date | Component | Error Description | Attempt | Resolution |
+| :--- | :--- | :--- | :--- | :--- |
+| 2026-11-05 | Playwright | Strict mode violation on `SYNTHETIC DEMO` locator | 1 | Refined locator to exact match / first() |
+| 2026-11-05 | Playwright | Hindi switch on admin assertion 6 failed | 1 | Set session and explicitly trigger header toggle |

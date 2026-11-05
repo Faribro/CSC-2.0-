@@ -3,6 +3,7 @@ package org.allianceindia.csc2.service.sms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component("mockSmsAdapter")
+@Profile({"local", "dev", "test", "default"})
 public class MockSmsAdapter implements SmsProvider {
 
     private static final Logger log = LoggerFactory.getLogger(MockSmsAdapter.class);

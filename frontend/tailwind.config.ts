@@ -51,20 +51,26 @@ const config: Config = {
           light: "var(--border-light)",
         },
         success: {
+          DEFAULT: "var(--success-text)",
           text: "var(--success-text)",
           bg: "var(--success-bg)",
           border: "var(--success-border)",
         },
+        "success-ink": "var(--success-text)",
         warning: {
+          DEFAULT: "var(--warning-text)",
           text: "var(--warning-text)",
           bg: "var(--warning-bg)",
           border: "var(--warning-border)",
         },
+        "warning-ink": "var(--warning-text)",
         error: {
+          DEFAULT: "var(--error-text)",
           text: "var(--error-text)",
           bg: "var(--error-bg)",
           border: "var(--error-border)",
         },
+        "error-ink": "var(--error-text)",
       },
       borderRadius: {
         card: "var(--radius-card)",
@@ -80,6 +86,11 @@ const config: Config = {
       },
       minWidth: {
         touch: "var(--touch-target)",
+      },
+      fontFamily: {
+        sans: ["'Baloo 2'", "'Noto Sans Devanagari'", "sans-serif"],
+        comic: ["'Baloo 2'", "cursive", "sans-serif"],
+        baloo: ["'Baloo 2'", "sans-serif"],
       },
     },
   },
