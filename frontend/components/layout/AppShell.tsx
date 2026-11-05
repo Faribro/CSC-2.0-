@@ -219,8 +219,8 @@ export function AppShell({
 
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink font-sans antialiased pb-20 md:pb-0" suppressHydrationWarning>
-      {/* Top Masthead (Desktop & Mobile Header) */}
-      <header className="bg-surface border-b-2 border-border/40 sticky top-0 z-40 shadow-xs">
+      {/* Top Masthead (Desktop Header - Hidden on mobile view per mobile ergonomics) */}
+      <header className="hidden md:block bg-surface border-b-2 border-border/40 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Alliance India Brand Logo */}
@@ -462,6 +462,20 @@ export function AppShell({
             </span>
           </Link>
         ))}
+
+        {/* Mobile Language Toggle */}
+        <button
+          type="button"
+          onClick={() => onLanguageChange(currentLang === 'en' ? 'hi' : 'en')}
+          className="flex flex-col items-center justify-center min-h-[48px] min-w-[48px] px-1 py-1 rounded-[12px] text-[11px] font-black text-plum hover:bg-plum/10 transition-colors select-none cursor-pointer"
+          title={currentLang === 'en' ? 'Switch to Hindi' : 'Switch to English'}
+          aria-label="Language Toggle"
+        >
+          <span className="w-5 h-5 mb-0.5 flex items-center justify-center font-mono font-black text-[10px] rounded bg-lavender border border-plum/30 text-plum">
+            {currentLang === 'en' ? 'HI' : 'EN'}
+          </span>
+          <span className="text-[9px] font-bold text-ink-muted">{currentLang === 'en' ? 'हिंदी' : 'Eng'}</span>
+        </button>
       </nav>
 
       {/* Field Phone Verification Modal */}

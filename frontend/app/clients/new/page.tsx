@@ -114,6 +114,25 @@ export default function NewClientRegistrationPage() {
         headers['X-Device-Session'] = deviceToken;
       }
 
+      // Check if browser is explicitly offline before attempting network call
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ formData: submittedData, centerId }));
+        const pendingQueueKey = 'csc2_pending_offline_submissions';
+        try {
+          const currentQueue = JSON.parse(localStorage.getItem(pendingQueueKey) || '[]');
+          currentQueue.push({
+            id: 'offline-' + Date.now(),
+            type: 'client_registration',
+            payload,
+            timestamp: new Date().toISOString(),
+          });
+          localStorage.setItem(pendingQueueKey, JSON.stringify(currentQueue));
+        } catch (_qErr) {}
+        setSaveStatus('saved_locally');
+        showToast(lang === 'hi' ? 'ऑफ़लाइन: डेटा इस डिवाइस पर सुरक्षित रूप से सहेजा गया।' : 'Offline: Form saved on this device (queued for sync).');
+        return;
+      }
+
       const res = await fetch('/api/v1/clients', {
         method: 'POST',
         headers,
@@ -136,8 +155,14 @@ export default function NewClientRegistrationPage() {
         router.push(`/clients/${receipt.resourceId || 'client-001'}?tab=registration&created=true`);
       }, 1000);
     } catch (err: any) {
-      alert(`Submission error: ${err.message}. Draft remains saved locally.`);
+      const isNetworkOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ formData: submittedData, centerId }));
       setSaveStatus('saved_locally');
+      if (isNetworkOffline || err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('Failed to fetch')) {
+        showToast(lang === 'hi' ? 'ऑफ़लाइन: डेटा इस डिवाइस पर सुरक्षित रूप से सहेजा गया।' : 'Offline: Form saved on this device (queued for sync).');
+      } else {
+        alert(`Submission error: ${err.message}. Draft remains saved locally.`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -164,8 +189,8 @@ export default function NewClientRegistrationPage() {
         }}
       >
         <div className="space-y-6">
-          {/* Navigation Breadcrumb & Center Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
+          {/* Navigation Breadcrumb & Center Selector (Hidden on mobile, visible on desktop) */}
+          <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-4xl mx-auto w-full">
             <Link
               href="/clients"
               className="text-xs font-semibold text-plum hover:text-primary flex items-center gap-1.5 transition-colors"
@@ -205,10 +230,11 @@ export default function NewClientRegistrationPage() {
           {/* Toast Message */}
           {toastMessage && (
             <div
-              className="fixed bottom-20 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2"
+              id="csc-toast-message"
+              className="fixed bottom-28 left-4 right-4 sm:left-auto sm:right-6 z-50 bg-slate-900/95 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2.5 backdrop-blur-md"
               role="status"
             >
-              <Icon name="check" className="w-4 h-4 text-emerald-400" />
+              <Icon name="check" className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{toastMessage}</span>
             </div>
           )}

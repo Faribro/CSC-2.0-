@@ -376,6 +376,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         }
       }
     }
+    if (typeof window !== 'undefined') {
+      (window as any).__fieldValidationMap = errors;
+    }
     return errors;
   }, [formData, lang]);
 
@@ -463,6 +466,39 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   };
 
+  const scrollToFirstError = () => {
+    const errorKeys = Object.keys(fieldValidationMap);
+    if (errorKeys.length === 0) return;
+    const firstErrorFieldName = errorKeys[0];
+    let errorSection = null;
+    let errorField = null;
+    for (const s of REGISTRATION_SECTIONS) {
+      const found = s.fields.find((f) => f.name === firstErrorFieldName);
+      if (found) {
+        errorSection = s;
+        errorField = found;
+        break;
+      }
+    }
+    const sectionName = errorSection
+      ? (isHi ? errorSection.titleHi : errorSection.titleEn)
+      : 'Section';
+    const fieldLabel = errorField
+      ? (isHi ? (errorField.labelHi || errorField.labelEn) : errorField.labelEn)
+      : firstErrorFieldName;
+
+    const el = document.getElementById(`field-${firstErrorFieldName}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+    }
+    alert(
+      isHi
+        ? `पहली त्रुटि: ${sectionName} में '${fieldLabel}' (${totalErrors} त्रुटियां शेष)`
+        : `First error: '${fieldLabel}' in ${sectionName} (${totalErrors} error${totalErrors > 1 ? 's' : ''} remaining)`
+    );
+  };
+
   // Submit Handler
   const handleTriggerSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -478,18 +514,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setTouched(allTouched);
 
     if (totalErrors > 0) {
-      // Find first error and scroll to it
-      const firstErrorField = Object.keys(fieldValidationMap)[0];
-      const el = document.getElementById(`field-${firstErrorField}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.focus();
-      }
-      alert(
-        isHi
-          ? `कृपया प्रपत्र में छूटी हुई या अमान्य ${totalErrors} जानकारी को ठीक करें।`
-          : `Please resolve the ${totalErrors} required or invalid fields before submitting.`
-      );
+      scrollToFirstError();
       return;
     }
 
@@ -1455,42 +1480,103 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           );
         })}
 
+        {/* ================================================================== */}
+        {/* IN-PAGE FULL-WIDTH SUBMIT BUTTON (ALWAYS REACHABLE ABOVE FOOTER) */}
+        {/* ================================================================== */}
+        {mode !== 'view' && (
+          <div className="pt-4 pb-36 px-1">
+            <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Icon name={mode === 'edit' ? 'save' : 'check'} className="w-5 h-5 text-plum" />
+                    <span>{mode === 'edit' ? (isHi ? 'प्रपत्र संशोधन समाप्त करें' : 'Finish Profile Revision') : (isHi ? 'पंजीकरण प्रपत्र पूर्ण करें' : 'Finish Client Registration')}</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {totalErrors > 0
+                      ? (isHi
+                          ? `प्रपत्र में ${totalErrors} अनिवार्य जानकारी अधूरी है। जांचने के लिए बटन दबाएं।`
+                          : `${totalErrors} required field${totalErrors > 1 ? 's' : ''} remaining. Tapping submit will jump to the first error.`)
+                      : (isHi
+                          ? 'सभी अनिवार्य फ़ील्ड मान्य हैं। डेटाबेस और गूगल शीट में सुरक्षित रूप से जमा करें।'
+                          : 'All mandatory fields validated. Submit securely to server & registry.')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                    totalErrors > 0
+                      ? 'bg-amber-50 text-amber-900 border-amber-300'
+                      : 'bg-lavender text-plum border-plum/30'
+                  }`}>
+                    {overallPercentage}% • {totalErrors > 0 ? `${totalErrors} ${isHi ? 'त्रुटि' : 'error'}${totalErrors > 1 ? 's' : ''}` : (isHi ? 'मान्य' : 'Ready')}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                id="in-page-submit-button"
+                onClick={handleTriggerSubmit}
+                disabled={isSubmitting}
+                className="w-full min-h-[52px] py-3.5 px-6 rounded-xl font-black text-sm text-white shadow-md transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 bg-primary hover:bg-primary-hover active:scale-[0.99]"
+              >
+                <Icon name={mode === 'edit' ? 'save' : 'check'} className="w-5 h-5 text-white" />
+                <span>
+                  {isSubmitting
+                    ? (isHi ? 'सर्वर पर जमा हो रहा है...' : 'Submitting to server...')
+                    : mode === 'edit'
+                    ? (isHi ? 'संशोधन सहेजें (Submit Revision)' : 'Submit Profile Revision')
+                    : (isHi ? 'पंजीकरण जमा करें (Submit Registration)' : 'Submit Registration')}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ------------------------------------------------------------------ */}
         {/* 4. STICKY ENKETO BOTTOM ACTION BAR */}
         {/* ------------------------------------------------------------------ */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl py-3 px-4 sm:px-8">
-          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="fixed bottom-[56px] md:bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl py-2 sm:py-3 px-3 sm:px-8">
+          <div className="max-w-4xl mx-auto flex flex-row items-center justify-between gap-2">
             {/* Completion Meter & Indicator */}
-            <div className="flex items-center gap-3">
-              <div className="w-28 sm:w-36 bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-14 sm:w-36 bg-slate-200 rounded-full h-2 sm:h-2.5 overflow-hidden shrink-0">
                 <div
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                  className={`h-full rounded-full transition-all duration-300 ${
                     totalErrors > 0 ? 'bg-amber-500' : 'bg-emerald-600'
                   }`}
                   style={{ width: `${overallPercentage}%` }}
                 />
               </div>
-              <div className="text-xs font-semibold text-slate-700">
+              <div className="text-[11px] sm:text-xs font-semibold text-slate-700 whitespace-nowrap">
                 <span>{overallPercentage}%</span> •{' '}
                 {totalErrors > 0 ? (
-                  <span className="text-rose-600 font-bold">
-                    {totalErrors} {isHi ? 'त्रुटियां' : 'errors'}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={scrollToFirstError}
+                    className="text-rose-600 font-bold hover:underline cursor-pointer inline-flex items-center gap-1 focus:outline-hidden"
+                    title={isHi ? 'पहली त्रुटि पर जाएं' : 'Jump to first error'}
+                  >
+                    <span>{totalErrors} {isHi ? 'त्रुटि' : 'err'}{totalErrors > 1 && !isHi ? 's' : ''}</span>
+                    <span className="text-[9px] bg-rose-100 text-rose-700 px-1 py-0.5 rounded-full border border-rose-300 font-bold uppercase tracking-wider">
+                      {isHi ? 'देखें' : 'Jump'}
+                    </span>
+                  </button>
                 ) : (
                   <span className="text-success-ink font-bold">
-                    {isHi ? 'वैध' : 'All valid'}
+                    {isHi ? 'वैध' : 'Valid'}
                   </span>
                 )}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2.5 justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
               {onCancel && (
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl hover:bg-slate-50 min-h-[44px]"
+                  className="px-2.5 sm:px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl hover:bg-slate-50 min-h-[44px]"
                 >
                   {isHi ? 'रद्द करें' : 'Cancel'}
                 </button>
@@ -1501,10 +1587,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   <button
                     type="button"
                     onClick={onSwitchToEdit}
-                    className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md min-h-[44px]"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 sm:px-5 py-2.5 rounded-xl shadow-md min-h-[44px]"
                   >
                     <Icon name="edit" className="w-4 h-4" />
-                    <span>{isHi ? 'संशोधन करें (Edit)' : 'Edit Beneficiary Record'}</span>
+                    <span>{isHi ? 'संशोधन करें' : 'Edit'}</span>
                   </button>
                 )
               ) : mode === 'edit' ? (
@@ -1512,19 +1598,37 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   type="button"
                   onClick={handleTriggerSubmit}
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 sm:px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
                 >
                   <Icon name="save" className="w-4 h-4" />
-                  <span>{isSubmitting ? (isHi ? 'सहेजा जा रहा है...' : 'Saving Revision...') : (isHi ? 'संशोधन सहेजें' : 'Save Profile Revision')}</span>
+                  <span>
+                    {isSubmitting
+                      ? (isHi ? 'सहेजा जा रहा...' : 'Saving...')
+                      : (
+                        <>
+                          <span className="inline sm:hidden">{isHi ? 'सहेजें' : 'Save'}</span>
+                          <span className="hidden sm:inline">{isHi ? 'संशोधन सहेजें' : 'Save Profile Revision'}</span>
+                        </>
+                      )}
+                  </span>
                 </button>
               ) : (
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 sm:px-6 py-2.5 rounded-xl shadow-md transition-all min-h-[44px] disabled:opacity-50"
                 >
                   <Icon name="check" className="w-4 h-4" />
-                  <span>{isSubmitting ? (isHi ? 'जमा हो रहा है...' : 'Submitting...') : (isHi ? 'पंजीकरण जमा करें' : 'Submit Registration')}</span>
+                  <span>
+                    {isSubmitting
+                      ? (isHi ? 'जमा...' : 'Submitting...')
+                      : (
+                        <>
+                          <span className="inline sm:hidden">{isHi ? 'जमा करें' : 'Submit'}</span>
+                          <span className="hidden sm:inline">{isHi ? 'पंजीकरण जमा करें' : 'Submit Registration'}</span>
+                        </>
+                      )}
+                  </span>
                 </button>
               )}
             </div>

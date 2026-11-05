@@ -1,5 +1,6 @@
 // CSC 2.0 — Community Support Centre Offline PWA Service Worker
-const CACHE_NAME = 'csc2-pwa-v1.0.0';
+const CACHE_VERSION = 'v1.3.1';
+const CACHE_NAME = `csc2-pwa-${CACHE_VERSION}`;
 const PRECACHE_URLS = [
   '/',
   '/work',
@@ -13,27 +14,38 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Activate new service worker immediately without waiting for old tabs to close
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch((err) => {
         console.warn('[SW] Precache non-blocking partial error:', err);
       });
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
 self.addEventListener('activate', (event) => {
+  // Claim all active clients immediately so the new build takes control instantly
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Purging outdated cache:', key);
             return caches.delete(key);
           }
         })
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Listen for explicit skipWaiting message from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -49,7 +61,7 @@ self.addEventListener('fetch', (event) => {
   // 3. Skip all API routes - API calls must remain strictly network-only to avoid stale data
   if (url.pathname.startsWith('/api/')) return;
 
-  // 4. Handle navigation requests (HTML document requests)
+  // 4. Handle navigation requests (HTML document requests): Network-First with Cache Fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -95,7 +107,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Static assets: Stale-while-revalidate
+  // 5. Static assets: Stale-while-revalidate with cache update
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request).then((networkResponse) => {
