@@ -1,10 +1,12 @@
 package org.allianceindia.csc2.service;
 
+import org.allianceindia.csc2.domain.AuditEvent;
 import org.allianceindia.csc2.domain.DeviceSession;
 import org.allianceindia.csc2.domain.FieldRoster;
 import org.allianceindia.csc2.domain.FieldUser;
 import org.allianceindia.csc2.domain.PhoneOtpChallenge;
 import org.allianceindia.csc2.domain.SmsOutbox;
+import org.allianceindia.csc2.repository.AuditEventRepository;
 import org.allianceindia.csc2.repository.DeviceSessionRepository;
 import org.allianceindia.csc2.repository.FieldRosterRepository;
 import org.allianceindia.csc2.repository.FieldUserRepository;
@@ -12,11 +14,15 @@ import org.allianceindia.csc2.repository.PhoneOtpChallengeRepository;
 import org.allianceindia.csc2.service.sms.SmsOutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
@@ -45,8 +51,31 @@ public class FieldUserAuthService {
     private final CryptoService cryptoService;
     private final RateLimiterService rateLimiterService;
     private final org.springframework.core.env.Environment environment;
+    private final AuditEventRepository auditEventRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
+    @Value("${app.demo.fixed-otp-enabled:${DEMO_FIXED_OTP_ENABLED:false}}")
+    private boolean demoFixedOtpEnabled;
+
+    @Value("${app.demo.auto-roster-enabled:${DEMO_AUTO_ROSTER_ENABLED:false}}")
+    private boolean demoAutoRosterEnabled;
+
+    private static final ZonedDateTime DEMO_EXPIRY_THRESHOLD =
+            ZonedDateTime.of(2026, 11, 7, 23, 59, 59, 0, ZoneId.of("Asia/Kolkata"));
+
+    public boolean isDemoFallbackAllowed() {
+        return ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).isBefore(DEMO_EXPIRY_THRESHOLD);
+    }
+
+    public boolean isDemoFixedOtpActive() {
+        return demoFixedOtpEnabled && isDemoFallbackAllowed();
+    }
+
+    public boolean isDemoAutoRosterActive() {
+        return demoAutoRosterEnabled && isDemoFallbackAllowed();
+    }
+
+    @Autowired
     public FieldUserAuthService(
             FieldUserRepository fieldUserRepository,
             FieldRosterRepository fieldRosterRepository,
@@ -55,7 +84,8 @@ public class FieldUserAuthService {
             SmsOutboxService smsOutboxService,
             CryptoService cryptoService,
             RateLimiterService rateLimiterService,
-            org.springframework.core.env.Environment environment) {
+            org.springframework.core.env.Environment environment,
+            @Autowired(required = false) AuditEventRepository auditEventRepository) {
         this.fieldUserRepository = fieldUserRepository;
         this.fieldRosterRepository = fieldRosterRepository;
         this.otpChallengeRepository = otpChallengeRepository;
@@ -64,6 +94,7 @@ public class FieldUserAuthService {
         this.cryptoService = cryptoService;
         this.rateLimiterService = rateLimiterService;
         this.environment = environment;
+        this.auditEventRepository = auditEventRepository;
     }
 
     public record SendPhoneOtpResult(boolean success, String message, boolean cooldownActive) {}
@@ -140,11 +171,23 @@ public class FieldUserAuthService {
 
         // 4. Enqueue SMS in outbox & attempt immediate delivery
         Optional<FieldRoster> rosterEntry = fieldRosterRepository.findByPhoneE164(phoneE164);
-        if (rosterEntry.isEmpty()) {
-            FieldRoster autoRoster = new FieldRoster(phoneE164, "Delhi", "Central Delhi", "DEMO_ENROLLMENT");
+        if (rosterEntry.isEmpty() && isDemoAutoRosterActive()) {
+            FieldRoster autoRoster = new FieldRoster(phoneE164, "Delhi", "Central Delhi", "DEMO_AUTO_ROSTER");
             fieldRosterRepository.save(autoRoster);
             rosterEntry = Optional.of(autoRoster);
-            log.info("Enrolled demo phone {} into field roster", phoneE164);
+            log.info("Auto-enrolled demo phone {} into field roster", phoneE164);
+            if (auditEventRepository != null) {
+                try {
+                    AuditEvent audit = new AuditEvent(
+                            null, "DEMO_AUTO_ROSTER", "Delhi",
+                            "DEMO_FALLBACK_USED", "ROSTER", UUID.randomUUID(),
+                            ipAddress, "{\"message\":\"demo fallback used\"}"
+                    );
+                    auditEventRepository.save(audit);
+                } catch (Exception ex) {
+                    log.warn("Failed to record demo fallback audit event", ex);
+                }
+            }
         }
 
         if (rosterEntry.isPresent()) {
@@ -168,11 +211,7 @@ public class FieldUserAuthService {
             return new VerifyPhoneOtpResult(false, "Verification code must be exactly 6 digits.", null, null);
         }
 
-        boolean isStrictProduction = environment != null && (
-                java.util.Arrays.asList(environment.getActiveProfiles()).contains("prod") ||
-                java.util.Arrays.asList(environment.getActiveProfiles()).contains("production")
-        );
-        boolean isDefaultDevCode = !isStrictProduction && "123456".equals(code.trim());
+        boolean isDemoFixedOtp = isDemoFixedOtpActive() && "123456".equals(code.trim());
         Instant now = Instant.now();
         Optional<PhoneOtpChallenge> challengeOpt = otpChallengeRepository
                 .findTopByPhoneE164AndConsumedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(phoneE164, now);
@@ -187,7 +226,7 @@ public class FieldUserAuthService {
 
             challenge.setAttempts(challenge.getAttempts() + 1);
 
-            boolean valid = isDefaultDevCode || cryptoService.verifyOtp(code.trim(), challenge.getOtpHash(), challenge.getSalt());
+            boolean valid = isDemoFixedOtp || cryptoService.verifyOtp(code.trim(), challenge.getOtpHash(), challenge.getSalt());
             if (!valid) {
                 otpChallengeRepository.save(challenge);
                 int remaining = challenge.getMaxAttempts() - challenge.getAttempts();
@@ -200,16 +239,16 @@ public class FieldUserAuthService {
             // Atomically mark consumed to prevent concurrency race conditions
             int updated = otpChallengeRepository.consumeChallengeAtomically(challenge.getId(), now);
             log.info("[OTP VERIFY] challengeId={} updated={}", challenge.getId(), updated);
-            if (updated == 0) {
+            if (updated == 0 && !isDemoFixedOtp) {
                 return new VerifyPhoneOtpResult(false, "Code has already been consumed.", null, null);
             }
-        } else if (!isDefaultDevCode) {
+        } else if (!isDemoFixedOtp) {
             return new VerifyPhoneOtpResult(false, "Code has expired or does not exist. Please request a new code.", null, null);
         }
 
         // Check active roster
         Optional<FieldRoster> roster = fieldRosterRepository.findByPhoneE164AndStatus(phoneE164, "ACTIVE");
-        String userStatus = roster.isPresent() ? "ACTIVE" : (isDefaultDevCode ? "ACTIVE" : "PENDING");
+        String userStatus = roster.isPresent() ? "ACTIVE" : (isDemoFixedOtp ? "ACTIVE" : "PENDING");
         String state = roster.map(FieldRoster::getState).orElse("MH");
         String district = roster.map(FieldRoster::getDistrict).orElse("Pune");
 
@@ -231,6 +270,20 @@ public class FieldUserAuthService {
         user.setDistrict(district);
         user.setUpdatedAt(now);
         user = fieldUserRepository.save(user);
+
+        if (isDemoFixedOtp && auditEventRepository != null) {
+            try {
+                AuditEvent audit = new AuditEvent(
+                        user.getId(), "DEMO_FALLBACK_USER", user.getState() != null ? user.getState() : "MH",
+                        "DEMO_FALLBACK_USED", "AUTH", user.getId(),
+                        ipAddress, "{\"message\":\"demo fallback used\"}"
+                );
+                auditEventRepository.save(audit);
+                log.info("Recorded demo fallback audit log for OTP verification");
+            } catch (Exception ex) {
+                log.warn("Failed to record demo fallback audit event", ex);
+            }
+        }
 
         // Create persistent device session (30-day sliding, 90-day absolute)
         byte[] sessionBytes = new byte[32];

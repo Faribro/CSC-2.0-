@@ -45,6 +45,9 @@ management:
       show-details: always
 
 app:
+  demo:
+    fixed-otp-enabled: ${DEMO_FIXED_OTP_ENABLED:false}
+    auto-roster-enabled: ${DEMO_AUTO_ROSTER_ENABLED:false}
   security:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,https://*.vercel.app,https://*.trycloudflare.com,https://*.onrender.com}
   jwt:

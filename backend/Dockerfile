@@ -1,14 +1,14 @@
 # Multi-stage Dockerfile for CSC 2.0 Spring Boot Authority Backend (Render & Container Environments)
 
 # Stage 1: Build artifact
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /workspace
 
 # Copy Maven POM and source
 COPY pom.xml .
 COPY src ./src
 
-RUN ./mvnw clean package -DskipTests 2>/dev/null || mvn clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Stage 2: Minimal runtime image
 FROM eclipse-temurin:21-jre-alpine AS runner

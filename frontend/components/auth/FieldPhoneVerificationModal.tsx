@@ -173,9 +173,14 @@ export function FieldPhoneVerificationModal({
             <Icon name="Phone" className="w-6 h-6" />
           </div>
           <div>
-            <h2 id="phone-verify-title" className="text-lg font-black text-ink tracking-tight font-comic">
-              {lang === 'hi' ? 'फील्ड कार्यकर्ता सत्यापन' : 'Field Worker Access'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 id="phone-verify-title" className="text-lg font-black text-ink tracking-tight font-comic">
+                {lang === 'hi' ? 'फील्ड कार्यकर्ता सत्यापन' : 'Field Worker Access'}
+              </h2>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shrink-0">
+                Demo environment
+              </span>
+            </div>
             <p className="text-xs text-ink-muted">
               {lang === 'hi' ? 'पहली बार उपयोग के लिए मोबाइल सत्यापन आवश्यक है' : 'One-time phone verification for this device'}
             </p>
@@ -295,25 +300,18 @@ export function FieldPhoneVerificationModal({
                 className="w-full text-center text-xl font-mono font-bold tracking-[0.3em] px-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum focus:ring-2 focus:ring-plum/20"
                 autoFocus
               />
-              {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
-                <div className="mt-2 flex items-center justify-between">
-                  <Link
-                    href="/dev-sinks"
-                    target="_blank"
-                    className="text-[11px] font-mono font-bold text-plum hover:underline bg-lavender px-2 py-0.5 rounded-full border border-border/30 flex items-center gap-1"
-                  >
-                    <Icon name="external" className="w-3 h-3" />
-                    <span>Open Local SMS Sink</span>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setOtp('123456')}
-                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
-                  >
-                    Fill 123456 (Dev)
-                  </button>
-                </div>
-              )}
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  Demo code: 123456
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOtp('123456')}
+                  className="text-[11px] font-bold text-plum hover:underline cursor-pointer"
+                >
+                  Fill 123456 (Demo)
+                </button>
+              </div>
               <div className="flex items-center justify-between text-[11px] text-ink-muted mt-2">
                 <span>
                   {lang === 'hi' ? 'कोड 10 मिनट के लिए मान्य है' : 'Code valid for 10 minutes'}

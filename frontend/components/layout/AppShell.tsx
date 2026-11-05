@@ -241,6 +241,9 @@ export function AppShell({
                   />
                 </div>
               </Link>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-full shrink-0">
+                Demo environment
+              </span>
             </div>
 
             {/* Desktop Center Navigation (Three Top-Level Tabs) */}

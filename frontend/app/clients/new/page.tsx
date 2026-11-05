@@ -61,7 +61,8 @@ export default function NewClientRegistrationPage() {
     setSaveStatus('queued');
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
+      const jwtToken = typeof window !== 'undefined' ? (localStorage.getItem('csc_token') || localStorage.getItem('csc2_auth_token')) : null;
+      const deviceToken = typeof window !== 'undefined' ? localStorage.getItem('csc2_device_session_token') : null;
 
       // Transform form data to match Backend RegisterClientRequest
       const payload = {
@@ -103,12 +104,20 @@ export default function NewClientRegistrationPage() {
         })),
       };
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (jwtToken) {
+        headers['Authorization'] = `Bearer ${jwtToken}`;
+      }
+      if (deviceToken) {
+        headers['X-Device-Session'] = deviceToken;
+      }
+
       const res = await fetch('/api/v1/clients', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 

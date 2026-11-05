@@ -244,8 +244,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // Repeat Group Handlers: Family Members
   const handleAddMember = () => {
     if (isReadOnly) return;
+    const newId = `b2-${Date.now()}`;
     const newMember: FamilyMemberRow = {
-      id: `b2-${Date.now()}`,
+      id: newId,
       name: '',
       relationship: '1',
       age: '',
@@ -255,6 +256,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       artStatus: '1',
     };
     handleFieldChange('b2_members', [...(formData.b2_members || []), newMember]);
+    setTimeout(() => {
+      const el = document.getElementById(`member-first-${newId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+      }
+    }, 100);
   };
 
   const handleRemoveMember = (id: string) => {
@@ -276,8 +284,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // Repeat Group Handlers: Referral Requests
   const handleAddReferral = () => {
     if (isReadOnly) return;
+    const newId = `d5-${Date.now()}`;
     const newReferral: ReferralRequestRow = {
-      id: `d5-${Date.now()}`,
+      id: newId,
       category: 'social_protection',
       facility: '',
       targetDueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
@@ -285,6 +294,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       notes: '',
     };
     handleFieldChange('d5_referrals', [...(formData.d5_referrals || []), newReferral]);
+    setTimeout(() => {
+      const el = document.getElementById(`referral-first-${newId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+      }
+    }, 100);
   };
 
   const handleRemoveReferral = (id: string) => {
@@ -306,8 +322,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // Repeat Group Handlers: Planned Services
   const handleAddService = () => {
     if (isReadOnly) return;
+    const newId = `j5-${Date.now()}`;
     const newService: PlannedServiceRow = {
-      id: `j5-${Date.now()}`,
+      id: newId,
       category: '1',
       service: '',
       targetDueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
@@ -315,6 +332,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       notes: '',
     };
     handleFieldChange('j5_services', [...(formData.j5_services || []), newService]);
+    setTimeout(() => {
+      const el = document.getElementById(`service-first-${newId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+      }
+    }, 100);
   };
 
   const handleRemoveService = (id: string) => {
@@ -892,7 +916,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                         <span>B2. {isHi ? 'परिवार के सदस्य और आश्रित' : 'Family Members & Dependents'}</span>
                         <span className="text-xs font-normal text-slate-500">
-                          ({formData.b2_members?.length || 0} {isHi ? 'सदस्य' : 'members'})
+                          ({formData.b2_members?.length || 0} {isHi ? 'सदस्य' : (formData.b2_members?.length === 1 ? '1 member' : `${formData.b2_members?.length || 0} members`)})
                         </span>
                       </h3>
                       <p className="text-xs text-slate-500">
@@ -901,17 +925,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                           : 'Record columns B2a through B2l for each household member (Father, Mother, Spouse, Partner, Children, Non-traditional members).'}
                       </p>
                     </div>
-
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={handleAddMember}
-                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
-                      >
-                        <Icon name="add" className="w-3.5 h-3.5" />
-                        <span>{isHi ? '+ सदस्य जोड़ें' : '+ Add Member'}</span>
-                      </button>
-                    )}
                   </div>
 
                   {formData.b2_members && formData.b2_members.length > 0 ? (
@@ -944,6 +957,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                                 B2a. {isHi ? 'रिश्ता' : 'Relationship'}
                               </label>
                               <select
+                                id={`member-first-${member.id}`}
                                 disabled={isReadOnly}
                                 value={member.relationship}
                                 onChange={(e) => handleUpdateMember(member.id, 'relationship', e.target.value)}
@@ -1192,6 +1206,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       {isHi ? 'कोई परिवार का सदस्य दर्ज नहीं है।' : 'No family members recorded.'}
                     </p>
                   )}
+
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={handleAddMember}
+                      className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-400 transition-colors shadow-2xs cursor-pointer py-3 px-4"
+                    >
+                      <Icon name="add" className="w-4 h-4 text-slate-700" />
+                      <span>{isHi ? '+ सदस्य जोड़ें' : '+ Add Member'}</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -1203,24 +1228,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                         <span>D5. {isHi ? 'रेफरल और लिंकेज अनुरोध' : 'Referral & Linkage Requests'}</span>
                         <span className="text-xs font-normal text-slate-500">
-                          ({formData.d5_referrals?.length || 0} {isHi ? 'अनुरोध' : 'requests'})
+                          ({formData.d5_referrals?.length || 0} {isHi ? 'अनुरोध' : (formData.d5_referrals?.length === 1 ? '1 request' : `${formData.d5_referrals?.length || 0} requests`)})
                         </span>
                       </h3>
                       <p className="text-xs text-slate-500">
                         Structured referrals to social protection, legal aid, nutrition, and medical schemes.
                       </p>
                     </div>
-
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={handleAddReferral}
-                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
-                      >
-                        <Icon name="add" className="w-3.5 h-3.5" />
-                        <span>{isHi ? '+ रेफरल जोड़ें' : '+ Add Referral'}</span>
-                      </button>
-                    )}
                   </div>
 
                   {formData.d5_referrals && formData.d5_referrals.length > 0 ? (
@@ -1252,6 +1266,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                                 {isHi ? 'योजना / श्रेणी' : 'Scheme / Category'}
                               </label>
                               <select
+                                id={`referral-first-${refItem.id}`}
                                 disabled={isReadOnly}
                                 value={refItem.category}
                                 onChange={(e) => handleUpdateReferral(refItem.id, 'category', e.target.value)}
@@ -1314,6 +1329,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       {isHi ? 'कोई रेफरल अनुरोध दर्ज नहीं है।' : 'No referral requests logged.'}
                     </p>
                   )}
+
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={handleAddReferral}
+                      className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-400 transition-colors shadow-2xs cursor-pointer py-3 px-4"
+                    >
+                      <Icon name="add" className="w-4 h-4 text-slate-700" />
+                      <span>{isHi ? '+ रेफरल जोड़ें' : '+ Add Referral'}</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -1325,24 +1351,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                         <span>J5. {isHi ? 'नियोजित अनुवर्ती सेवाएं' : 'Planned Follow-Up Services'}</span>
                         <span className="text-xs font-normal text-slate-500">
-                          ({formData.j5_services?.length || 0} {isHi ? 'सेवाएं' : 'services'})
+                          ({formData.j5_services?.length || 0} {isHi ? 'सेवाएं' : (formData.j5_services?.length === 1 ? '1 service' : `${formData.j5_services?.length || 0} services`)})
                         </span>
                       </h3>
                       <p className="text-xs text-slate-500">
                         Schedule upcoming routine adherence visits, viral load tests, and entitlement check-ins.
                       </p>
                     </div>
-
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={handleAddService}
-                        className="inline-flex items-center gap-1.5 bg-mint/40 hover:bg-mint text-success-ink text-xs font-bold px-3 py-1.5 rounded-lg border border-mint transition-colors"
-                      >
-                        <Icon name="add" className="w-3.5 h-3.5" />
-                        <span>{isHi ? '+ सेवा जोड़ें' : '+ Add Service'}</span>
-                      </button>
-                    )}
                   </div>
 
                   {formData.j5_services && formData.j5_services.length > 0 ? (
@@ -1374,6 +1389,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                                 {isHi ? 'सेवा श्रेणी' : 'Service Purpose'}
                               </label>
                               <select
+                                id={`service-first-${svc.id}`}
                                 disabled={isReadOnly}
                                 value={svc.category}
                                 onChange={(e) => handleUpdateService(svc.id, 'category', e.target.value)}
@@ -1421,6 +1437,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     <p className="text-xs text-slate-400 italic">
                       {isHi ? 'कोई सेवा नियोजित नहीं है।' : 'No services scheduled.'}
                     </p>
+                  )}
+
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={handleAddService}
+                      className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-400 transition-colors shadow-2xs cursor-pointer py-3 px-4"
+                    >
+                      <Icon name="add" className="w-4 h-4 text-slate-700" />
+                      <span>{isHi ? '+ सेवा जोड़ें' : '+ Add Service'}</span>
+                    </button>
                   )}
                 </div>
               )}
