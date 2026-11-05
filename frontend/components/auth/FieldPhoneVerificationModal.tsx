@@ -21,6 +21,7 @@ export function FieldPhoneVerificationModal({
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [enrolmentToken, setEnrolmentToken] = useState('');
   const [otp, setOtp] = useState('');
 
   const [otpSent, setOtpSent] = useState(false);
@@ -88,6 +89,12 @@ export function FieldPhoneVerificationModal({
 
     const cleanPhone = phone.trim().replace(/[\s\-()]+/g, '');
     const cleanOtp = otp.trim();
+    const cleanToken = enrolmentToken.trim();
+
+    if (!cleanToken) {
+      setError(lang === 'hi' ? 'राज्य नामांकन बारकोड या टोकन आवश्यक है' : 'State enrolment barcode or token is required.');
+      return;
+    }
 
     if (!cleanOtp || cleanOtp.length !== 6) {
       setError(lang === 'hi' ? 'कृपया 6-अंकों का कोड दर्ज करें' : 'Please enter the 6-digit code.');
@@ -103,6 +110,7 @@ export function FieldPhoneVerificationModal({
         body: JSON.stringify({
           phone: cleanPhone,
           code: cleanOtp,
+          enrolmentToken: cleanToken,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           deviceId: 'browser-device',
@@ -244,6 +252,25 @@ export function FieldPhoneVerificationModal({
 
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
+                {lang === 'hi' ? 'राज्य नामांकन बारकोड / टोकन' : 'State Enrolment Barcode / Token'} *
+              </label>
+              <input
+                type="text"
+                required
+                value={enrolmentToken}
+                onChange={(e) => setEnrolmentToken(e.target.value.toUpperCase())}
+                placeholder="e.g. CSC2-MH-8A4F102B..."
+                className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum tracking-wider uppercase"
+              />
+              <p className="text-[11px] text-ink-muted mt-1">
+                {lang === 'hi'
+                  ? 'अपनी राज्य टीम से प्राप्त बारकोड टोकन दर्ज करें। दोनों कारक अनिवार्य हैं।'
+                  : 'Issued by your State Team in welcome email. Both this barcode/token and SMS OTP are required.'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1">
                 {lang === 'hi' ? 'मोबाइल नंबर (+91)' : 'Mobile Number (+91)'} *
               </label>
               <div className="relative">
@@ -267,7 +294,7 @@ export function FieldPhoneVerificationModal({
 
             <button
               type="submit"
-              disabled={loading || !phone || phone.length < 10}
+              disabled={loading || !phone || phone.length < 10 || !enrolmentToken.trim()}
               className="w-full min-h-[48px] px-4 py-3 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-[12px] shadow-comic flex items-center justify-center gap-2 transition-transform active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
@@ -283,6 +310,11 @@ export function FieldPhoneVerificationModal({
         ) : (
           /* Step 2: 6-Digit OTP Verification Form */
           <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div className="bg-lavender/30 border border-border/40 p-2.5 rounded-[10px] flex items-center justify-between text-xs">
+              <span className="font-semibold text-ink-muted">{lang === 'hi' ? 'नामांकन बारकोड:' : 'Enrolment Barcode:'}</span>
+              <span className="font-mono font-bold text-plum">{enrolmentToken}</span>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
                 {lang === 'hi' ? '6-अंकों का सत्यापन कोड' : 'Enter 6-Digit Code'} *

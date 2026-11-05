@@ -30,6 +30,21 @@ public class EvaluationController {
         return ResponseEntity.ok(evaluationService.getActiveStates());
     }
 
+    @PostMapping("/state-team/signup/request-otp")
+    public ResponseEntity<Map<String, String>> stateTeamRequestOtp(
+            @RequestBody EvaluationService.StateTeamSignupRequest req) {
+        return ResponseEntity.ok(evaluationService.requestStateTeamSignupOtp(req));
+    }
+
+    @PostMapping("/state-team/signup/verify")
+    public ResponseEntity<EvaluationService.AuthResponse> stateTeamVerifyOtp(
+            @RequestBody EvaluationService.StateTeamVerifyRequest req,
+            HttpServletResponse response) {
+        EvaluationService.AuthResponse auth = evaluationService.verifyStateTeamSignupOtp(req);
+        setJwtCookie(response, auth.token());
+        return ResponseEntity.ok(auth);
+    }
+
     @PostMapping("/state-team/signup")
     public ResponseEntity<EvaluationService.AuthResponse> stateTeamSignup(
             @RequestBody EvaluationService.StateTeamSignupRequest req,

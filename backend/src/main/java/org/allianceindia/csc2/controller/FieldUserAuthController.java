@@ -29,7 +29,11 @@ public class FieldUserAuthController {
     }
 
     public record SendPhoneOtpRequest(String phone, String deviceId) {}
-    public record VerifyPhoneOtpRequest(String phone, String code, String firstName, String lastName, String deviceId) {}
+    public record VerifyPhoneOtpRequest(String phone, String code, String enrolmentToken, String firstName, String lastName, String deviceId) {
+        public VerifyPhoneOtpRequest(String phone, String code, String firstName, String lastName, String deviceId) {
+            this(phone, code, null, firstName, lastName, deviceId);
+        }
+    }
 
     // PHONE-BASED VERIFICATION (PRIMARY FOR FIELD CASEWORKERS)
     @PostMapping("/field/send-otp")
@@ -48,7 +52,7 @@ public class FieldUserAuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
         FieldUserAuthService.VerifyPhoneOtpResult result = phoneAuthService.verifyPhoneOtp(
-                req.phone(), req.code(), req.firstName(), req.lastName(), req.deviceId(), httpRequest.getRemoteAddr()
+                req.phone(), req.code(), req.enrolmentToken(), req.firstName(), req.lastName(), req.deviceId(), httpRequest.getRemoteAddr()
         );
 
         if (result.success() && result.tokens() != null) {

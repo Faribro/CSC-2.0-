@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +53,7 @@ public class NotificationService {
         this.appBaseUrl = appBaseUrl;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.ALWAYS)
                 .build();
     }
 
@@ -82,8 +84,9 @@ public class NotificationService {
             Map<String, Object> data = objectMapper.readValue(item.getPayload(), Map.class);
             String subject = getSubjectForTemplate(item.getTemplate(), data);
             String bodyText = renderBodyForTemplate(item.getTemplate(), data);
+            String htmlBody = renderHtmlForTemplate(item.getTemplate(), data);
 
-            SendResult result = dispatchEmail(item.getRecipient(), subject, bodyText);
+            SendResult result = dispatchEmail(item.getRecipient(), subject, bodyText, htmlBody);
             if (result.success()) {
                 item.setStatus(result.reportedDelivered() ? "DELIVERED" : "ACCEPTED");
                 item.setErrorMessage(null);
@@ -106,7 +109,7 @@ public class NotificationService {
         outboxRepository.save(item);
     }
 
-    private SendResult dispatchEmail(String recipient, String subject, String bodyText) {
+    private SendResult dispatchEmail(String recipient, String subject, String bodyText, String htmlBody) {
         if ("mock".equalsIgnoreCase(providerMode)) {
             String[] activeProfiles = environment.getActiveProfiles();
             if (java.util.Arrays.asList(activeProfiles).contains("prod") || java.util.Arrays.asList(activeProfiles).contains("production") || java.util.Arrays.asList(activeProfiles).contains("staging")) {
@@ -119,7 +122,7 @@ public class NotificationService {
         }
 
         if ("apps_script".equalsIgnoreCase(providerMode)) {
-            return sendViaAppsScript(recipient, subject, bodyText);
+            return sendViaAppsScript(recipient, subject, bodyText, htmlBody);
         }
 
         if ("resend".equalsIgnoreCase(providerMode)) {
@@ -129,18 +132,20 @@ public class NotificationService {
         return new SendResult(false, false, "PROVIDER_UNCONFIGURED", "No valid notification provider configured");
     }
 
-    private SendResult sendViaAppsScript(String recipient, String subject, String bodyText) {
+    private SendResult sendViaAppsScript(String recipient, String subject, String bodyText, String htmlBody) {
         try {
             if (appsScriptUrl == null || appsScriptUrl.trim().isEmpty()) {
                 return new SendResult(false, false, "MISSING_URL", "Apps Script endpoint URL unconfigured");
             }
 
-            Map<String, String> reqBody = Map.of(
-                    "service_credential", appsScriptCredential != null ? appsScriptCredential : "",
-                    "recipient", recipient,
-                    "subject", subject,
-                    "body", bodyText
-            );
+            Map<String, Object> reqBody = new HashMap<>();
+            reqBody.put("service_credential", appsScriptCredential != null ? appsScriptCredential : "");
+            reqBody.put("recipient", recipient);
+            reqBody.put("subject", subject);
+            reqBody.put("body", bodyText);
+            if (htmlBody != null && !htmlBody.trim().isEmpty()) {
+                reqBody.put("htmlBody", htmlBody);
+            }
             String json = objectMapper.writeValueAsString(reqBody);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -152,6 +157,10 @@ public class NotificationService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                boolean isError = response.body().contains("\"status\":\"INTERNAL_ERROR\"") || response.body().contains("\"code\":500") || response.body().contains("\"status\":\"UNAUTHORIZED\"");
+                if (isError) {
+                    return new SendResult(false, false, "APPS_SCRIPT_ERROR", response.body());
+                }
                 boolean delivered = response.body().contains("\"delivered\":true") || response.body().contains("\"status\":\"DELIVERED\"");
                 return new SendResult(true, delivered, null, null);
             } else {
@@ -198,6 +207,8 @@ public class NotificationService {
     private String getSubjectForTemplate(String template, Map<String, Object> data) {
         return switch (template) {
             case "LEADERSHIP_OTP" -> "CSC 2.0 National Leadership Access Code";
+            case "STATE_TEAM_SIGNUP_OTP" -> "CSC 2.0 State Team Email Verification Code";
+            case "STATE_TEAM_WELCOME" -> "Welcome to CSC 2.0 — State Team Enrolment Credentials";
             case "STATE_MANAGER_SIGNUP" -> "CSC 2.0 State Verification & Invitation Credentials";
             case "ADMIN_APPROVAL_REQUEST" -> "Action Required: New State Manager Registration Pending Review";
             case "APPLICANT_APPROVED" -> "CSC 2.0 Registration Approved - Access Activated";
@@ -207,9 +218,73 @@ public class NotificationService {
         };
     }
 
+    private String renderHtmlForTemplate(String template, Map<String, Object> data) {
+        if ("STATE_TEAM_WELCOME".equals(template)) {
+            String name = String.valueOf(data.getOrDefault("name", "State Manager"));
+            String state = String.valueOf(data.getOrDefault("state", "State"));
+            String token = String.valueOf(data.getOrDefault("enrolmentToken", ""));
+            String qrDataUrl = String.valueOf(data.getOrDefault("qrDataUrl", ""));
+            String appUrl = String.valueOf(data.getOrDefault("appUrl", this.appBaseUrl));
+
+            StringBuilder html = new StringBuilder();
+            html.append("<div style=\"font-family:Arial,sans-serif;color:#1e293b;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;\">");
+            html.append("<div style=\"text-align:center;margin-bottom:20px;\"><h2 style=\"color:#c2410c;margin:0;\">CSC 2.0 Platform</h2><p style=\"color:#64748b;margin:4px 0 0;\">Care & Support Centre Management</p></div>");
+            html.append("<p>Dear <strong>").append(name).append("</strong>,</p>");
+            html.append("<p>Welcome to CSC 2.0! Your State Team account for <strong>").append(state).append("</strong> has been successfully verified.</p>");
+            html.append("<p>You may access the platform at: <a href=\"").append(appUrl).append("\" style=\"color:#c2410c;font-weight:bold;\">").append(appUrl).append("</a></p>");
+            html.append("<hr style=\"border:none;border-top:1px solid #e2e8f0;margin:20px 0;\" />");
+            html.append("<h3 style=\"color:#1e293b;margin-bottom:8px;\">Field Caseworker Enrolment Barcode / Token</h3>");
+            html.append("<p style=\"color:#475569;font-size:13px;\">Share this QR barcode and token with authorized field caseworkers in ").append(state).append(". Both this token and SMS verification are required to sign in.</p>");
+            if (!qrDataUrl.isEmpty()) {
+                html.append("<div style=\"text-align:center;margin:16px 0;\"><img src=\"").append(qrDataUrl).append("\" alt=\"Enrolment Barcode QR\" style=\"width:200px;height:200px;border:2px solid #e2e8f0;border-radius:8px;padding:8px;background:#ffffff;\" /></div>");
+            }
+            html.append("<div style=\"background:#f8fafc;padding:12px 16px;border-radius:8px;border:1px solid #cbd5e1;font-family:monospace;font-size:14px;font-weight:bold;color:#0f172a;text-align:center;letter-spacing:1px;\">").append(token).append("</div>");
+            html.append("<p style=\"font-size:12px;color:#94a3b8;margin-top:20px;\">Security Notice: This token contains no personally identifiable data and is scoped to ").append(state).append(". Every redemption is logged in the audit ledger.</p>");
+            html.append("<p style=\"font-size:12px;color:#64748b;margin-top:16px;\">Regards,<br/><strong>CSC 2.0 National Operations Authority</strong></p>");
+            html.append("</div>");
+            return html.toString();
+        }
+        return null;
+    }
+
     private String renderBodyForTemplate(String template, Map<String, Object> data) {
         StringBuilder sb = new StringBuilder();
         switch (template) {
+            case "STATE_TEAM_SIGNUP_OTP" -> {
+                String name = String.valueOf(data.getOrDefault("firstName", "State Team"));
+                String state = String.valueOf(data.getOrDefault("state", "State"));
+                String otp = String.valueOf(data.getOrDefault("otp", ""));
+
+                sb.append("CSC 2.0 Care & Support Centre Platform\n\n");
+                sb.append("Dear ").append(name).append(",\n\n");
+                sb.append("Your 6-digit email verification code for ").append(state).append(" State Team registration is:\n\n");
+                sb.append("   ").append(otp).append("\n\n");
+                sb.append("Validity: 10 minutes (single use, locked after 5 failed attempts).\n");
+                sb.append("Enter this code to complete account creation.\n\n");
+                sb.append("Regards,\nCSC 2.0 National Administrative Authority\n");
+            }
+            case "STATE_TEAM_WELCOME" -> {
+                String name = String.valueOf(data.getOrDefault("name", "State Manager"));
+                String state = String.valueOf(data.getOrDefault("state", "State"));
+                String token = String.valueOf(data.getOrDefault("enrolmentToken", ""));
+                String appUrl = String.valueOf(data.getOrDefault("appUrl", this.appBaseUrl));
+
+                sb.append("Welcome to CSC 2.0 — State Team Enrolment Credentials\n\n");
+                sb.append("Dear ").append(name).append(",\n\n");
+                sb.append("Your State Team account for ").append(state).append(" has been successfully verified and activated.\n\n");
+                sb.append("Platform URL: ").append(appUrl).append("\n\n");
+                sb.append("--------------------------------------------------\n");
+                sb.append("FIELD CASEWORKER ENROLMENT TOKEN\n");
+                sb.append("--------------------------------------------------\n");
+                sb.append("Token: ").append(token).append("\n");
+                sb.append("State Scope: ").append(state).append("\n\n");
+                sb.append("Instructions for Field Workers:\n");
+                sb.append("1. Open the CSC 2.0 application on mobile.\n");
+                sb.append("2. Enter the Enrolment Token (or scan the QR code in the HTML version).\n");
+                sb.append("3. Complete SMS OTP verification with their registered mobile phone.\n\n");
+                sb.append("Security Policy: This token encodes no personal data and is strictly scoped to ").append(state).append(".\n\n");
+                sb.append("Regards,\nCSC 2.0 National Operations Authority\n");
+            }
             case "LEADERSHIP_OTP" -> {
                 String name = String.valueOf(data.getOrDefault("name", "Leadership Member"));
                 String otp = String.valueOf(data.getOrDefault("otp", ""));

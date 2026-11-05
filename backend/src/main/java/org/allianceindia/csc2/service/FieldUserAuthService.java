@@ -11,6 +11,7 @@ import org.allianceindia.csc2.repository.DeviceSessionRepository;
 import org.allianceindia.csc2.repository.FieldRosterRepository;
 import org.allianceindia.csc2.repository.FieldUserRepository;
 import org.allianceindia.csc2.repository.PhoneOtpChallengeRepository;
+import org.allianceindia.csc2.repository.StateCodeRepository;
 import org.allianceindia.csc2.service.sms.SmsOutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class FieldUserAuthService {
     private final FieldRosterRepository fieldRosterRepository;
     private final PhoneOtpChallengeRepository otpChallengeRepository;
     private final DeviceSessionRepository deviceSessionRepository;
+    private final StateCodeRepository stateCodeRepository;
     private final SmsOutboxService smsOutboxService;
     private final CryptoService cryptoService;
     private final RateLimiterService rateLimiterService;
@@ -81,6 +83,7 @@ public class FieldUserAuthService {
             FieldRosterRepository fieldRosterRepository,
             PhoneOtpChallengeRepository otpChallengeRepository,
             DeviceSessionRepository deviceSessionRepository,
+            StateCodeRepository stateCodeRepository,
             SmsOutboxService smsOutboxService,
             CryptoService cryptoService,
             RateLimiterService rateLimiterService,
@@ -90,6 +93,7 @@ public class FieldUserAuthService {
         this.fieldRosterRepository = fieldRosterRepository;
         this.otpChallengeRepository = otpChallengeRepository;
         this.deviceSessionRepository = deviceSessionRepository;
+        this.stateCodeRepository = stateCodeRepository;
         this.smsOutboxService = smsOutboxService;
         this.cryptoService = cryptoService;
         this.rateLimiterService = rateLimiterService;
@@ -200,19 +204,46 @@ public class FieldUserAuthService {
         return new SendPhoneOtpResult(true, "If your phone number is registered with your State Team, a 6-digit code has been sent.", false);
     }
 
-    /**
-     * Verifies phone OTP, enforces 5-attempt lockout, links to FieldUser, and creates persistent DeviceSession.
-     */
     @Transactional
     public VerifyPhoneOtpResult verifyPhoneOtp(String rawPhone, String code, String firstName, String lastName,
+                                               String deviceId, String ipAddress) {
+        return verifyPhoneOtp(rawPhone, code, null, firstName, lastName, deviceId, ipAddress);
+    }
+
+    /**
+     * Dual-factor requirement: requires BOTH valid state enrolment barcode/token AND valid SMS OTP.
+     */
+    @Transactional
+    public VerifyPhoneOtpResult verifyPhoneOtp(String rawPhone, String code, String enrolmentToken, String firstName, String lastName,
                                                String deviceId, String ipAddress) {
         String phoneE164 = normalizeIndianPhone(rawPhone);
         if (code == null || !code.trim().matches("^\\d{6}$")) {
             return new VerifyPhoneOtpResult(false, "Verification code must be exactly 6 digits.", null, null);
         }
 
-        boolean isDemoFixedOtp = isDemoFixedOtpActive() && "123456".equals(code.trim());
+        // 1. DUAL FACTOR CHECK: Barcode alone fails. OTP alone fails.
+        if (enrolmentToken == null || enrolmentToken.trim().isEmpty()) {
+            return new VerifyPhoneOtpResult(false, "State enrolment barcode/token is required. Both barcode and OTP are required.", null, null);
+        }
+
+        String tokenClean = enrolmentToken.trim();
+        String tokenHash = cryptoService.sha256Hex(tokenClean);
+
+        Optional<org.allianceindia.csc2.domain.StateCode> stateCodeOpt = stateCodeRepository.findByCodeVerifier(tokenHash);
+        if (stateCodeOpt.isEmpty()) {
+            return new VerifyPhoneOtpResult(false, "Invalid, expired, or revoked state enrolment barcode.", null, null);
+        }
+
+        org.allianceindia.csc2.domain.StateCode stateCode = stateCodeOpt.get();
         Instant now = Instant.now();
+        if (!"ACTIVE".equalsIgnoreCase(stateCode.getStatus()) || (stateCode.getExpiresAt() != null && stateCode.getExpiresAt().isBefore(now))) {
+            return new VerifyPhoneOtpResult(false, "State enrolment barcode has expired or been revoked.", null, null);
+        }
+        if (stateCode.getRedemptionCount() >= stateCode.getMaxRedemptions()) {
+            return new VerifyPhoneOtpResult(false, "State enrolment barcode redemption limit reached.", null, null);
+        }
+
+        boolean isDemoFixedOtp = isDemoFixedOtpActive() && "123456".equals(code.trim());
         Optional<PhoneOtpChallenge> challengeOpt = otpChallengeRepository
                 .findTopByPhoneE164AndConsumedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(phoneE164, now);
 
@@ -246,11 +277,19 @@ public class FieldUserAuthService {
             return new VerifyPhoneOtpResult(false, "Code has expired or does not exist. Please request a new code.", null, null);
         }
 
-        // Check active roster
+        // Check active roster (Unrostered numbers get a generic rejection)
         Optional<FieldRoster> roster = fieldRosterRepository.findByPhoneE164AndStatus(phoneE164, "ACTIVE");
+        if (roster.isEmpty() && !isDemoAutoRosterActive()) {
+            return new VerifyPhoneOtpResult(false, "If your mobile number is registered with your State Team, a verification code was sent. Access could not be authorized.", null, null);
+        }
+
+        // Record successful redemption on the state barcode
+        stateCode.setRedemptionCount(stateCode.getRedemptionCount() + 1);
+        stateCodeRepository.save(stateCode);
+
         String userStatus = roster.isPresent() ? "ACTIVE" : (isDemoFixedOtp ? "ACTIVE" : "PENDING");
-        String state = roster.map(FieldRoster::getState).orElse("MH");
-        String district = roster.map(FieldRoster::getDistrict).orElse("Pune");
+        String state = stateCode.getState() != null ? stateCode.getState() : roster.map(FieldRoster::getState).orElse("MH");
+        String district = roster.map(FieldRoster::getDistrict).orElse(state + " Field");
 
         // Find or create FieldUser
         FieldUser user = fieldUserRepository.findByPhoneE164(phoneE164).orElseGet(() -> {
@@ -271,17 +310,18 @@ public class FieldUserAuthService {
         user.setUpdatedAt(now);
         user = fieldUserRepository.save(user);
 
-        if (isDemoFixedOtp && auditEventRepository != null) {
+        // Audit dual factor verification
+        if (auditEventRepository != null) {
             try {
                 AuditEvent audit = new AuditEvent(
-                        user.getId(), "DEMO_FALLBACK_USER", user.getState() != null ? user.getState() : "MH",
-                        "DEMO_FALLBACK_USED", "AUTH", user.getId(),
-                        ipAddress, "{\"message\":\"demo fallback used\"}"
+                        user.getId(), phoneE164, state,
+                        "FIELD_WORKER_DUAL_FACTOR_LOGIN", "AUTH", user.getId(),
+                        ipAddress, "{\"stateCode\":\"" + state + "\",\"enrolmentTokenHash\":\"" + tokenHash + "\",\"isDemo\":" + isDemoFixedOtp + "}"
                 );
                 auditEventRepository.save(audit);
-                log.info("Recorded demo fallback audit log for OTP verification");
+                log.info("Recorded dual-factor login audit event for user={}", user.getId());
             } catch (Exception ex) {
-                log.warn("Failed to record demo fallback audit event", ex);
+                log.warn("Failed to record dual-factor audit event", ex);
             }
         }
 

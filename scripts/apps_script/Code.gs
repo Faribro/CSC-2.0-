@@ -8,6 +8,15 @@
  * (c) 2026 India HIV/AIDS Alliance
  */
 
+/**
+ * Helper to grant one-time MailApp permissions in Apps Script Editor
+ */
+function authorizeMailPermissions() {
+  var quota = MailApp.getRemainingDailyQuota();
+  Logger.log('Mail quota remaining: ' + quota);
+  return quota;
+}
+
 // ---------------------------------------------------------------------------
 // 1. CONFIGURATION & COLOR PALETTE (Strictly NO Blue, NO Dark Green)
 // ---------------------------------------------------------------------------

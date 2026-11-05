@@ -45,6 +45,9 @@ public class EvaluationService {
     private final NotificationService notificationService;
     private final RateLimiterService rateLimiterService;
     private final PasswordValidatorService passwordValidatorService;
+    private final StateRegistrationRepository stateRegistrationRepo;
+    private final StateCodeRepository stateCodeRepo;
+    private final QrCodeService qrCodeService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public EvaluationService(
@@ -65,7 +68,10 @@ public class EvaluationService {
             FieldUserAuthService fieldUserAuthService,
             NotificationService notificationService,
             RateLimiterService rateLimiterService,
-            PasswordValidatorService passwordValidatorService) {
+            PasswordValidatorService passwordValidatorService,
+            StateRegistrationRepository stateRegistrationRepo,
+            StateCodeRepository stateCodeRepo,
+            QrCodeService qrCodeService) {
         this.stateRefRepo = stateRefRepo;
         this.fieldRosterRepo = fieldRosterRepo;
         this.fieldUserRepo = fieldUserRepo;
@@ -84,6 +90,9 @@ public class EvaluationService {
         this.notificationService = notificationService;
         this.rateLimiterService = rateLimiterService;
         this.passwordValidatorService = passwordValidatorService;
+        this.stateRegistrationRepo = stateRegistrationRepo;
+        this.stateCodeRepo = stateCodeRepo;
+        this.qrCodeService = qrCodeService;
     }
 
     public record StateTeamSignupRequest(String firstName, String lastName, String workEmail,
@@ -101,7 +110,13 @@ public class EvaluationService {
 
     public record LeadershipVerifyRequest(String email, String otp) {}
 
-    public record AuthResponse(String token, String role, String fullName, String state, String message) {}
+    public record StateTeamVerifyRequest(String workEmail, String otp) {}
+
+    public record AuthResponse(String token, String role, String fullName, String state, String message, String enrolmentToken, String qrCodeDataUrl) {
+        public AuthResponse(String token, String role, String fullName, String state, String message) {
+            this(token, role, fullName, state, message, null, null);
+        }
+    }
 
     public record RosterEntryDto(UUID id, String phoneE164, String state, String district, String status, Instant createdAt) {}
 
@@ -116,10 +131,11 @@ public class EvaluationService {
     }
 
     /**
-     * State Team Signup: validates state code (ISO 3166-2:IN), creates user, hashes password.
+     * State Team Signup Step 1: Dispatches real 6-digit email OTP (hashed, 10-min expiry, max 5 attempts, rate-limited).
+     * Account is NOT created yet.
      */
     @Transactional
-    public AuthResponse signupStateTeam(StateTeamSignupRequest req) {
+    public Map<String, String> requestStateTeamSignupOtp(StateTeamSignupRequest req) {
         if (req.workEmail() == null || !req.workEmail().contains("@")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid work email is required.");
         }
@@ -137,25 +153,183 @@ public class EvaluationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with this email already exists.");
         }
 
-        // Create AppUser
-        AppUser user = new AppUser(
-                email,
-                email,
-                req.firstName(),
-                req.lastName() != null ? req.lastName() : "",
-                "STATE_MANAGER",
-                stateRef.getStateCode()
-        );
-        user = appUserRepo.save(user);
+        // Rate limit: 5 OTP requests per hour per email
+        if (!rateLimiterService.checkAndRecord("STATE_SIGNUP:otp:" + email, 5, java.time.Duration.ofHours(1))) {
+            return Map.of("status", "OTP_SENT", "message", "If your work email is eligible, a 6-digit access code has been dispatched. Valid for 10 minutes.");
+        }
 
-        // Save password hash with Argon2id
-        String hash = passwordEncoder.encode(req.password());
-        PasswordCredential cred = new PasswordCredential(user.getId(), hash, "ARGON2ID");
-        passwordCredRepo.save(cred);
+        // Invalidate prior active challenges for this email
+        otpChallengeRepo.findByEmailIgnoreCaseAndConsumedAtIsNull(email)
+                .forEach(c -> {
+                    c.setConsumedAt(Instant.now());
+                    otpChallengeRepo.save(c);
+                });
+
+        // Generate 6-digit OTP
+        String otp = cryptoService.generate6DigitOtp();
+        byte[] salt = new byte[32];
+        secureRandom.nextBytes(salt);
+        String saltHex = HexFormat.of().formatHex(salt);
+        String otpHash = cryptoService.hashOtp(otp, saltHex);
+
+        OtpChallenge challenge = new OtpChallenge(email, otpHash, saltHex, Instant.now().plus(10, ChronoUnit.MINUTES));
+        otpChallengeRepo.save(challenge);
+
+        // Store pending StateRegistration (password hash safely saved in notes)
+        StateRegistration reg = stateRegistrationRepo.findByWorkEmailIgnoreCase(email)
+                .orElseGet(() -> new StateRegistration(req.firstName(), req.lastName(), email, stateRef.getStateCode(), req.organization()));
+        reg.setFirstName(req.firstName());
+        reg.setLastName(req.lastName() != null ? req.lastName() : "");
+        reg.setRequestedState(stateRef.getStateCode());
+        reg.setOrganization(req.organization() != null ? req.organization() : "");
+        reg.setStatus("PENDING_APPROVAL");
+        reg.setNotes(passwordEncoder.encode(req.password()));
+        stateRegistrationRepo.save(reg);
+
+        // Enqueue email notification
+        notificationService.enqueueEmail(email, "STATE_TEAM_SIGNUP_OTP", Map.of(
+                "otp", otp,
+                "firstName", req.firstName(),
+                "state", stateRef.getStateName()
+        ));
+        notificationService.processPendingNotifications();
+        log.info("[STATE TEAM SIGNUP OTP] Dispatched challenge for email {}", email);
+
+        return Map.of(
+                "status", "OTP_SENT",
+                "message", "A 6-digit verification code has been dispatched to your work email. Valid for 10 minutes."
+        );
+    }
+
+    /**
+     * State Team Signup Step 2: Verifies email OTP, creates account, creates hashed QR enrollment token,
+     * sends welcome email with QR code, and issues session JWT.
+     */
+    @Transactional
+    public AuthResponse verifyStateTeamSignupOtp(StateTeamVerifyRequest req) {
+        if (req.workEmail() == null || req.workEmail().trim().isEmpty() || req.otp() == null || req.otp().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Work email and 6-digit verification code are required.");
+        }
+        String cleanEmail = req.workEmail().trim().toLowerCase();
+        String cleanOtp = req.otp().trim();
+
+        // Strict security rule: 123456 rejected for email OTP!
+        if ("123456".equals(cleanOtp)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The fixed demo code 123456 is not permitted for email verification.");
+        }
+
+        // Rate limit: 10 attempts per 15 minutes
+        if (!rateLimiterService.checkAndRecord("STATE_SIGNUP:verify:" + cleanEmail, 10, java.time.Duration.ofMinutes(15))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many failed attempts. Account temporarily locked for 15 minutes.");
+        }
+
+        Optional<OtpChallenge> challengeOpt = otpChallengeRepo.findTopByEmailIgnoreCaseAndConsumedAtIsNullOrderByCreatedAtDesc(cleanEmail);
+        if (challengeOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Verification code has expired or does not exist. Please request a new code.");
+        }
+
+        OtpChallenge challenge = challengeOpt.get();
+        if (challenge.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Verification code has expired. Please request a new code.");
+        }
+        if (challenge.getAttempts() >= 5) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "Too many failed attempts. This code is locked. Please request a new code.");
+        }
+
+        challenge.setAttempts(challenge.getAttempts() + 1);
+        boolean valid = cryptoService.verifyOtp(cleanOtp, challenge.getOtpHash(), challenge.getSalt());
+        if (!valid) {
+            otpChallengeRepo.save(challenge);
+            int remaining = Math.max(0, 5 - challenge.getAttempts());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid verification code. " + remaining + " attempts remaining.");
+        }
+
+        // Mark OTP challenge consumed
+        challenge.setConsumedAt(Instant.now());
+        otpChallengeRepo.save(challenge);
+
+        // Load pending registration
+        StateRegistration reg = stateRegistrationRepo.findByWorkEmailIgnoreCase(cleanEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No pending registration found for this email."));
+        reg.setEmailVerifiedAt(Instant.now());
+        reg.setStatus("APPROVED");
+        stateRegistrationRepo.save(reg);
+
+        StateReference stateRef = stateRefRepo.findByStateCode(reg.getRequestedState().toUpperCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid state: " + reg.getRequestedState()));
+
+        // Create AppUser if not exists
+        AppUser user = appUserRepo.findByEmailIgnoreCase(cleanEmail).orElseGet(() -> {
+            AppUser u = new AppUser(
+                    cleanEmail,
+                    cleanEmail,
+                    reg.getFirstName(),
+                    reg.getLastName(),
+                    "STATE_MANAGER",
+                    stateRef.getStateCode()
+            );
+            return appUserRepo.save(u);
+        });
+
+        // Save password credential
+        String passwordHash = reg.getNotes();
+        if (passwordHash != null && !passwordHash.isEmpty()) {
+            passwordCredRepo.findByUserId(user.getId()).ifPresent(passwordCredRepo::delete);
+            PasswordCredential cred = new PasswordCredential(user.getId(), passwordHash, "ARGON2ID");
+            passwordCredRepo.save(cred);
+        }
+
+        // Generate random enrolment token
+        byte[] tokenBytes = new byte[16];
+        secureRandom.nextBytes(tokenBytes);
+        String enrolmentToken = "CSC2-" + stateRef.getStateCode() + "-" + HexFormat.of().formatHex(tokenBytes).toUpperCase();
+        String tokenHash = cryptoService.sha256Hex(enrolmentToken);
+
+        // Rotate any previous active state codes for this state
+        stateCodeRepo.findByStateIgnoreCase(stateRef.getStateCode()).stream()
+                .filter(sc -> "ACTIVE".equalsIgnoreCase(sc.getStatus()))
+                .forEach(sc -> {
+                    sc.setStatus("ROTATED");
+                    sc.setRotatedAt(Instant.now());
+                    stateCodeRepo.saveAndFlush(sc);
+                });
+
+        // Save new active StateCode
+        StateCode newCode = new StateCode(reg, stateRef.getStateCode(), tokenHash, 50, Instant.now().plus(90, ChronoUnit.DAYS));
+        stateCodeRepo.saveAndFlush(newCode);
+
+        // Generate QR code data URL
+        String qrDataUrl = qrCodeService.generateQrCodeDataUrl(enrolmentToken, 250, 250);
+
+        // Enqueue welcome email (sent once with QR and enrolment token)
+        notificationService.enqueueEmail(cleanEmail, "STATE_TEAM_WELCOME", Map.of(
+                "name", user.getFullName(),
+                "state", stateRef.getStateName(),
+                "enrolmentToken", enrolmentToken,
+                "qrDataUrl", qrDataUrl,
+                "appUrl", "https://frontend-six-zeta-93.vercel.app"
+        ));
+        notificationService.processPendingNotifications();
+
+        // Audit log
+        auditEventRepository.save(new AuditEvent(
+                null, cleanEmail, stateRef.getStateCode(),
+                "STATE_TEAM_ACCOUNT_CREATED", "APP_USER", user.getId(),
+                null, "{\"enrolmentTokenCreated\": true, \"stateCode\": \"" + stateRef.getStateCode() + "\"}"
+        ));
 
         List<String> centers = List.of("CENTER_" + stateRef.getStateCode(), stateRef.getStateName());
         String jwt = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole(), centers);
-        return new AuthResponse(jwt, user.getRole(), user.getFullName(), stateRef.getStateName(), "Account created successfully.");
+
+        return new AuthResponse(jwt, user.getRole(), user.getFullName(), stateRef.getStateName(), "Account verified and created successfully.", enrolmentToken, qrDataUrl);
+    }
+
+    /**
+     * Backward-compatible signup method: requires OTP verification.
+     */
+    @Transactional
+    public AuthResponse signupStateTeam(StateTeamSignupRequest req) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please use 2-step registration: request OTP first via /state-team/signup/request-otp");
     }
 
     /**

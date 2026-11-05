@@ -42,6 +42,14 @@ export function EvaluationLoginModal({
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
 
+  // 2-Step Signup State: 'FORM' | 'OTP' | 'SUCCESS'
+  const [signupStep, setSignupStep] = useState<'FORM' | 'OTP' | 'SUCCESS'>('FORM');
+  const [signupOtp, setSignupOtp] = useState('');
+  const [enrolmentToken, setEnrolmentToken] = useState('');
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const [createdAuthData, setCreatedAuthData] = useState<{ role: string; fullName: string; state: string; token: string } | null>(null);
+  const [copiedToken, setCopiedToken] = useState(false);
+
   // Leadership OTP form
   const [leaderEmail, setLeaderEmail] = useState('');
   const [leaderOtp, setLeaderOtp] = useState('');
@@ -100,17 +108,18 @@ export function EvaluationLoginModal({
     }
   };
 
-  // Handle State Team Sign Up
-  const handleStateSignUp = async (e: React.FormEvent) => {
+  // Step 1: Request Email OTP for State Team Signup (no account or token created yet)
+  const handleStateRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMsg(null);
     if (signupPassword !== signupConfirmPassword) {
       setError(lang === 'hi' ? 'पासवर्ड मेल नहीं खाते हैं' : 'Passwords do not match. Please verify your password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/evaluation/state-team/signup', {
+      const res = await fetch('/api/v1/evaluation/state-team/signup/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,6 +129,40 @@ export function EvaluationLoginModal({
           stateCode: selectedStateCode,
           organization: signupOrg.trim() || 'Alliance State Team',
           password: signupPassword,
+          confirmPassword: signupConfirmPassword,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSignupStep('OTP');
+        setSuccessMsg(data.message || (lang === 'hi' ? '6-अंकों का सत्यापन कोड आपके कार्य ईमेल पर भेजा गया है।' : 'A 6-digit verification code has been dispatched to your work email. Valid for 10 minutes.'));
+      } else {
+        setError(data.message || (lang === 'hi' ? 'सत्यापन कोड भेजने में विफल' : 'Failed to send verification code.'));
+      }
+    } catch {
+      setError(lang === 'hi' ? 'कनेक्शन त्रुटि' : 'Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Verify Email OTP and Create State Team Account
+  const handleStateVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMsg(null);
+    if (!signupOtp || signupOtp.trim().length !== 6) {
+      setError(lang === 'hi' ? 'कृपया 6-अंकों का सत्यापन कोड दर्ज करें' : 'Please enter the 6-digit verification code.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/evaluation/state-team/signup/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workEmail: signupEmail.trim(),
+          otp: signupOtp.trim(),
         }),
       });
       const data = await res.json();
@@ -128,13 +171,16 @@ export function EvaluationLoginModal({
           localStorage.setItem('csc2_auth_token', data.token);
           localStorage.setItem('csc2_eval_user', JSON.stringify(data));
         }
-        onSuccess(data);
-        onClose();
+        setEnrolmentToken(data.enrolmentToken || '');
+        setQrCodeDataUrl(data.qrCodeDataUrl || '');
+        setCreatedAuthData(data);
+        setSignupStep('SUCCESS');
+        setSuccessMsg(lang === 'hi' ? 'खाता सफलतापूर्वक सत्यापित और सक्रिय किया गया!' : 'Account verified and activated successfully! Welcome email with QR barcode dispatched.');
       } else {
-        setError(data.message || (lang === 'hi' ? 'पंजीकरण विफल' : 'Registration failed.'));
+        setError(data.message || (lang === 'hi' ? 'सत्यापन विफल' : 'Verification failed. Please check the code.'));
       }
     } catch {
-      setError(lang === 'hi' ? 'कनेक्शन त्रुटि' : 'Connection error. Please try again.');
+      setError(lang === 'hi' ? 'सत्यापन त्रुटि' : 'Verification error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -367,8 +413,8 @@ export function EvaluationLoginModal({
                   <span>{loading ? (lang === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying...') : (lang === 'hi' ? 'साइन इन करें और मूल्यांकन अनलॉक करें' : 'Sign In & Unlock Evaluation')}</span>
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleStateSignUp} className="space-y-3">
+            ) : signupStep === 'FORM' ? (
+              <form onSubmit={handleStateRequestOtp} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-ink mb-1">
@@ -476,10 +522,131 @@ export function EvaluationLoginModal({
                   disabled={loading || !signupEmail || signupPassword.length < 8 || signupConfirmPassword.length < 8}
                   className="w-full min-h-[48px] px-4 py-3 bg-plum hover:bg-[#682e77] text-white text-xs font-black rounded-[12px] shadow-comic flex items-center justify-center gap-2 transition-transform active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
-                  <Icon name="User" className="w-4 h-4" />
-                  <span>{loading ? (lang === 'hi' ? 'बनाया जा रहा है...' : 'Creating...') : (lang === 'hi' ? 'राज्य टीम खाता बनाएं' : 'Create State Team Account')}</span>
+                  <Icon name="Send" className="w-4 h-4" />
+                  <span>{loading ? (lang === 'hi' ? 'सत्यापन कोड भेजा जा रहा है...' : 'Dispatching verification code...') : (lang === 'hi' ? 'ईमेल सत्यापन कोड भेजें' : 'Send Email Verification Code')}</span>
                 </button>
               </form>
+            ) : signupStep === 'OTP' ? (
+              <form onSubmit={handleStateVerifyOtp} className="space-y-4">
+                <div className="bg-lavender/40 border border-border/40 p-3 rounded-[12px]">
+                  <p className="text-xs font-semibold text-ink">
+                    {lang === 'hi' ? 'सत्यापन कोड भेजा गया:' : 'Verification code sent to:'} <span className="font-bold text-plum">{signupEmail}</span>
+                  </p>
+                  <p className="text-[11px] text-ink-muted mt-1">
+                    {lang === 'hi' ? 'वैधता: 10 मिनट (अधिकतम 5 प्रयास)। खाता केवल कोड के बाद बनेगा।' : 'Validity: 10 minutes (max 5 attempts). Account is activated only after verification.'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1">
+                    {lang === 'hi' ? '6-अंकों का ईमेल सत्यापन कोड' : '6-Digit Email Verification Code'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={signupOtp}
+                    onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="••••••"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    className="w-full text-center text-xl font-mono font-bold tracking-[0.3em] px-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum"
+                    autoFocus
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || signupOtp.length !== 6}
+                  className="w-full min-h-[48px] px-4 py-3 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-[12px] shadow-comic flex items-center justify-center gap-2 transition-transform active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                >
+                  <Icon name="CheckCircle" className="w-4 h-4" />
+                  <span>{loading ? (lang === 'hi' ? 'सत्यापित किया जा रहा है...' : 'Verifying & Creating...') : (lang === 'hi' ? 'कोड सत्यापित करें और खाता बनाएं' : 'Verify Code & Create Account')}</span>
+                </button>
+
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setSignupStep('FORM'); setError(null); }}
+                    className="text-xs font-semibold text-ink-muted hover:text-ink cursor-pointer"
+                  >
+                    {lang === 'hi' ? '← विवरण संपादित करें' : '← Edit registration details'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStateRequestOtp}
+                    disabled={loading}
+                    className="text-xs font-semibold text-plum hover:underline cursor-pointer"
+                  >
+                    {lang === 'hi' ? 'कोड पुनः भेजें' : 'Resend code'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-accent-soft mx-auto flex items-center justify-center text-accent">
+                  <Icon name="CheckCircle" className="w-7 h-7" />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-ink">
+                    {lang === 'hi' ? 'राज्य टीम खाता सक्रिय हुआ!' : 'State Team Account Activated!'}
+                  </h4>
+                  <p className="text-xs text-ink-muted mt-1">
+                    {lang === 'hi' ? 'स्वागत ईमेल और फ़ील्ड कार्यकर्ता बारकोड भेज दिया गया है।' : 'Welcome email with caseworker barcode sent to your inbox.'}
+                  </p>
+                </div>
+
+                {qrCodeDataUrl && (
+                  <div className="bg-canvas border-2 border-border/40 p-4 rounded-[14px]">
+                    <p className="text-xs font-bold text-ink mb-2">
+                      {lang === 'hi' ? 'फ़ील्ड कार्यकर्ता नामांकन बारकोड (QR)' : 'Field Caseworker Enrolment Barcode (QR)'}
+                    </p>
+                    <img
+                      src={qrCodeDataUrl}
+                      alt="Caseworker Enrolment QR Barcode"
+                      className="w-44 h-44 mx-auto rounded-lg border border-border/30 p-2 bg-white shadow-xs"
+                    />
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <span className="font-mono text-xs font-bold text-ink bg-surface px-3 py-1.5 rounded-md border border-border/40 select-all">
+                        {enrolmentToken}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText(enrolmentToken);
+                            setCopiedToken(true);
+                            setTimeout(() => setCopiedToken(false), 2000);
+                          }
+                        }}
+                        className="px-2.5 py-1.5 text-xs font-bold text-plum bg-lavender rounded-md hover:bg-lavender/80 cursor-pointer"
+                      >
+                        {copiedToken ? (lang === 'hi' ? 'कॉपी हुआ' : 'Copied!') : (lang === 'hi' ? 'कॉपी' : 'Copy')}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-ink-muted mt-2 text-left">
+                      {lang === 'hi'
+                        ? 'यह बारकोड/टोकन अपने राज्य के अधिकृत कार्यकर्ताओं को दें। कार्यकर्ताओं को लॉग इन करने के लिए इस बारकोड और एसएमएस ओटीपी दोनों की आवश्यकता होगी।'
+                        : 'Share this barcode/token with authorized caseworkers in your state. Field workers require BOTH this token and their phone SMS OTP to sign in.'}
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (createdAuthData) {
+                      onSuccess(createdAuthData);
+                    }
+                    onClose();
+                  }}
+                  className="w-full min-h-[48px] px-4 py-3 bg-primary hover:bg-primary-hover text-white text-xs font-black rounded-[12px] shadow-comic flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
+                >
+                  <Icon name="ArrowRight" className="w-4 h-4" />
+                  <span>{lang === 'hi' ? 'राज्य मूल्यांकन पोर्टल खोलें' : 'Open State Evaluation Portal'}</span>
+                </button>
+              </div>
             )}
           </div>
         )}

@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface OtpChallengeRepository extends JpaRepository<OtpChallenge, UUID> {
     Optional<OtpChallenge> findTopByEmailIgnoreCaseAndConsumedAtIsNullOrderByCreatedAtDesc(String email);
+    List<OtpChallenge> findByEmailIgnoreCaseAndConsumedAtIsNull(String email);
     List<OtpChallenge> findByEmailIgnoreCase(String email);
 }
