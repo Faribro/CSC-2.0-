@@ -65,9 +65,9 @@ export function FieldPhoneVerificationModal({
 
       if (res.ok && data.success) {
         setOtpSent(true);
-        setOtp('123456');
+        setOtp('');
         setCooldown(60);
-        setInfoMessage(data.message || (lang === 'hi' ? 'सत्यापन कोड भेजा गया है। डिफ़ॉल्ट कोड: 123456' : 'Verification code sent. Default code: 123456'));
+        setInfoMessage(data.message || (lang === 'hi' ? 'सत्यापन कोड आपके पंजीकृत मोबाइल नंबर पर भेजा गया है।' : 'Verification code sent to your registered mobile number.'));
       } else {
         if (data.cooldownActive) {
           setCooldown(60);
@@ -295,23 +295,25 @@ export function FieldPhoneVerificationModal({
                 className="w-full text-center text-xl font-mono font-bold tracking-[0.3em] px-4 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum focus:ring-2 focus:ring-plum/20"
                 autoFocus
               />
-              <div className="mt-2 flex items-center justify-between">
-                <Link
-                  href="/dev-sinks"
-                  target="_blank"
-                  className="text-[11px] font-mono font-bold text-plum hover:underline bg-lavender px-2 py-0.5 rounded-full border border-border/30 flex items-center gap-1"
-                >
-                  <Icon name="external" className="w-3 h-3" />
-                  <span>Open Local SMS Sink</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setOtp('123456')}
-                  className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
-                >
-                  Fill 123456 (Dev)
-                </button>
-              </div>
+              {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+                <div className="mt-2 flex items-center justify-between">
+                  <Link
+                    href="/dev-sinks"
+                    target="_blank"
+                    className="text-[11px] font-mono font-bold text-plum hover:underline bg-lavender px-2 py-0.5 rounded-full border border-border/30 flex items-center gap-1"
+                  >
+                    <Icon name="external" className="w-3 h-3" />
+                    <span>Open Local SMS Sink</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setOtp('123456')}
+                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    Fill 123456 (Dev)
+                  </button>
+                </div>
+              )}
               <div className="flex items-center justify-between text-[11px] text-ink-muted mt-2">
                 <span>
                   {lang === 'hi' ? 'कोड 10 मिनट के लिए मान्य है' : 'Code valid for 10 minutes'}

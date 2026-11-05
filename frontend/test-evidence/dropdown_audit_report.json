@@ -1,0 +1,265 @@
+[
+  {
+    "label": "A2. Registration done at",
+    "wrapperId": "wrapper-a02_reg_place",
+    "foundCount": 3,
+    "expectedCount": 3,
+    "pass": true,
+    "texts": [
+      "CSC",
+      "Field/Home",
+      "Helpdesk"
+    ]
+  },
+  {
+    "label": "A5. Gender",
+    "wrapperId": "wrapper-a05_gender",
+    "foundCount": 3,
+    "expectedCount": 3,
+    "pass": true,
+    "texts": [
+      "Male",
+      "Female",
+      "Transgender"
+    ]
+  },
+  {
+    "label": "A7. Residence Type",
+    "wrapperId": "wrapper-a07_res_type",
+    "foundCount": 0,
+    "expectedCount": 3,
+    "pass": false,
+    "error": "Buttons not found"
+  },
+  {
+    "label": "A13. Client Type",
+    "wrapperId": "wrapper-a13_client_type",
+    "foundCount": 2,
+    "expectedCount": 2,
+    "pass": true,
+    "texts": [
+      "New Registration",
+      "Follow up Client"
+    ]
+  },
+  {
+    "label": "A14. Typology KP",
+    "selector": "select#field-a14_kp",
+    "foundCount": 7,
+    "expectedMinOpts": 7,
+    "pass": true,
+    "options": [
+      "FSW",
+      "MSM",
+      "TGH",
+      "PWID",
+      "Migrants",
+      "Truckers",
+      "NA (not a KP)"
+    ]
+  },
+  {
+    "label": "A15. Typology Other",
+    "selector": "select#field-a15_typ_other",
+    "foundCount": 6,
+    "expectedMinOpts": 6,
+    "pass": true,
+    "options": [
+      "Migrants",
+      "Truckers",
+      "Inmates or OCS",
+      "ANC",
+      "Others",
+      "NA"
+    ]
+  },
+  {
+    "label": "A16. Caretaker",
+    "wrapperId": "wrapper-a16_caretaker",
+    "foundCount": 0,
+    "expectedCount": 2,
+    "pass": false,
+    "error": "Buttons not found"
+  },
+  {
+    "label": "A17. Orphan status",
+    "wrapperId": "wrapper-a17_orphan",
+    "foundCount": 0,
+    "expectedCount": 3,
+    "pass": false,
+    "error": "Buttons not found"
+  },
+  {
+    "label": "A18. Education",
+    "selector": "select#field-a_sub_edu",
+    "foundCount": 0,
+    "expectedMinOpts": 7,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "A19. Occupation",
+    "selector": "select#field-a19_occupation",
+    "foundCount": 14,
+    "expectedMinOpts": 14,
+    "pass": true,
+    "options": [
+      "Agriculture labour",
+      "Non-Agriculture labour",
+      "Unemployed",
+      "Retired",
+      "Housewife",
+      "Sex work",
+      "Domestic servant",
+      "Local Transport work (auto/taxi-driving/handcraft/rickshaw pulling)",
+      "Semi-skilled work",
+      "Petty business/large business/small shop/self employed",
+      "Hotel staff",
+      "Agriculture cultivation/landholding",
+      "Not applicable (Student/Child)",
+      "Others"
+    ]
+  },
+  {
+    "label": "A20. Marital status",
+    "selector": "select#field-a20_marital",
+    "foundCount": 0,
+    "expectedMinOpts": 6,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "A21. Monthly income",
+    "selector": "select#field-a21_income",
+    "foundCount": 0,
+    "expectedMinOpts": 6,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "B. Family Relationship",
+    "selector": "select:near(:text(\"Relationship\"))",
+    "foundCount": 6,
+    "expectedMinOpts": 6,
+    "pass": true,
+    "options": [
+      "Father",
+      "Mother",
+      "Spouse",
+      "Partner",
+      "Child",
+      "Non-traditional family member (incl. other sexual partner)"
+    ]
+  },
+  {
+    "label": "B. Family HIV Status",
+    "selector": "select:near(:text(\"HIV Status\"))",
+    "foundCount": 4,
+    "expectedMinOpts": 4,
+    "pass": true,
+    "options": [
+      "1. Positive",
+      "2. Negative",
+      "3. Not tested",
+      "4. Don't know"
+    ]
+  },
+  {
+    "label": "C3. Route of Transmission",
+    "selector": "select#field-c3_route",
+    "foundCount": 0,
+    "expectedMinOpts": 8,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "C6. Type of ARTC",
+    "wrapperId": "wrapper-c6_artc_type",
+    "foundCount": 4,
+    "expectedCount": 4,
+    "pass": true,
+    "texts": [
+      "Public",
+      "Private",
+      "NGO",
+      "Others"
+    ]
+  },
+  {
+    "label": "C10. WHO Clinical Stage",
+    "wrapperId": "wrapper-c10_who_stage",
+    "foundCount": 0,
+    "expectedCount": 4,
+    "pass": false,
+    "error": "Buttons not found"
+  },
+  {
+    "label": "C14d. TB Treatment Status",
+    "selector": "select#field-c14d_att_status",
+    "foundCount": 0,
+    "expectedMinOpts": 6,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "D2a. Social Entitlements",
+    "wrapperId": "wrapper-d2a_docs",
+    "foundCount": 14,
+    "expectedCount": 13,
+    "pass": true
+  },
+  {
+    "label": "F2. Discrimination from",
+    "wrapperId": "wrapper-f2_from",
+    "foundCount": 0,
+    "expectedCount": 9,
+    "pass": false,
+    "error": "Checkboxes not found"
+  },
+  {
+    "label": "G2. Disability types",
+    "wrapperId": "wrapper-g2_type",
+    "foundCount": 0,
+    "expectedCount": 11,
+    "pass": false,
+    "error": "Checkboxes not found"
+  },
+  {
+    "label": "H2. Reason for death",
+    "selector": "select#field-h2_reason",
+    "foundCount": 0,
+    "expectedMinOpts": 5,
+    "pass": false,
+    "error": "Element not found"
+  },
+  {
+    "label": "H6. Place of death",
+    "wrapperId": "wrapper-h6_place",
+    "foundCount": 0,
+    "expectedCount": 4,
+    "pass": false,
+    "error": "Buttons not found"
+  },
+  {
+    "label": "J5. Service Purpose",
+    "selector": "select:near(:text(\"Service Purpose\"))",
+    "foundCount": 13,
+    "expectedMinOpts": 13,
+    "pass": true,
+    "options": [
+      "Counselling",
+      "Support group meeting",
+      "LFU tracked back to ART",
+      "Missed case follow up",
+      "Pre-ART registration",
+      "CD4 follow up",
+      "Link to TI",
+      "Testing of partner/spouse, children and family member",
+      "Hospital/clinical referrals (OI management, side effects, general ailment, TB, STI treatment)",
+      "Support for legal aid",
+      "Social protection",
+      "Social entitlements",
+      "Others (specify in remarks)"
+    ]
+  }
+]

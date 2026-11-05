@@ -45,11 +45,23 @@ management:
       show-details: always
 
 app:
+  security:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,https://*.vercel.app,https://*.trycloudflare.com,https://*.onrender.com}
   jwt:
     secret: ${JWT_SIGNING_SECRET:local_dev_only_synthetic_jwt_signing_key_never_used_in_prod_0123456789}
     expiration-ms: 86400000
   service:
     credential: ${SERVICE_CREDENTIAL:local_dev_service_secret_token_abcdef123456789}
   apps-script:
-    gateway-url: ${APPS_SCRIPT_GATEWAY_URL:http://localhost:8080/api/mock/apps-script-gateway}
+    gateway-url: ${APPS_SCRIPT_GATEWAY_URL:https://script.google.com/macros/s/AKfycbwDZRDCm5TgOAL4wVkGgLBkxQtthZYBzkUTd_M3PNrSF_srx0a78rcEuSU7byHqp7AjnQ/exec}
     gateway-secret: ${APPS_SCRIPT_GATEWAY_SECRET:local_gateway_synthetic_secret_token_12345}
+  notification:
+    provider: ${NOTIFICATION_PROVIDER:apps_script}
+    apps-script-url: ${APPS_SCRIPT_GATEWAY_URL:https://script.google.com/macros/s/AKfycbwDZRDCm5TgOAL4wVkGgLBkxQtthZYBzkUTd_M3PNrSF_srx0a78rcEuSU7byHqp7AjnQ/exec}
+    apps-script-credential: ${APPS_SCRIPT_GATEWAY_SECRET:local_gateway_synthetic_secret_token_12345}
+  sms:
+    provider: ${SMS_PROVIDER:mock}
+    textbee:
+      api-key: ${TEXTBEE_API_KEY:}
+      device-id: ${TEXTBEE_DEVICE_ID:}
+      base-url: ${TEXTBEE_BASE_URL:https://api.textbee.dev/api/v1/gateway}

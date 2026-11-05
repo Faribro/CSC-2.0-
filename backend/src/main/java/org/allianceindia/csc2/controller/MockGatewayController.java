@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/api/mock")
+@Profile({"local", "test", "dev", "default"})
 public class MockGatewayController {
 
     private static final Logger log = LoggerFactory.getLogger(MockGatewayController.class);
@@ -173,8 +175,9 @@ public class MockGatewayController {
                 "recent_clients", clientsSheet.stream().limit(5).toList(),
                 "header_tiers", List.of(
                         "Tier 1: Merged Title (Row 1)",
-                        "Tier 2: Colour-Coded Category Bands (Row 2)",
-                        "Tier 3: English Field Headers (Row 3)"
+                        "Tier 2: Category Grouping Bands (Row 2)",
+                        "Tier 3: 45° Rotated Field Headers (Row 3)",
+                        "Tier 4: Column Numbers (Row 4)"
                 )
         ));
     }

@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: csc2-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: singapore
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: staging
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: csc2-postgres
+          property: connectionString
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: "3"
+      - key: FLYWAY_ENABLED
+        value: "true"
+      - key: FLYWAY_URL
+        fromDatabase:
+          name: csc2-postgres
+          property: connectionString
+      - key: JWT_SIGNING_SECRET
+        generateValue: true
+      - key: SERVICE_CREDENTIAL
+        generateValue: true
+      - key: APPS_SCRIPT_GATEWAY_URL
+        sync: false
+      - key: APPS_SCRIPT_GATEWAY_SECRET
+        sync: false
+      - key: SMS_GATEWAY_URL
+        sync: false
+      - key: SMS_GATEWAY_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: csc2-postgres
+    databaseName: csc2_staging
+    user: csc2_app
+    region: singapore
+    plan: free
+    ipAllowList: []

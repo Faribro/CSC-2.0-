@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -268,17 +268,10 @@ export default function SignInPage() {
           {t.subTitle}
         </p>
 
-        {/* Mandatory Security Banner */}
-        <div className="mt-4 bg-amber-50 border-2 border-amber-400 rounded-xl p-3 shadow-2xs text-left flex items-start gap-3">
-          <Icon name="AlertTriangle" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-amber-900">
-              LOCAL TEST IDENTITY – SYNTHETIC DATA
-            </h3>
-            <p className="text-[11px] text-amber-800 mt-0.5 leading-snug">
-              This platform runs in local test mode with synthetic identity profiles and encrypted PostgreSQL sessions. Real beneficiary data is never processed here.
-            </p>
-          </div>
+        {/* Subtle Demo Environment Badge */}
+        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span>Demo environment</span>
         </div>
       </div>
 
@@ -385,7 +378,7 @@ export default function SignInPage() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <Icon name="Users" className="w-4 h-4 text-plum" />
-                      <span>{isHi ? 'स्थानीय परीक्षण पहचान (Synthetic)' : 'Local Test Identities (Synthetic)'}</span>
+                      <span>{isHi ? 'स्थानीय परीक्षण पहचान (Synthetic)' : 'Test Identities (Demo)'}</span>
                     </h3>
                     <span className="text-[10px] font-mono text-slate-400">1-Click Fast Fill</span>
                   </div>
@@ -415,7 +408,7 @@ export default function SignInPage() {
                 </div>
               ) : (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500">
-                  Local synthetic identities disabled in non-development profiles.
+                  Test identities disabled in non-development profiles.
                 </div>
               )}
             </div>

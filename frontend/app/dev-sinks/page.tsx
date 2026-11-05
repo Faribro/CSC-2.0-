@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -159,8 +159,8 @@ export default function DevSinksPage() {
 
         {/* Copied Notification */}
         {copiedCode && (
-          <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold flex items-center gap-2">
-            <Icon name="check" className="w-4 h-4 text-emerald-700" />
+          <div className="p-3 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold flex items-center gap-2">
+            <Icon name="check" className="w-4 h-4 text-amber-800" />
             <span>Copied code &quot;{copiedCode}&quot; to clipboard! Paste it into the auth modal.</span>
           </div>
         )}
@@ -186,9 +186,9 @@ export default function DevSinksPage() {
                         <span
                           className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                             sms.status === 'DELIVERED'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-amber-100 text-amber-800'
                               : sms.status === 'ACCEPTED'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-lavender text-plum'
                               : 'bg-amber-100 text-amber-800'
                           }`}
                         >
@@ -254,7 +254,7 @@ export default function DevSinksPage() {
                         <span className="text-[10px] font-mono font-bold bg-lavender text-plum px-2 py-0.5 rounded-full border border-border/30">
                           {email.template}
                         </span>
-                        <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                           {email.status}
                         </span>
                       </div>

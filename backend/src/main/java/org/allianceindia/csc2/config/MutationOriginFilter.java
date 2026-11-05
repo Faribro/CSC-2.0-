@@ -23,7 +23,7 @@ public class MutationOriginFilter extends OncePerRequestFilter {
 
     private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "DELETE", "PATCH");
 
-    @Value("${app.security.allowed-origins:http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080}")
+    @Value("${app.security.allowed-origins:http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,https://*.vercel.app,https://*.trycloudflare.com,https://*.onrender.com}")
     private String allowedOriginsConfig;
 
     @Override

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -1305,7 +1305,7 @@ export default function EvaluationDashboardPage() {
                             {lang === 'hi' ? 'नमूना प्रदर्शन डेटा • नाको अनुमोदन लंबित' : 'Sample Demonstration Data • Pending NACO Approval'}
                           </span>
                           <span className="text-[10px] font-mono font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300">
-                            SYNTHETIC DEMO
+                            Demo environment
                           </span>
                         </div>
                         <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
@@ -1365,7 +1365,7 @@ export default function EvaluationDashboardPage() {
                         <div><strong>Definition:</strong> Attended scheduled ART refills and care visits within ±7 days of due date over 6 months.</div>
                         <div><strong>Numerator:</strong> 478 attended on schedule</div>
                         <div><strong>Denominator:</strong> 540 total cohort due for 6-month check</div>
-                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Synthetic Demo)</div>
+                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Demo Environment)</div>
                       </div>
                     </div>
 
@@ -1380,14 +1380,14 @@ export default function EvaluationDashboardPage() {
                         </div>
                         <div className="mt-2 flex items-baseline gap-2">
                           <span className="text-3xl font-black text-ink font-comic">94.2%</span>
-                          <span className="text-xs font-bold text-emerald-700 font-mono">438 / 465 [Sample]</span>
+                          <span className="text-xs font-bold text-amber-800 font-mono">438 / 465 [Sample]</span>
                         </div>
                       </div>
                       <div className="mt-3 pt-2.5 border-t border-border/30 text-[10.5px] text-ink-muted space-y-1">
                         <div><strong>Definition:</strong> Documented undetectable or suppressed viral load (&lt;1000 copies/mL) among tested cohort.</div>
                         <div><strong>Numerator:</strong> 438 suppressed (&lt;1000 copies/mL)</div>
                         <div><strong>Denominator:</strong> 465 tested in 12-month cohort</div>
-                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Synthetic Demo)</div>
+                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Demo Environment)</div>
                       </div>
                     </div>
                   </div>
@@ -1411,7 +1411,7 @@ export default function EvaluationDashboardPage() {
                         <div><strong>Definition:</strong> Field outreach contacts completed vs total visits scheduled under Section J.2 protocol.</div>
                         <div><strong>Numerator:</strong> 1,210 completed contacts</div>
                         <div><strong>Denominator:</strong> 1,321 scheduled visits in period</div>
-                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Synthetic Demo)</div>
+                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Demo Environment)</div>
                       </div>
                     </div>
 
@@ -1433,7 +1433,7 @@ export default function EvaluationDashboardPage() {
                         <div><strong>Definition:</strong> Beneficiaries classified as LFU who were tracked by caseworkers and confirmed re-linked to ART Care within 90 days.</div>
                         <div><strong>Numerator:</strong> 32 confirmed re-linked to ART</div>
                         <div><strong>Denominator:</strong> 43 active LFU cases tracked</div>
-                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Synthetic Demo)</div>
+                        <div className="text-[9.5px] text-ink-muted font-mono">Last calculated: Today at 10:00 IST (Demo Environment)</div>
                       </div>
                     </div>
                   </div>
