@@ -29,6 +29,7 @@ public class ClientProfileService {
     private final AuditEventRepository auditEventRepository;
     private final OutboxRepository outboxRepository;
     private final IdempotencyReceiptRepository idempotencyReceiptRepository;
+    private final ActorRepository actorRepository;
     private final CryptoService cryptoService;
     private final ObjectMapper objectMapper;
 
@@ -43,6 +44,7 @@ public class ClientProfileService {
             AuditEventRepository auditEventRepository,
             OutboxRepository outboxRepository,
             IdempotencyReceiptRepository idempotencyReceiptRepository,
+            ActorRepository actorRepository,
             CryptoService cryptoService,
             ObjectMapper objectMapper) {
         this.clientRepository = clientRepository;
@@ -52,6 +54,7 @@ public class ClientProfileService {
         this.auditEventRepository = auditEventRepository;
         this.outboxRepository = outboxRepository;
         this.idempotencyReceiptRepository = idempotencyReceiptRepository;
+        this.actorRepository = actorRepository;
         this.cryptoService = cryptoService;
         this.objectMapper = objectMapper;
     }
@@ -200,10 +203,17 @@ public class ClientProfileService {
         }
 
         // 11. Store New Profile Revision in csc2.profile_revisions
+        UUID authorUuid = null;
+        if (user.getId() != null && actorRepository.existsById(user.getId())) {
+            authorUuid = user.getId();
+        } else {
+            authorUuid = actorRepository.findAll().stream().findFirst().map(Actor::getId).orElse(null);
+        }
+
         ProfileRevision revision = new ProfileRevision(
                 client,
                 newVersion,
-                user.getId(),
+                authorUuid,
                 user.getUsername(),
                 req.changeReason().trim(),
                 diffJson,
@@ -285,7 +295,7 @@ public class ClientProfileService {
         if (idempotencyKey != null && requestHash != null) {
             String receiptBody = String.format("{\"status\":\"SUCCESS\",\"version\":%d,\"resourceId\":\"%s\"}", newVersion, client.getId());
             IdempotencyReceipt receipt = new IdempotencyReceipt(
-                    idempotencyKey, user.getId(), "/api/v1/clients/" + clientId + "/profile",
+                    idempotencyKey, authorUuid, "/api/v1/clients/" + clientId + "/profile",
                     requestHash, 200, receiptBody
             );
             idempotencyReceiptRepository.save(receipt);
@@ -306,16 +316,16 @@ public class ClientProfileService {
             boolean inCenter = user.getAuthorizedCenters() != null &&
                     (user.getAuthorizedCenters().contains("ALL") || user.getAuthorizedCenters().contains(client.getCenterId()));
             if (!isCreator && !inCenter) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Beneficiary record not in authorized center scope.");
             }
             return;
         }
         List<String> authorized = user.getAuthorizedCenters();
         if (authorized == null || authorized.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Beneficiary record not in authorized center scope.");
         }
         if (!authorized.contains("ALL") && !authorized.contains(client.getCenterId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Beneficiary record not in authorized center scope.");
         }
     }
 

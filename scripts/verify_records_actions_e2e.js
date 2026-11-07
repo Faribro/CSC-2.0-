@@ -40,7 +40,15 @@ async function run() {
   const sOtpRes = await fetch(`${BASE_URL}/api/v1/evaluation/state-team/signup/request-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: testStateEmail, state: 'DL' })
+    body: JSON.stringify({
+      workEmail: testStateEmail,
+      stateCode: 'DL',
+      firstName: 'Anita',
+      lastName: 'Desai',
+      organization: 'NACO DL Supervision',
+      password: 'DemoPassword123!',
+      confirmPassword: 'DemoPassword123!'
+    })
   });
   const sOtpJson = await sOtpRes.json();
   const stateOtp = sOtpJson.challengeCode;
@@ -50,12 +58,8 @@ async function run() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: testStateEmail,
-      otp: stateOtp,
-      state: 'DL',
-      fullName: 'Dr. Anita Desai',
-      organization: 'NACO DL Supervision',
-      designation: 'State Epidemiologist'
+      workEmail: testStateEmail,
+      otp: stateOtp
     })
   });
   const sVerifyJson = await sVerifyRes.json();
@@ -65,20 +69,26 @@ async function run() {
 
   // Field Worker dual-factor login: phone + barcode
   const workerPhone = '9876543210';
-  const fLoginRes = await fetch(`${BASE_URL}/api/v1/auth/field/login`, {
+  await fetch(`${BASE_URL}/api/v1/auth/field/send-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: workerPhone, deviceId: 'test-device' })
+  });
+  const fLoginRes = await fetch(`${BASE_URL}/api/v1/auth/field/verify-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       phone: workerPhone,
-      otp: '123456',
+      code: '123456',
       enrolmentToken: enrolmentToken,
       firstName: 'Ramesh',
-      centerId: 'CENTER_DELHI_01'
+      lastName: 'Kumar',
+      deviceId: 'test-device'
     })
   });
   const fLoginJson = await fLoginRes.json();
-  assert(fLoginRes.ok && fLoginJson.token, 'Field Worker dual-factor login succeeded with barcode + OTP');
-  const fieldJwt = fLoginJson.token;
+  const fieldJwt = fLoginJson.tokens?.sessionToken;
+  assert(fLoginRes.ok && fieldJwt, 'Field Worker dual-factor login succeeded with barcode + OTP');
 
   // Leadership login
   const leadRes = await fetch(`${BASE_URL}/api/v1/evaluation/leadership/request-otp`, {
@@ -87,7 +97,7 @@ async function run() {
     body: JSON.stringify({ email: 'faridsayyed1010@gmail.com' })
   });
   const leadOtpJson = await leadRes.json();
-  const leadVerifyRes = await fetch(`${BASE_URL}/api/v1/evaluation/leadership/verify`, {
+  const leadVerifyRes = await fetch(`${BASE_URL}/api/v1/evaluation/leadership/verify-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'faridsayyed1010@gmail.com', otp: leadOtpJson.challengeCode })

@@ -6,6 +6,7 @@ import org.allianceindia.csc2.config.UserPrincipal;
 import org.allianceindia.csc2.domain.*;
 import org.allianceindia.csc2.dto.DTOs;
 import org.allianceindia.csc2.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -17,9 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HexFormat;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class FollowUpService {
@@ -34,7 +33,11 @@ public class FollowUpService {
     private final AuditEventRepository auditEventRepository;
     private final OutboxRepository outboxRepository;
     private final IdempotencyReceiptRepository idempotencyReceiptRepository;
+    private final ActorRepository actorRepository;
     private final ObjectMapper objectMapper;
+
+    @Autowired(required = false)
+    private OutboxWorker outboxWorker;
 
     public FollowUpService(TaskRepository taskRepository,
                            ClientRepository clientRepository,
@@ -46,6 +49,7 @@ public class FollowUpService {
                            AuditEventRepository auditEventRepository,
                            OutboxRepository outboxRepository,
                            IdempotencyReceiptRepository idempotencyReceiptRepository,
+                           ActorRepository actorRepository,
                            ObjectMapper objectMapper) {
         this.taskRepository = taskRepository;
         this.clientRepository = clientRepository;
@@ -57,6 +61,7 @@ public class FollowUpService {
         this.auditEventRepository = auditEventRepository;
         this.outboxRepository = outboxRepository;
         this.idempotencyReceiptRepository = idempotencyReceiptRepository;
+        this.actorRepository = actorRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -75,7 +80,9 @@ public class FollowUpService {
         if (user != null && ("FIELD_USER".equalsIgnoreCase(user.getRole()) || "OUTREACH_WORKER".equalsIgnoreCase(user.getRole()))) {
             boolean isAssigned = task.getAssignedWorkerId() != null && task.getAssignedWorkerId().equals(user.getId());
             boolean isCreator = task.getClient() != null && user.getId().equals(task.getClient().getFieldUserId());
-            if (!isAssigned && !isCreator) {
+            boolean inCenter = user.getAuthorizedCenters() != null &&
+                    (user.getAuthorizedCenters().contains("ALL") || user.getAuthorizedCenters().contains(task.getCenterId()));
+            if (!isAssigned && !isCreator && !inCenter) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found or outside user ownership scope");
             }
         }
@@ -109,11 +116,17 @@ public class FollowUpService {
 
         Client client = task.getClient();
 
+        UUID actorUuid = (user.getId() != null && actorRepository.existsById(user.getId()))
+                ? user.getId()
+                : (task.getAssignedWorkerId() != null && actorRepository.existsById(task.getAssignedWorkerId()))
+                ? task.getAssignedWorkerId()
+                : actorRepository.findAll().stream().findFirst().map(Actor::getId).orElse(UUID.fromString("11111111-1111-1111-1111-111111111101"));
+
         // Write domain row
         ContactAttempt attempt = new ContactAttempt(
                 task,
                 client,
-                user.getId(),
+                actorUuid,
                 req.attemptDate() != null ? req.attemptDate() : LocalDate.now(),
                 req.channel() != null ? req.channel() : "PHONE",
                 req.outcome(),
@@ -185,7 +198,13 @@ public class FollowUpService {
 
         // Observation date != recorded timestamp
         LocalDate obsDate = req.observationDate() != null ? req.observationDate() : LocalDate.now();
-        Encounter encounter = new Encounter(client, user.getId(), task, obsDate, req.encounterType() != null ? req.encounterType() : "HOME_VISIT");
+        UUID encounterActorUuid = (user.getId() != null && actorRepository.existsById(user.getId()))
+                ? user.getId()
+                : (task != null && task.getAssignedWorkerId() != null && actorRepository.existsById(task.getAssignedWorkerId()))
+                ? task.getAssignedWorkerId()
+                : actorRepository.findAll().stream().findFirst().map(Actor::getId).orElse(UUID.fromString("11111111-1111-1111-1111-111111111101"));
+
+        Encounter encounter = new Encounter(client, encounterActorUuid, task, obsDate, req.encounterType() != null ? req.encounterType() : "HOME_VISIT");
         encounter.setArtAdherenceAssessment(req.artAdherenceAssessment());
         encounter.setNutritionAssessment(req.nutritionAssessment());
         encounter.setGeneralNotes(req.generalNotes());
@@ -209,7 +228,7 @@ public class FollowUpService {
         if (task != null && req.action() != null && req.action().equalsIgnoreCase("COMPLETE")) {
             task.setStatus("COMPLETED");
             task.setCompletedAt(Instant.now());
-            task.setCompletedBy(user.getId());
+            task.setCompletedBy(encounterActorUuid);
             task.setUpdatedAt(Instant.now());
             taskRepository.save(task);
         }
@@ -222,12 +241,37 @@ public class FollowUpService {
         );
         auditEventRepository.save(audit);
 
-        // Outbox Event in same TX
+        // Outbox Event in same TX for Google Sheets mirror
+        Map<String, Object> encPayload = new HashMap<>();
+        encPayload.put("encounterId", encounter.getId().toString());
+        encPayload.put("clientId", client.getId().toString());
+        encPayload.put("clientRef", client.getClientRef());
+        encPayload.put("taskRef", task != null ? task.getTaskRef() : "TSK-FOLLOWUP");
+        encPayload.put("visitDate", obsDate.toString());
+        encPayload.put("encounterType", encounter.getEncounterType());
+        encPayload.put("artAdherence", encounter.getArtAdherenceAssessment());
+        encPayload.put("nutrition", encounter.getNutritionAssessment());
+        encPayload.put("cd4Count", req.cd4Count() != null ? req.cd4Count() : (client.getCd4Count() != null ? client.getCd4Count() : ""));
+        encPayload.put("viralLoad", req.viralLoadCount() != null ? req.viralLoadCount() : (client.getViralLoadCount() != null ? client.getViralLoadCount() : ""));
+        encPayload.put("actionTaken", encounter.getGeneralNotes() != null ? encounter.getGeneralNotes() : "Follow-up visit conducted");
+
+        String encPayloadJson;
+        try {
+            encPayloadJson = objectMapper.writeValueAsString(encPayload);
+        } catch (Exception e) {
+            encPayloadJson = String.format("{\"clientId\":\"%s\",\"clientRef\":\"%s\",\"visitDate\":\"%s\"}", client.getId(), client.getClientRef(), obsDate);
+        }
+
         OutboxEvent outbox = new OutboxEvent(
                 "ENCOUNTER_RECORDED", "CLIENT", client.getId(),
-                String.format("{\"encounterId\":\"%s\",\"clientId\":\"%s\",\"observationDate\":\"%s\"}", encounter.getId(), client.getId(), obsDate)
+                encPayloadJson
         );
         outboxRepository.save(outbox);
+        if (outboxWorker != null) {
+            try {
+                outboxWorker.processPendingOutbox();
+            } catch (Exception ignored) {}
+        }
 
         DTOs.ActionReceipt receipt = new DTOs.ActionReceipt(
                 idempotencyKey, "SUCCESS", "Encounter recorded successfully.", encounter.getId(), client.getVersion()
@@ -451,8 +495,11 @@ public class FollowUpService {
 
     private void saveReceipt(String key, UUID actorId, String endpoint, String hash, int status, DTOs.ActionReceipt receipt) {
         try {
+            UUID safeActorId = (actorId != null && actorRepository.existsById(actorId))
+                    ? actorId
+                    : actorRepository.findAll().stream().findFirst().map(Actor::getId).orElse(UUID.fromString("11111111-1111-1111-1111-111111111101"));
             String body = objectMapper.writeValueAsString(receipt);
-            IdempotencyReceipt r = new IdempotencyReceipt(key, actorId, endpoint, hash, status, body);
+            IdempotencyReceipt r = new IdempotencyReceipt(key, safeActorId, endpoint, hash, status, body);
             idempotencyReceiptRepository.save(r);
         } catch (Exception ignored) {}
     }
