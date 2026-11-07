@@ -331,15 +331,32 @@ public class ClientService {
 
     @Transactional(readOnly = true)
     public DTOs.ClientListResponse listClients(UserPrincipal user, String search, int page, int size) {
+        if ("LEADERSHIP".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Leadership role has aggregate-only access and cannot access individual client linelists.");
+        }
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Client> pageResult;
 
         if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
-            // A field user sees ONLY records they submitted
-            if (search != null && !search.trim().isEmpty()) {
-                pageResult = clientRepository.findByFieldUserIdAndFullNameContainingIgnoreCase(user.getId(), search.trim(), pageable);
+            List<String> authorizedCenters = user.getAuthorizedCenters();
+            if (authorizedCenters != null && authorizedCenters.contains("ALL")) {
+                if (search != null && !search.trim().isEmpty()) {
+                    pageResult = clientRepository.findByFullNameContainingIgnoreCase(search.trim(), pageable);
+                } else {
+                    pageResult = clientRepository.findAll(pageable);
+                }
+            } else if (authorizedCenters != null && !authorizedCenters.isEmpty()) {
+                if (search != null && !search.trim().isEmpty()) {
+                    pageResult = clientRepository.findByCenterIdInAndFullNameContainingIgnoreCase(authorizedCenters, search.trim(), pageable);
+                } else {
+                    pageResult = clientRepository.findByCenterIdIn(authorizedCenters, pageable);
+                }
             } else {
-                pageResult = clientRepository.findByFieldUserId(user.getId(), pageable);
+                if (search != null && !search.trim().isEmpty()) {
+                    pageResult = clientRepository.findByFieldUserIdAndFullNameContainingIgnoreCase(user.getId(), search.trim(), pageable);
+                } else {
+                    pageResult = clientRepository.findByFieldUserId(user.getId(), pageable);
+                }
             }
         } else {
             List<String> authorizedCenters = user.getAuthorizedCenters();

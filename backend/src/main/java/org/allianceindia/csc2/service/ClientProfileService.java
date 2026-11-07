@@ -5,6 +5,9 @@ import org.allianceindia.csc2.config.UserPrincipal;
 import org.allianceindia.csc2.domain.*;
 import org.allianceindia.csc2.dto.DTOs;
 import org.allianceindia.csc2.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,8 @@ import java.util.*;
 @Service
 public class ClientProfileService {
 
+    private static final Logger log = LoggerFactory.getLogger(ClientProfileService.class);
+
     private final ClientRepository clientRepository;
     private final ProfileRevisionRepository profileRevisionRepository;
     private final FamilyMemberRepository familyMemberRepository;
@@ -26,6 +31,9 @@ public class ClientProfileService {
     private final IdempotencyReceiptRepository idempotencyReceiptRepository;
     private final CryptoService cryptoService;
     private final ObjectMapper objectMapper;
+
+    @Autowired(required = false)
+    private OutboxWorker outboxWorker;
 
     public ClientProfileService(
             ClientRepository clientRepository,
@@ -70,9 +78,12 @@ public class ClientProfileService {
             String idempotencyKey,
             String clientIp) {
 
-        // 1. Role Authorization Gate: Leadership cannot edit!
+        // 1. Role Authorization Gate: Leadership and State Team cannot edit!
         if ("leadership".equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Leadership role has view-only permissions and cannot edit beneficiary records.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Leadership role has aggregate-only access and cannot edit beneficiary records.");
+        }
+        if ("state_reviewer".equalsIgnoreCase(user.getRole()) || "state_team".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "State team role has read-only evaluation access and cannot edit beneficiary records.");
         }
 
         // 2. Mandatory changeReason
@@ -208,13 +219,67 @@ public class ClientProfileService {
         );
         auditEventRepository.save(audit);
 
-        // 13. Atomic Outbox Event for Sheets Mirror Sync
+        // 13. Atomic Outbox Event for Sheets Mirror Sync (Complete client mirror)
+        Map<String, Object> clientMirrorPayload = new HashMap<>();
+        clientMirrorPayload.put("clientId", client.getId().toString());
+        clientMirrorPayload.put("clientRef", client.getClientRef());
+        clientMirrorPayload.put("centerId", client.getCenterId());
+        clientMirrorPayload.put("fullName", client.getFullName());
+        clientMirrorPayload.put("aliasName", client.getAliasName());
+        clientMirrorPayload.put("age", client.getAge());
+        clientMirrorPayload.put("gender", client.getGender());
+        clientMirrorPayload.put("maritalStatus", client.getMaritalStatus());
+        clientMirrorPayload.put("inSchool", client.getInSchool());
+        clientMirrorPayload.put("occupation", client.getOccupation());
+        clientMirrorPayload.put("registrationDate", client.getRegistrationDate() != null ? client.getRegistrationDate().toString() : LocalDate.now().toString());
+        clientMirrorPayload.put("primaryPhone", client.getPrimaryPhone());
+        clientMirrorPayload.put("addressCurrent", client.getAddressCurrent());
+        clientMirrorPayload.put("district", client.getDistrict());
+        clientMirrorPayload.put("state", client.getState());
+        clientMirrorPayload.put("pincode", client.getPincode());
+        clientMirrorPayload.put("caregiverName", client.getCaregiverName());
+        clientMirrorPayload.put("hivStatus", client.getHivStatus());
+        clientMirrorPayload.put("artNumber", client.getArtNumber());
+        clientMirrorPayload.put("artCenterName", client.getArtCenterName());
+        clientMirrorPayload.put("artStartDate", client.getArtStartDate() != null ? client.getArtStartDate().toString() : null);
+        clientMirrorPayload.put("cd4Count", client.getCd4Count());
+        clientMirrorPayload.put("cd4Percentage", client.getCd4Percentage());
+        clientMirrorPayload.put("viralLoadCount", client.getViralLoadCount());
+        clientMirrorPayload.put("hasHivDoc", client.isHasHivDocDeclaration());
+        clientMirrorPayload.put("hasAddressDoc", client.isHasAddressDocDeclaration());
+        clientMirrorPayload.put("hasArtDoc", client.isHasArtDocDeclaration());
+        clientMirrorPayload.put("homeVisitConsent", client.isHomeVisitConsent());
+        clientMirrorPayload.put("messagingConsent", client.isMessagingConsent());
+        clientMirrorPayload.put("status", client.getStatus());
+        clientMirrorPayload.put("version", newVersion);
+
+        if (req.familyMembers() != null) {
+            clientMirrorPayload.put("familyMembers", req.familyMembers());
+        }
+        if (req.referralRequests() != null) {
+            clientMirrorPayload.put("referralRequests", req.referralRequests());
+        }
+
+        String fullPayloadJson;
+        try {
+            fullPayloadJson = objectMapper.writeValueAsString(clientMirrorPayload);
+        } catch (Exception e) {
+            fullPayloadJson = String.format("{\"clientRef\":\"%s\",\"centerId\":\"%s\",\"fullName\":\"%s\",\"version\":%d}",
+                    client.getClientRef(), client.getCenterId(), client.getFullName(), newVersion);
+        }
+
         OutboxEvent outbox = new OutboxEvent(
-                "CLIENT_PROFILE_UPDATED", "CLIENT", client.getId(),
-                String.format("{\"clientRef\":\"%s\",\"centerId\":\"%s\",\"fullName\":\"%s\",\"version\":%d}",
-                        client.getClientRef(), client.getCenterId(), client.getFullName(), newVersion)
+                "CLIENT_UPDATED", "CLIENT", client.getId(), fullPayloadJson
         );
         outboxRepository.save(outbox);
+
+        if (outboxWorker != null) {
+            try {
+                outboxWorker.processPendingOutbox();
+            } catch (Exception ex) {
+                log.warn("Immediate outbox dispatch to Google Sheets failed, background worker will retry: {}", ex.getMessage());
+            }
+        }
 
         // 14. Save Idempotency Receipt if key provided
         if (idempotencyKey != null && requestHash != null) {
@@ -233,9 +298,15 @@ public class ClientProfileService {
     }
 
     private void validateCenterScope(Client client, UserPrincipal user) {
+        if ("leadership".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Leadership role has aggregate-only access and cannot view individual client records.");
+        }
         if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
-            if (client.getFieldUserId() == null || !client.getFieldUserId().equals(user.getId())) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not found");
+            boolean isCreator = client.getFieldUserId() != null && client.getFieldUserId().equals(user.getId());
+            boolean inCenter = user.getAuthorizedCenters() != null &&
+                    (user.getAuthorizedCenters().contains("ALL") || user.getAuthorizedCenters().contains(client.getCenterId()));
+            if (!isCreator && !inCenter) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Beneficiary record not in authorized center scope.");
             }
             return;
         }

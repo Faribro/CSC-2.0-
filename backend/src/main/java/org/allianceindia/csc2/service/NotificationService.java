@@ -85,8 +85,9 @@ public class NotificationService {
             String subject = getSubjectForTemplate(item.getTemplate(), data);
             String bodyText = renderBodyForTemplate(item.getTemplate(), data);
             String htmlBody = renderHtmlForTemplate(item.getTemplate(), data);
+            String qrDataUrl = String.valueOf(data.getOrDefault("qrDataUrl", ""));
 
-            SendResult result = dispatchEmail(item.getRecipient(), subject, bodyText, htmlBody);
+            SendResult result = dispatchEmail(item.getRecipient(), subject, bodyText, htmlBody, qrDataUrl);
             if (result.success()) {
                 item.setStatus(result.reportedDelivered() ? "DELIVERED" : "ACCEPTED");
                 item.setErrorMessage(null);
@@ -109,7 +110,7 @@ public class NotificationService {
         outboxRepository.save(item);
     }
 
-    private SendResult dispatchEmail(String recipient, String subject, String bodyText, String htmlBody) {
+    private SendResult dispatchEmail(String recipient, String subject, String bodyText, String htmlBody, String qrDataUrl) {
         if ("mock".equalsIgnoreCase(providerMode)) {
             String[] activeProfiles = environment.getActiveProfiles();
             if (java.util.Arrays.asList(activeProfiles).contains("prod") || java.util.Arrays.asList(activeProfiles).contains("production") || java.util.Arrays.asList(activeProfiles).contains("staging")) {
@@ -122,7 +123,7 @@ public class NotificationService {
         }
 
         if ("apps_script".equalsIgnoreCase(providerMode)) {
-            return sendViaAppsScript(recipient, subject, bodyText, htmlBody);
+            return sendViaAppsScript(recipient, subject, bodyText, htmlBody, qrDataUrl);
         }
 
         if ("resend".equalsIgnoreCase(providerMode)) {
@@ -132,7 +133,7 @@ public class NotificationService {
         return new SendResult(false, false, "PROVIDER_UNCONFIGURED", "No valid notification provider configured");
     }
 
-    private SendResult sendViaAppsScript(String recipient, String subject, String bodyText, String htmlBody) {
+    private SendResult sendViaAppsScript(String recipient, String subject, String bodyText, String htmlBody, String qrDataUrl) {
         try {
             if (appsScriptUrl == null || appsScriptUrl.trim().isEmpty()) {
                 return new SendResult(false, false, "MISSING_URL", "Apps Script endpoint URL unconfigured");
@@ -145,6 +146,9 @@ public class NotificationService {
             reqBody.put("body", bodyText);
             if (htmlBody != null && !htmlBody.trim().isEmpty()) {
                 reqBody.put("htmlBody", htmlBody);
+            }
+            if (qrDataUrl != null && !qrDataUrl.trim().isEmpty()) {
+                reqBody.put("qrDataUrl", qrDataUrl);
             }
             String json = objectMapper.writeValueAsString(reqBody);
 

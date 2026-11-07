@@ -46,6 +46,10 @@ import {
   HelpCircle,
   Wifi,
   WifiOff,
+  Camera,
+  QrCode,
+  Upload,
+  Image as ImageIcon,
   LucideProps,
 } from 'lucide-react';
 
@@ -247,6 +251,19 @@ export const Icon: React.FC<IconProps> = ({
     case 'check-circle':
     case 'CheckCircle':
       return <CheckCircle {...commonProps} />;
+    case 'Camera':
+    case 'camera':
+      return <Camera {...commonProps} />;
+    case 'QrCode':
+    case 'qrcode':
+    case 'qr':
+      return <QrCode {...commonProps} />;
+    case 'Upload':
+    case 'upload':
+      return <Upload {...commonProps} />;
+    case 'Image':
+    case 'image':
+      return <ImageIcon {...commonProps} />;
 
     default:
       return <FileText {...commonProps} />;

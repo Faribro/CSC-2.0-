@@ -22,19 +22,21 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTabParam = searchParams.get('tab');
+  const modeParam = searchParams.get('mode');
   const isNewlyCreated = searchParams.get('created') === 'true';
-  const initialEditMode = searchParams.get('edit') === 'true';
+  const initialEditMode = searchParams.get('edit') === 'true' || modeParam === 'edit';
 
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
 
   // Deep-linkable Tab State: 'registration' | 'followup'
   const [activeTab, setActiveTab] = useState<'registration' | 'followup'>(() => {
-    if (initialTabParam === 'registration') return 'registration';
+    if (initialTabParam === 'registration' || modeParam === 'view' || modeParam === 'edit') return 'registration';
     return 'followup';
   });
 
   const [formMode, setFormMode] = useState<'view' | 'edit'>(initialEditMode ? 'edit' : 'view');
+  const [profileData, setProfileData] = useState<any>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showCreatedNotice, setShowCreatedNotice] = useState(isNewlyCreated);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,6 +122,7 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     alternatePhone: "9811001102",
     inSchool: "no",
     occupation: "daily_wage",
+    occupationOther: "",
     keyPopulation: "none",
     addressCurrent: "House 42, Gali 3, Daryaganj, Central Delhi, 110002",
     district: "Central Delhi",
@@ -142,6 +145,8 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     sharingConsent: false,
     version: 1,
     status: "ACTIVE",
+    registrationDate: "",
+    revisions: [] as any[],
   });
 
   const [tasks, setTasks] = useState<TaskSummary[]>([
@@ -229,38 +234,99 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
 
   const loadClientData = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
-      const res = await fetch(`/api/v1/clients/${clientId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setClient((prev) => ({
-          ...prev,
-          id: data.id,
-          clientRef: data.clientRef,
-          centerId: data.centerId,
-          fullName: data.fullName,
-          age: data.age,
-          gender: data.gender,
-          primaryPhone: data.primaryPhone,
-          hivStatus: data.hivStatus,
-          artNumber: data.artNumber,
-          addressCurrent: data.addressCurrent,
-          hasHivDocDeclaration: data.hasHivDocDeclaration,
-          hasAddressDocDeclaration: data.hasAddressDocDeclaration,
-          hasArtDocDeclaration: data.hasArtDocDeclaration,
-          docDeclarationNotes: data.docDeclarationNotes,
-          homeVisitConsent: data.homeVisitConsent,
-          messagingConsent: data.messagingConsent,
-          version: data.version,
-        }));
-        if (data.tasks) setTasks(data.tasks);
-        if (data.contactAttempts) setContactAttempts(data.contactAttempts);
-        if (data.encounters) setEncounters(data.encounters);
-        if (data.plannedServices) setPlannedServices(data.plannedServices);
-        if (data.deliveredServices) setDeliveredServices(data.deliveredServices);
+      // 0. Check for offline pending submissions
+      if (typeof window !== 'undefined' && (clientId.startsWith('offline-') || clientId.startsWith('local-'))) {
+        const queue = JSON.parse(localStorage.getItem('csc2_pending_offline_submissions') || '[]');
+        const found = queue.find((q: any) => q.id === clientId);
+        if (found && found.payload) {
+          const p = found.payload;
+          setClient((prev) => ({
+            ...prev,
+            id: clientId,
+            clientRef: p.clientRef || 'LOCAL-DRAFT',
+            centerId: p.centerId || 'Saved Locally',
+            fullName: p.fullName || 'Unsynced Beneficiary',
+            age: p.age || 30,
+            gender: p.gender || 'male',
+            primaryPhone: p.primaryPhone || '',
+            addressCurrent: p.addressCurrent || '',
+            district: p.district || '',
+            state: p.state || '',
+            pincode: p.pincode || '',
+            hivStatus: p.hivStatus || 'positive',
+            artNumber: p.artNumber || '',
+            version: 1,
+            revisions: [],
+          }));
+          return;
+        }
       }
+
+      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') || localStorage.getItem('csc2_auth_token') : null;
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // 1. Fetch full profile (A-J, repeats, revisions, version)
+      try {
+        const pRes = await fetch(`/api/v1/clients/${clientId}/profile`, { headers });
+        if (pRes.ok) {
+          const p = await pRes.json();
+          setProfileData(p);
+          setClient((prev) => ({
+            ...prev,
+            id: p.id,
+            clientRef: p.clientRef,
+            centerId: p.centerId,
+            fullName: p.fullName,
+            aliasName: p.aliasName || '',
+            age: p.age,
+            gender: p.gender,
+            maritalStatus: p.maritalStatus || '1',
+            caregiverName: p.caregiverName || '',
+            primaryPhone: p.primaryPhone || '',
+            alternatePhone: p.alternatePhone || '',
+            inSchool: p.inSchool || 'no',
+            occupation: p.occupation || '',
+            occupationOther: p.occupationOther || '',
+            keyPopulation: p.keyPopulation || 'none',
+            addressCurrent: p.addressCurrent || '',
+            district: p.district || '',
+            state: p.state || '',
+            pincode: p.pincode || '',
+            hivStatus: p.hivStatus || 'positive',
+            artNumber: p.artNumber || '',
+            artCenterName: p.artCenterName || '',
+            artStartDate: p.artStartDate || '',
+            cd4Count: p.cd4Count || 0,
+            cd4Percentage: p.cd4Percentage ? String(p.cd4Percentage) : '',
+            viralLoadCount: p.viralLoadCount || 0,
+            muacCm: p.muacCm ? Number(p.muacCm) : 0,
+            hasHivDocDeclaration: p.hasHivDocDeclaration ?? true,
+            hasAddressDocDeclaration: p.hasAddressDocDeclaration ?? true,
+            hasArtDocDeclaration: p.hasArtDocDeclaration ?? true,
+            docDeclarationNotes: p.docDeclarationNotes || '',
+            homeVisitConsent: p.homeVisitConsent ?? true,
+            messagingConsent: p.messagingConsent ?? true,
+            sharingConsent: p.sharingConsent ?? false,
+            version: p.version || 1,
+            status: p.status || 'ACTIVE',
+            registrationDate: p.registrationDate || '',
+            revisions: p.revisions || [],
+          }));
+        }
+      } catch (_pErr) {}
+
+      // 2. Fetch tasks, attempts, encounters, planned services
+      try {
+        const res = await fetch(`/api/v1/clients/${clientId}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tasks) setTasks(data.tasks);
+          if (data.contactAttempts) setContactAttempts(data.contactAttempts);
+          if (data.encounters) setEncounters(data.encounters);
+          if (data.plannedServices) setPlannedServices(data.plannedServices);
+          if (data.deliveredServices) setDeliveredServices(data.deliveredServices);
+        }
+      } catch (_dErr) {}
     } catch (_ignored) {}
   };
 
@@ -309,32 +375,74 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
     setConflictDiff(null);
     try {
       const idempotencyKey = `edit-${clientId}-${Date.now()}`;
-      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('csc_token') || localStorage.getItem('csc2_auth_token') : null;
 
       const payload = {
         expectedVersion: client.version,
         changeReason: changeReason || 'Routine profile update',
-        fullName: formData.a03_name || formData.a01_full_name || client.fullName,
-        age: Number(formData.a04_age || formData.a03_age) || client.age,
-        gender: formData.a05_gender || formData.a04_gender || client.gender,
-        maritalStatus: formData.a06_marital || formData.a05_marital_status || client.maritalStatus,
-        primaryPhone: formData.a11_phone || formData.a06_phone || client.primaryPhone,
-        addressCurrent: formData.a09_address || formData.a07_address_current || client.addressCurrent,
+        fullName: formData.a03_name || client.fullName,
+        aliasName: formData.a03_alias || client.aliasName,
+        age: Number(formData.a04_age) || client.age,
+        gender: formData.a05_gender || client.gender,
+        maritalStatus: formData.a06_marital || client.maritalStatus,
+        caregiverName: formData.a16_caretaker || client.caregiverName,
+        primaryPhone: formData.a11_phone || client.primaryPhone,
+        alternatePhone: formData.a11_alt_phone || client.alternatePhone,
+        inSchool: formData.a18_in_school || client.inSchool,
+        occupation: formData.a19_occupation || client.occupation,
+        occupationOther: formData.a19_occupation_other || client.occupationOther,
+        keyPopulation: formData.a14_kp || client.keyPopulation,
+        addressCurrent: formData.a09_address || client.addressCurrent,
+        district: client.district,
+        state: client.state,
+        pincode: formData.a10_pincode || client.pincode,
         hivStatus: formData.c1_hiv_confirmed === 'yes' ? 'positive' : client.hivStatus,
-        artNumber: formData.c9_art_no || formData.c03_art_number || client.artNumber,
-        artCenterName: formData.c6_artc_name || formData.c04_art_center || client.artCenterName,
-        cd4Count: formData.c12b_cd4_count ? Number(formData.c12b_cd4_count) : client.cd4Count,
-        cd4Percentage: formData.c12b_cd4_pct || client.cd4Percentage,
-        viralLoadCount: formData.c13b_vl_count ? Number(formData.c13b_vl_count) : client.viralLoadCount,
-        hasHivDocDeclaration: Boolean(formData.j_doc_hiv ?? formData.j_hiv_doc_sighted),
-        hasAddressDocDeclaration: Boolean(formData.j_doc_addr ?? formData.j_address_doc_sighted),
-        hasArtDocDeclaration: Boolean(formData.j_doc_art ?? formData.j_art_doc_sighted),
-        docDeclarationNotes: formData.j4_comments || formData.j_verifier_notes || client.docDeclarationNotes,
-        homeVisitConsent: Boolean(formData.a01_consent ?? formData.a08_consent_home),
-        messagingConsent: Boolean(formData.a01_consent ?? formData.a08_consent_sms),
-        familyMembers: formData.b2_members || [],
-        referralRequests: formData.d5_referrals || [],
+        artNumber: formData.c9_art_no || client.artNumber,
+        artCenterName: formData.c6_artc_name || client.artCenterName,
+        artStartDate: formData.c9_art_date || client.artStartDate,
+        cd4Count: Number(formData.c12b_cd4_count) || client.cd4Count,
+        cd4Percentage: formData.c12b_cd4_pct ? Number(formData.c12b_cd4_pct) : client.cd4Percentage,
+        viralLoadCount: Number(formData.c13b_vl_count) || client.viralLoadCount,
+        hasHivDocDeclaration: Boolean(formData.j_doc_hiv),
+        hasAddressDocDeclaration: Boolean(formData.j_doc_addr),
+        hasArtDocDeclaration: Boolean(formData.j_doc_art),
+        docDeclarationNotes: formData.j4_comments || client.docDeclarationNotes,
+        homeVisitConsent: formData.a01_consent === 'yes' || formData.a01_consent === true,
+        messagingConsent: true,
+        sharingConsent: false,
+        clientRef: client.clientRef,
+        familyMembers: (formData.b2_members || []).map((m) => ({
+          name: m.name,
+          relationship: m.relationship,
+          age: Number(m.age) || 0,
+          gender: m.gender,
+          hivStatus: m.hivStatus,
+          artNumber: m.artNumber,
+        })),
+        referralRequests: (formData.d5_referrals || []).map((r) => ({
+          serviceCategory: r.category,
+          facilityName: r.facility,
+          targetDueDate: r.targetDueDate,
+          status: r.status,
+          notes: r.notes,
+        })),
       };
+
+      // Check if browser is offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        const queueKey = 'csc2_pending_offline_updates';
+        const queue = JSON.parse(localStorage.getItem(queueKey) || '[]');
+        queue.push({
+          clientId,
+          payload,
+          idempotencyKey,
+          timestamp: new Date().toISOString(),
+        });
+        localStorage.setItem(queueKey, JSON.stringify(queue));
+        showToast(lang === 'hi' ? 'ऑफ़लाइन: संशोधन इस डिवाइस पर सहेजा गया।' : 'Offline: Changes saved on this device (queued for sync).');
+        setFormMode('view');
+        return;
+      }
 
       const res = await fetch(`/api/v1/clients/${clientId}/profile`, {
         method: 'PUT',
@@ -347,9 +455,13 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
       });
 
       if (res.status === 409) {
-        const errJson = await res.json().catch(() => null);
-        setConflictDiff(errJson || { message: 'Version conflict: Record was updated by another user.' });
-        showToast('Version conflict (409): Another user modified this record concurrently.');
+        const conflict = await res.json().catch(() => ({}));
+        setConflictDiff(conflict);
+        alert(
+          lang === 'hi'
+            ? `समवर्ती संशोधन संघर्ष: रिकॉर्ड को किसी अन्य उपयोगकर्ता द्वारा संशोधित किया गया है (सर्वर संस्करण v${conflict.currentVersion || 'new'})। कृपया पृष्ठ ताज़ा करें।`
+            : `Concurrent modification conflict: This record was modified elsewhere (current server version is v${conflict.currentVersion || 'higher'}). Please refresh before saving.`
+        );
         return;
       }
 
@@ -358,17 +470,29 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
         throw new Error(errText || 'Profile update failed');
       }
 
-      const updated = await res.json();
+      const receipt = await res.json();
       setClient((prev) => ({
         ...prev,
-        version: updated.version || prev.version + 1,
-        fullName: updated.fullName || prev.fullName,
+        version: receipt.version || prev.version + 1,
       }));
       setFormMode('view');
-      showToast('Profile revision successfully saved and recorded in audit log.');
-      loadClientData();
+      showToast(lang === 'hi' ? `संशोधन v${receipt.version} सफलतापूर्वक सहेजा गया!` : `Profile updated to revision v${receipt.version} successfully!`);
+      await loadClientData();
     } catch (err: any) {
-      alert(`Error updating profile: ${err.message}`);
+      if (!navigator.onLine || err.message?.includes('fetch')) {
+        const queueKey = 'csc2_pending_offline_updates';
+        const queue = JSON.parse(localStorage.getItem(queueKey) || '[]');
+        queue.push({
+          clientId,
+          payload: { expectedVersion: client.version, ...formData },
+          timestamp: new Date().toISOString(),
+        });
+        localStorage.setItem(queueKey, JSON.stringify(queue));
+        showToast(lang === 'hi' ? 'ऑफ़लाइन: संशोधन इस डिवाइस पर सहेजा गया।' : 'Offline: Changes saved on this device (queued for sync).');
+        setFormMode('view');
+      } else {
+        alert(`Error updating profile: ${err.message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -629,24 +753,70 @@ function ClientRecordContent({ clientId }: { clientId: string }) {
               mode={formMode}
               version={client.version}
               clientRef={client.clientRef}
+              revisions={client.revisions}
+              onBackToList={() => router.push('/clients')}
               initialData={{
+                a01_reg_date: client.registrationDate || new Date().toISOString().split('T')[0],
+                a02_reg_place: '1',
                 a03_name: client.fullName,
+                a03_alias: client.aliasName,
                 a04_age: String(client.age),
                 a05_gender: client.gender,
                 a06_marital: client.maritalStatus,
-                a11_phone: client.primaryPhone,
                 a09_address: client.addressCurrent,
-                a01_consent: client.homeVisitConsent,
-                c1_hiv_confirmed: client.hivStatus === 'positive' ? 'yes' : 'no',
-                c9_art_no: client.artNumber,
+                a10_csc_name: client.centerId,
+                a10_pincode: client.pincode,
+                a11_phone: client.primaryPhone,
+                a11_alt_phone: client.alternatePhone,
+                a14_kp: client.keyPopulation,
+                a16_caretaker: client.caregiverName,
+                a18_in_school: client.inSchool,
+                a19_occupation: client.occupation,
+                a19_occupation_other: client.occupationOther,
+                a01_consent: client.homeVisitConsent ? 'yes' : 'no',
+                c1_hiv_confirmed: client.hivStatus === 'positive' || client.hivStatus === 'confirmed' ? 'yes' : 'no',
                 c6_artc_name: client.artCenterName,
-                c12b_cd4_count: String(client.cd4Count),
-                c12b_cd4_pct: client.cd4Percentage,
-                c13b_vl_count: String(client.viralLoadCount),
+                c9_art_no: client.artNumber,
+                c9_art_date: client.artStartDate,
+                c12b_cd4_count: String(client.cd4Count || ''),
+                c12b_cd4_pct: client.cd4Percentage ? String(client.cd4Percentage) : '',
+                c13b_vl_count: String(client.viralLoadCount || ''),
                 j_doc_hiv: client.hasHivDocDeclaration,
                 j_doc_addr: client.hasAddressDocDeclaration,
                 j_doc_art: client.hasArtDocDeclaration,
                 j4_comments: client.docDeclarationNotes,
+                b2_members: profileData?.familyMembers?.length
+                  ? profileData.familyMembers.map((fm: any, idx: number) => ({
+                      id: fm.id || `fm-${idx}`,
+                      name: fm.name,
+                      relationship: fm.relationship || 'other',
+                      age: String(fm.age || ''),
+                      gender: fm.gender || 'male',
+                      living: '1',
+                      hivStatus: fm.hivStatus || 'negative',
+                      artNumber: fm.artNumber || '',
+                    }))
+                  : undefined,
+                d5_referrals: profileData?.referralRequests?.length
+                  ? profileData.referralRequests.map((r: any, idx: number) => ({
+                      id: r.id || `ref-${idx}`,
+                      category: r.serviceCategory || 'social_protection',
+                      facility: r.facilityName || '',
+                      targetDueDate: r.targetDueDate || '',
+                      status: r.status || 'PENDING',
+                      notes: r.notes || '',
+                    }))
+                  : undefined,
+                j5_services: plannedServices?.length
+                  ? plannedServices.map((ps: any, idx: number) => ({
+                      id: ps.id || `ps-${idx}`,
+                      category: ps.serviceCode || '1',
+                      service: ps.serviceName || 'Follow-up service',
+                      targetDueDate: ps.targetDueDate || '',
+                      facility: '',
+                      notes: ps.notes || '',
+                    }))
+                  : undefined,
               }}
               lang={lang}
               onSubmit={handleProfileSubmit}

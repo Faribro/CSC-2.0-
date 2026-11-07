@@ -66,9 +66,18 @@ export interface RegistrationFormProps {
   isSubmitting?: boolean;
   onCancel?: () => void;
   onSwitchToEdit?: () => void;
+  onBackToList?: () => void;
   canEdit?: boolean;
   version?: number;
   clientRef?: string;
+  revisions?: Array<{
+    id?: string;
+    revisionNumber: number;
+    changeReason?: string;
+    fieldDiff?: string;
+    modifiedByUsername?: string;
+    createdAt?: string;
+  }>;
 }
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
@@ -80,9 +89,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   isSubmitting = false,
   onCancel,
   onSwitchToEdit,
+  onBackToList,
   canEdit = true,
   version = 1,
   clientRef = 'NEW',
+  revisions = [],
 }) => {
   const isHi = lang === 'hi';
   const t = translations[lang];
@@ -571,8 +582,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       return null; // Evaluated internally without cluttering UI
     }
 
-    // Read-only View Mode Rendering
-    if (isReadOnly) {
+    // Read-only View Mode or Immutable Field Rendering
+    const isImmutableField = mode === 'edit' && (
+      field.name === 'a01_reg_date' ||
+      field.name === 'a02_reg_place' ||
+      field.name === 'a10_csc_name' ||
+      field.name === 'clientRef'
+    );
+
+    if (isReadOnly || isImmutableField) {
       let displayVal = '—';
       if (value !== undefined && value !== null && value !== '') {
         if (field.type === 'select_one' && choices.length > 0) {
@@ -593,7 +611,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       return (
         <div key={field.name} className="py-2 border-b border-slate-100 last:border-b-0">
-          <span className="block text-[11px] font-medium text-slate-500">{label}</span>
+          <span className="block text-[11px] font-medium text-slate-500">
+            {label} {isImmutableField && <span className="text-[10px] text-amber-700 font-bold ml-1">({isHi ? 'अपरिवर्तनीय' : 'Read-only'})</span>}
+          </span>
           <span className="text-sm font-semibold text-slate-900 mt-0.5 block">{displayVal}</span>
         </div>
       );
@@ -770,30 +790,115 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 )}
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1.5">
-              {isHi
-                ? 'CSC 2.0 देखभाल और सहायता केंद्र पंजीकरण एवं फॉलो-अप प्रपत्र'
-                : 'CSC 2.0 Care & Support Centre Intake and Follow-Up Form'}
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1.5 font-comic">
+              {mode === 'edit'
+                ? (isHi ? `संशोधन: ${clientRef}` : `Editing ${clientRef}`)
+                : mode === 'view'
+                ? (isHi ? `लाभार्थी रिकॉर्ड: ${clientRef}` : `Beneficiary Record: ${clientRef}`)
+                : (isHi
+                    ? 'CSC 2.0 देखभाल और सहायता केंद्र पंजीकरण एवं फॉलो-अप प्रपत्र'
+                    : 'CSC 2.0 Care & Support Centre Intake and Follow-Up Form')}
             </h1>
-            {clientRef && clientRef !== 'NEW' && (
+            {clientRef && clientRef !== 'NEW' && mode === 'create' && (
               <p className="text-xs text-slate-500 mt-0.5">
                 Ref: <strong className="font-mono text-slate-800">{clientRef}</strong>
               </p>
             )}
+            {mode === 'edit' && (
+              <p className="text-xs text-amber-700 mt-0.5">
+                {isHi
+                  ? `सहेजने पर नया संशोधन (v${version + 1}) और ऑडिट इवेंट बनाया जाएगा।`
+                  : `Saving creates revision v${version + 1} and appends to the audit trail.`}
+              </p>
+            )}
           </div>
 
-          {/* Action Button for View Mode */}
-          {mode === 'view' && canEdit && onSwitchToEdit && (
-            <button
-              type="button"
-              onClick={onSwitchToEdit}
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-colors shrink-0 min-h-[44px]"
-            >
-              <Icon name="edit" className="w-4 h-4" />
-              <span>{isHi ? 'संशोधन करें (Edit)' : 'Edit Beneficiary Record'}</span>
-            </button>
-          )}
+          {/* Action Buttons in Header */}
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+            {mode === 'view' && onBackToList && (
+              <button
+                type="button"
+                onClick={onBackToList}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-canvas hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-colors min-h-[44px] cursor-pointer"
+              >
+                <Icon name="back" className="w-3.5 h-3.5" />
+                <span>{isHi ? 'सूची पर वापस' : 'Back to list'}</span>
+              </button>
+            )}
+
+            {mode === 'view' && canEdit && onSwitchToEdit && (
+              <button
+                type="button"
+                onClick={onSwitchToEdit}
+                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-colors shrink-0 min-h-[44px] cursor-pointer"
+              >
+                <Icon name="edit" className="w-4 h-4" />
+                <span>{isHi ? 'संशोधन करें (Edit)' : 'Edit Record'}</span>
+              </button>
+            )}
+
+            {mode === 'edit' && (
+              <>
+                {onCancel && (
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-canvas hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-colors min-h-[44px] cursor-pointer"
+                  >
+                    <span>{isHi ? 'रद्द करें' : 'Cancel'}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleTriggerSubmit}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-colors min-h-[44px] cursor-pointer disabled:opacity-50"
+                >
+                  <Icon name="save" className="w-4 h-4" />
+                  <span>{isSubmitting ? (isHi ? 'सहेजा जा रहा...' : 'Saving...') : (isHi ? 'संशोधन सहेजें' : 'Save changes')}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Revision History Summary */}
+        {revisions && revisions.length > 0 && (
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <Icon name="ClipboardList" className="w-4 h-4 text-plum" />
+                <span>{isHi ? `संशोधन इतिहास (${revisions.length})` : `Revision History (${revisions.length} revisions)`}</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-500 font-bold">
+                Current: v{version}
+              </span>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {revisions.map((rev) => (
+                <div key={rev.id || rev.revisionNumber} className="bg-white p-2.5 rounded-lg border border-slate-200 text-[11px] flex items-start justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-plum bg-lavender/60 px-1.5 py-0.5 rounded text-[10px]">
+                        v{rev.revisionNumber}
+                      </span>
+                      <strong className="text-slate-800">{rev.changeReason || 'Profile update'}</strong>
+                    </div>
+                    {rev.fieldDiff && rev.fieldDiff !== '{}' && (
+                      <p className="text-[10px] text-slate-500 font-mono truncate max-w-md">
+                        Diff: {rev.fieldDiff}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right text-[10px] text-slate-400 shrink-0">
+                    <span className="block font-medium text-slate-600">{rev.modifiedByUsername || 'worker'}</span>
+                    <span>{rev.createdAt ? new Date(rev.createdAt).toLocaleDateString() : 'Recorded'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ------------------------------------------------------------------ */}
         {/* 2. HORIZONTAL SECTION PILL RUNNER (ENKETO JUMP TABS) */}

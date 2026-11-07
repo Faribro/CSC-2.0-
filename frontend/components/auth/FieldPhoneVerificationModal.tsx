@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import jsQR from 'jsqr';
 import { Icon } from '@/components/ui/Icon';
-import { Language, translations } from '@/lib/translations';
+import { Language } from '@/lib/translations';
 
 interface FieldPhoneVerificationModalProps {
   isOpen: boolean;
@@ -24,6 +24,19 @@ export function FieldPhoneVerificationModal({
   const [enrolmentToken, setEnrolmentToken] = useState('');
   const [otp, setOtp] = useState('');
 
+  // Scanning / Upload states
+  const [scanMode, setScanMode] = useState<'none' | 'camera' | 'manual'>('none');
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [scannerError, setScannerError] = useState<string | null>(null);
+  const [showManualInput, setShowManualInput] = useState(false);
+
+  // References for camera & file upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  // Verification flow states
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -40,6 +53,213 @@ export function FieldPhoneVerificationModal({
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  // Clean up camera on unmount or close
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+    }
+  }, [isOpen]);
+
+  const tokenState = useMemo(() => {
+    if (!enrolmentToken) return null;
+    const match = enrolmentToken.match(/^CSC2-([A-Z0-9]+)-/i);
+    return match ? match[1] : null;
+  }, [enrolmentToken]);
+
+  // Helper: Stop camera tracks
+  const stopCamera = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setScanMode((prev) => (prev === 'camera' ? 'none' : prev));
+  };
+
+  // Helper: Accept decoded QR code
+  const handleCodeAccepted = (rawCode: string) => {
+    const clean = rawCode.trim().toUpperCase();
+    setEnrolmentToken(clean);
+    setScannerError(null);
+    stopCamera();
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(50);
+      } catch {
+        // Ignore haptic feedback errors
+      }
+    }
+  };
+
+  // 1. SCAN WITH CAMERA
+  const startCamera = async () => {
+    setScannerError(null);
+    setScanMode('camera');
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        scanVideoLoop();
+      }
+    } catch {
+      stopCamera();
+      setScannerError(
+        lang === 'hi'
+          ? 'कैमरा शुरू करने में असमर्थ। कृपया अनुमति दें या छवि फ़ाइल अपलोड करें।'
+          : 'Unable to access camera. Please grant camera permission or upload the QR image.'
+      );
+    }
+  };
+
+  const scanVideoLoop = () => {
+    if (!videoRef.current || videoRef.current.readyState < 2) {
+      animFrameRef.current = requestAnimationFrame(scanVideoLoop);
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    if (ctx && canvas.width > 0 && canvas.height > 0) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+      if (code && code.data && code.data.trim()) {
+        handleCodeAccepted(code.data.trim());
+        return;
+      }
+    }
+
+    animFrameRef.current = requestAnimationFrame(scanVideoLoop);
+  };
+
+  // 2. UPLOAD QR IMAGE (KoboToolbox style from gallery/screenshot)
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setScannerError(null);
+    setIsAnalyzingImage(true);
+
+    try {
+      const decoded = await scanImageFile(file);
+      if (decoded) {
+        handleCodeAccepted(decoded);
+      } else {
+        setScannerError(
+          lang === 'hi'
+            ? 'इस छवि में कोई QR कोड नहीं मिला। कृपया स्पष्ट छवि अपलोड करें या मैन्युअल रूप से कोड दर्ज करें।'
+            : 'No QR code detected in this image. Please upload a clear photo/screenshot or enter the code manually.'
+        );
+      }
+    } catch {
+      setScannerError(
+        lang === 'hi'
+          ? 'छवि पढ़ने में असमर्थ। कृपया पुनः प्रयास करें।'
+          : 'Failed to process image file. Please try another image.'
+      );
+    } finally {
+      setIsAnalyzingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const scanImageFile = (file: File): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('FileReader error'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Image decode error'));
+        img.onload = async () => {
+          try {
+            // 1. Try native BarcodeDetector if available
+            if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+              try {
+                const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+                const barcodes = await detector.detect(img);
+                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                  return resolve(barcodes[0].rawValue);
+                }
+              } catch {
+                // Fallback to jsQR canvas pipeline
+              }
+            }
+
+            // 2. Canvas + jsQR
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              const ratio = Math.min(maxDim / width, maxDim / height);
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return resolve(null);
+
+            ctx.drawImage(img, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+
+            // Normal attempt
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'attemptBoth',
+            });
+            if (code && code.data && code.data.trim()) {
+              return resolve(code.data.trim());
+            }
+
+            // High contrast fallback (helps with photos of laptop/phone screens)
+            const d = imageData.data;
+            for (let i = 0; i < d.length; i += 4) {
+              const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+              const thresh = gray > 128 ? 255 : 0;
+              d[i] = thresh;
+              d[i + 1] = thresh;
+              d[i + 2] = thresh;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            const contrastCode = jsQR(d, width, height, { inversionAttempts: 'attemptBoth' });
+            if (contrastCode && contrastCode.data && contrastCode.data.trim()) {
+              return resolve(contrastCode.data.trim());
+            }
+
+            resolve(null);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   if (!isOpen) return null;
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -51,6 +271,11 @@ export function FieldPhoneVerificationModal({
     const cleanPhone = phone.trim().replace(/[\s\-()]+/g, '');
     if (!cleanPhone) {
       setError(lang === 'hi' ? 'कृपया मोबाइल नंबर दर्ज करें' : 'Please enter your mobile number.');
+      return;
+    }
+
+    if (!enrolmentToken.trim()) {
+      setError(lang === 'hi' ? 'राज्य नामांकन बारकोड/QR कोड आवश्यक है' : 'State enrolment QR barcode or token is required.');
       return;
     }
 
@@ -68,7 +293,12 @@ export function FieldPhoneVerificationModal({
         setOtpSent(true);
         setOtp('');
         setCooldown(60);
-        setInfoMessage(data.message || (lang === 'hi' ? 'सत्यापन कोड आपके पंजीकृत मोबाइल नंबर पर भेजा गया है।' : 'Verification code sent to your registered mobile number.'));
+        setInfoMessage(
+          data.message ||
+            (lang === 'hi'
+              ? 'सत्यापन कोड आपके पंजीकृत मोबाइल नंबर पर भेजा गया है।'
+              : 'Verification code sent to your registered mobile number.')
+        );
       } else {
         if (data.cooldownActive) {
           setCooldown(60);
@@ -148,7 +378,7 @@ export function FieldPhoneVerificationModal({
           onClose();
         }
       } else {
-        setError(data.message || (lang === 'hi' ? 'अमान्य कोड' : 'Invalid verification code.'));
+        setError(data.message || (lang === 'hi' ? 'अमान्य कोड या बारकोड' : 'Invalid verification code or state barcode.'));
       }
     } catch {
       setError(lang === 'hi' ? 'सत्यापन विफल' : 'Verification failed. Please try again.');
@@ -159,17 +389,20 @@ export function FieldPhoneVerificationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-xs p-4 animate-in fade-in duration-200 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="phone-verify-title"
     >
-      <div className="bg-surface rounded-[20px] max-w-md w-full p-6 shadow-comic border-2 border-border/40 relative">
+      <div className="bg-surface rounded-[20px] max-w-md w-full p-6 shadow-comic border-2 border-border/40 relative my-8">
         {/* Close Button */}
         <button
           type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-ink-muted hover:text-ink hover:bg-canvas rounded-full transition-colors"
+          onClick={() => {
+            stopCamera();
+            onClose();
+          }}
+          className="absolute top-4 right-4 p-2 text-ink-muted hover:text-ink hover:bg-canvas rounded-full transition-colors cursor-pointer"
           aria-label={lang === 'hi' ? 'बंद करें' : 'Close modal'}
         >
           <Icon name="x" className="w-5 h-5" />
@@ -177,13 +410,13 @@ export function FieldPhoneVerificationModal({
 
         {/* Header Icon + Title */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-peach flex items-center justify-center text-primary shadow-xs border border-border/30">
+          <div className="w-12 h-12 rounded-full bg-peach flex items-center justify-center text-primary shadow-xs border border-border/30 shrink-0">
             <Icon name="Phone" className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 id="phone-verify-title" className="text-lg font-black text-ink tracking-tight font-comic">
-                {lang === 'hi' ? 'फील्ड कार्यकर्ता सत्यापन' : 'Field Worker Access'}
+                {lang === 'hi' ? 'फ़ील्ड कार्यकर्ता सत्यापन' : 'Field Worker Access'}
               </h2>
               <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shrink-0">
                 Demo environment
@@ -220,7 +453,7 @@ export function FieldPhoneVerificationModal({
         )}
 
         {!otpSent ? (
-          /* Step 1: Name and Phone Number Form */
+          /* Step 1: Name, QR Code, and Phone Number Form */
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -250,25 +483,174 @@ export function FieldPhoneVerificationModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-ink mb-1">
-                {lang === 'hi' ? 'राज्य नामांकन बारकोड / टोकन' : 'State Enrolment Barcode / Token'} *
+            {/* ------------------------------------------------------------- */}
+            {/* STATE ENROLMENT QR CODE / BARCODE SECTION (KOBOTOOLBOX STYLE)  */}
+            {/* ------------------------------------------------------------- */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-ink">
+                {lang === 'hi' ? 'राज्य नामांकन QR कोड / बारकोड' : 'State Enrolment Barcode / QR Code'} *
               </label>
+
+              {/* Hidden file input for uploading QR code image */}
               <input
-                type="text"
-                required
-                value={enrolmentToken}
-                onChange={(e) => setEnrolmentToken(e.target.value.toUpperCase())}
-                placeholder="e.g. CSC2-MH-8A4F102B..."
-                className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum tracking-wider uppercase"
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                aria-label="Upload QR Code Image"
               />
-              <p className="text-[11px] text-ink-muted mt-1">
+
+              {/* 1. STATE: QR CODE ACCEPTED */}
+              {enrolmentToken ? (
+                <div className="bg-mint/40 border-2 border-mint rounded-[12px] p-3.5 space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-mint flex items-center justify-center text-success-ink shrink-0">
+                        <Icon name="check" className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-success-ink">
+                        {lang === 'hi' ? 'QR कोड स्वीकृत' : 'QR Code Accepted'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEnrolmentToken('');
+                        setScannerError(null);
+                      }}
+                      className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white px-2.5 py-1 rounded-md border border-slate-300 shadow-2xs hover:bg-slate-50 cursor-pointer"
+                    >
+                      {lang === 'hi' ? 'बदलें' : 'Change Code'}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/90 px-3 py-2 rounded-lg border border-mint">
+                    <span className="font-mono text-xs font-bold text-ink tracking-wider truncate">
+                      {enrolmentToken}
+                    </span>
+                    {tokenState && (
+                      <span className="text-[10px] font-mono font-bold text-plum bg-lavender/60 px-2 py-0.5 rounded-full border border-plum/20 shrink-0 ml-2">
+                        State: {tokenState}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* 2. STATE: NO QR CODE YET - KOBOTOOLBOX STYLE UPLOAD & CAMERA SCAN */
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* UPLOAD QR IMAGE BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isAnalyzingImage}
+                      className="min-h-[50px] p-2.5 bg-lavender hover:bg-lavender/80 border-2 border-plum/30 rounded-[12px] flex flex-col items-center justify-center text-center transition-all active:scale-[0.98] cursor-pointer text-plum shadow-2xs"
+                    >
+                      <div className="flex items-center gap-1.5 font-black text-xs">
+                        <Icon name="Upload" className="w-4 h-4 text-plum" />
+                        <span>{isAnalyzingImage ? (lang === 'hi' ? 'स्कैनिंग...' : 'Reading...') : (lang === 'hi' ? 'QR छवि अपलोड करें' : 'Upload QR Image')}</span>
+                      </div>
+                      <span className="text-[10px] font-medium text-slate-600 mt-0.5">
+                        {lang === 'hi' ? 'गैलरी या स्क्रीनशॉट से' : 'From gallery / screenshot'}
+                      </span>
+                    </button>
+
+                    {/* SCAN WITH CAMERA BUTTON */}
+                    <button
+                      type="button"
+                      onClick={scanMode === 'camera' ? stopCamera : startCamera}
+                      className="min-h-[50px] p-2.5 bg-canvas hover:bg-slate-100 border-2 border-border/50 rounded-[12px] flex flex-col items-center justify-center text-center transition-all active:scale-[0.98] cursor-pointer text-ink shadow-2xs"
+                    >
+                      <div className="flex items-center gap-1.5 font-black text-xs">
+                        <Icon name="Camera" className="w-4 h-4 text-slate-700" />
+                        <span>{scanMode === 'camera' ? (lang === 'hi' ? 'कैमरा बंद करें' : 'Close Camera') : (lang === 'hi' ? 'कैमरे से स्कैन करें' : 'Scan with Camera')}</span>
+                      </div>
+                      <span className="text-[10px] font-medium text-slate-500 mt-0.5">
+                        {lang === 'hi' ? 'फ़ोन कैमरा का उपयोग करें' : 'Point camera at code'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* LIVE CAMERA VIEWFINDER */}
+                  {scanMode === 'camera' && (
+                    <div className="relative rounded-[14px] overflow-hidden border-2 border-plum bg-black shadow-comic animate-in fade-in">
+                      <video
+                        ref={videoRef}
+                        playsInline
+                        autoPlay
+                        muted
+                        className="w-full h-56 object-cover"
+                      />
+                      {/* Targeting overlay reticle */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4">
+                        <div className="w-40 h-40 border-2 border-dashed border-white/90 rounded-xl relative shadow-lg">
+                          <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400" />
+                          <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400" />
+                          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400" />
+                          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400" />
+                          <div className="w-full h-0.5 bg-emerald-400/80 absolute top-1/2 -translate-y-1/2 animate-pulse" />
+                        </div>
+                        <span className="text-[11px] font-bold text-white bg-black/60 px-2.5 py-1 rounded-full mt-2">
+                          {lang === 'hi' ? 'QR कोड को बॉक्स में रखें' : 'Align QR code within box'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="absolute top-2 right-2 px-2.5 py-1 bg-black/70 hover:bg-black text-white text-[11px] font-bold rounded-lg border border-white/20 cursor-pointer"
+                      >
+                        {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* SCANNER ERROR MESSAGE */}
+                  {scannerError && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-800 text-[11px] rounded-lg font-medium flex items-start gap-1.5 animate-in fade-in">
+                      <Icon name="AlertCircle" className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                      <span>{scannerError}</span>
+                    </div>
+                  )}
+
+                  {/* MANUAL INPUT EXPANDER FALLBACK */}
+                  <div className="pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowManualInput(!showManualInput)}
+                      className="text-[11px] font-bold text-plum hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Icon name="QrCode" className="w-3.5 h-3.5" />
+                      <span>
+                        {showManualInput
+                          ? (lang === 'hi' ? 'मैन्युअल कोड इनपुट छुपाएं' : 'Hide manual code entry')
+                          : (lang === 'hi' ? 'या कोड मैन्युअल रूप से दर्ज करें' : 'Or type token code manually')}
+                      </span>
+                      <Icon name={showManualInput ? 'chevron-up' : 'chevron-down'} className="w-3 h-3 text-plum" />
+                    </button>
+
+                    {showManualInput && (
+                      <div className="mt-2 space-y-1 animate-in fade-in">
+                        <input
+                          type="text"
+                          value={enrolmentToken}
+                          onChange={(e) => setEnrolmentToken(e.target.value.toUpperCase())}
+                          placeholder="e.g. CSC2-MH-8A4F102B..."
+                          className="w-full text-xs font-mono font-bold px-3 py-2 rounded-[10px] border-2 border-border/50 bg-canvas text-ink focus:outline-hidden focus:border-plum tracking-wider uppercase"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] text-ink-muted">
                 {lang === 'hi'
-                  ? 'अपनी राज्य टीम से प्राप्त बारकोड टोकन दर्ज करें। दोनों कारक अनिवार्य हैं।'
-                  : 'Issued by your State Team in welcome email. Both this barcode/token and SMS OTP are required.'}
+                  ? 'अपनी राज्य टीम से प्राप्त ईमेल में संलग्न QR कोड अपलोड करें। दोनों कारक अनिवार्य हैं।'
+                  : 'Upload the QR code image received from your State Team. Both QR code and SMS OTP are required.'}
               </p>
             </div>
 
+            {/* Mobile Number Field */}
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
                 {lang === 'hi' ? 'मोबाइल नंबर (+91)' : 'Mobile Number (+91)'} *
@@ -287,7 +669,7 @@ export function FieldPhoneVerificationModal({
               </div>
               <p className="text-[11px] text-ink-muted mt-1">
                 {lang === 'hi'
-                  ? 'यह नंबर आपकी राज्य टीम द्वारा अनुमोदित होना चाहिए।'
+                  ? 'यह नंबर आपकी राज्य टीम द्वारा अनुमोदित रोस्टर में होना चाहिए।'
                   : 'Must be registered on your State Team approved caseworker roster.'}
               </p>
             </div>
@@ -312,7 +694,7 @@ export function FieldPhoneVerificationModal({
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="bg-lavender/30 border border-border/40 p-2.5 rounded-[10px] flex items-center justify-between text-xs">
               <span className="font-semibold text-ink-muted">{lang === 'hi' ? 'नामांकन बारकोड:' : 'Enrolment Barcode:'}</span>
-              <span className="font-mono font-bold text-plum">{enrolmentToken}</span>
+              <span className="font-mono font-bold text-plum truncate max-w-[200px]">{enrolmentToken}</span>
             </div>
 
             <div>

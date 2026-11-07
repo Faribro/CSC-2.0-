@@ -38,10 +38,19 @@ public class ClientQueryService {
 
     @Transactional(readOnly = true)
     public DTOs.ClientDetailResponse getClientDetail(UUID clientId, UserPrincipal user) {
+        if ("LEADERSHIP".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Leadership role has aggregate-only access and cannot view individual client details.");
+        }
         Client client;
         if ("FIELD_USER".equalsIgnoreCase(user.getRole())) {
-            client = clientRepository.findByIdAndFieldUserId(clientId, user.getId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope"));
+            client = clientRepository.findById(clientId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+            boolean isCreator = client.getFieldUserId() != null && client.getFieldUserId().equals(user.getId());
+            boolean inCenter = user.getAuthorizedCenters() != null &&
+                    (user.getAuthorizedCenters().contains("ALL") || user.getAuthorizedCenters().contains(client.getCenterId()));
+            if (!isCreator && !inCenter) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found or outside authorized center scope");
+            }
         } else {
             List<String> centers = user.getAuthorizedCenters();
             if (centers == null || centers.isEmpty()) {

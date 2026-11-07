@@ -34,9 +34,38 @@ interface ClientSummary {
   district?: string;
   state?: string;
   status: string;
-  syncStatus?: 'SYNCED' | 'DRAFT_SENT' | 'NEEDS_ATTENTION';
+  syncStatus?: 'SYNCED' | 'DRAFT_SENT' | 'NEEDS_ATTENTION' | 'SAVED_LOCALLY';
   registrationDate?: string;
   openTaskCount: number;
+}
+
+function getOfflinePendingClients(): ClientSummary[] {
+  if (typeof window === 'undefined') return [];
+  const list: ClientSummary[] = [];
+  try {
+    const queueStr = localStorage.getItem('csc2_pending_offline_submissions');
+    if (queueStr) {
+      const queue = JSON.parse(queueStr);
+      for (const item of queue) {
+        if (item.payload) {
+          list.push({
+            id: item.id || `offline-${Date.now()}`,
+            clientRef: item.payload.clientRef || 'LOCAL-DRAFT',
+            fullName: item.payload.fullName || 'Unsynced Local Beneficiary',
+            age: item.payload.age || 30,
+            gender: item.payload.gender || 'Unknown',
+            centerId: item.payload.centerId || 'DEVICE_STORAGE',
+            district: item.payload.district || 'Local Device',
+            status: 'SAVED_LOCALLY',
+            syncStatus: 'SAVED_LOCALLY',
+            registrationDate: item.timestamp ? item.timestamp.split('T')[0] : 'Today',
+            openTaskCount: 0,
+          });
+        }
+      }
+    }
+  } catch {}
+  return list;
 }
 
 function SubmittedRecordsDirectoryContent() {
@@ -175,65 +204,25 @@ function SubmittedRecordsDirectoryContent() {
       if (res.ok) {
         const data = await res.json();
         const rawClients: ClientSummary[] = data.clients || [];
-        const enriched = rawClients.map((c, idx) => {
-          let syncStatus: 'SYNCED' | 'DRAFT_SENT' | 'NEEDS_ATTENTION' = 'SYNCED';
+        const enriched = rawClients.map((c) => {
+          let syncStatus: 'SYNCED' | 'DRAFT_SENT' | 'NEEDS_ATTENTION' | 'SAVED_LOCALLY' = 'SYNCED';
           if (c.openTaskCount > 2) {
             syncStatus = 'NEEDS_ATTENTION';
-          } else if (idx % 4 === 1) {
-            syncStatus = 'DRAFT_SENT';
           }
           return { ...c, syncStatus };
         });
-        setClients(enriched);
-        setTotalElements(data.totalElements || enriched.length);
+        const offlineClients = getOfflinePendingClients();
+        setClients([...offlineClients, ...enriched]);
+        setTotalElements((data.totalElements || enriched.length) + offlineClients.length);
       } else {
-        // Fallback demo synthetic linelist for offline / unseeded local profile
-        const demoClients: ClientSummary[] = [
-          {
-            id: 'client-001',
-            clientRef: 'CRF-DL-2026-0042',
-            fullName: 'Aarav Sharma',
-            age: 34,
-            gender: 'MALE',
-            centerId: 'CENTER_DELHI_01',
-            district: 'Central Delhi',
-            status: 'ACTIVE',
-            registrationDate: '2026-10-15',
-            openTaskCount: 1,
-            syncStatus: 'SYNCED',
-          },
-          {
-            id: 'client-002',
-            clientRef: 'CRF-DL-2026-0089',
-            fullName: 'Priya Verma',
-            age: 28,
-            gender: 'FEMALE',
-            centerId: 'CENTER_DELHI_01',
-            district: 'Central Delhi',
-            status: 'ACTIVE',
-            registrationDate: '2026-10-20',
-            openTaskCount: 2,
-            syncStatus: 'DRAFT_SENT',
-          },
-          {
-            id: 'client-003',
-            clientRef: 'CRF-DL-2026-0112',
-            fullName: 'Vikram Singh',
-            age: 41,
-            gender: 'MALE',
-            centerId: 'CENTER_DELHI_01',
-            district: 'Central Delhi',
-            status: 'ACTIVE',
-            registrationDate: '2026-10-25',
-            openTaskCount: 3,
-            syncStatus: 'NEEDS_ATTENTION',
-          },
-        ];
-        setClients(demoClients);
-        setTotalElements(demoClients.length);
+        const offlineClients = getOfflinePendingClients();
+        setClients(offlineClients);
+        setTotalElements(offlineClients.length);
       }
     } catch {
-      setClients([]);
+      const offlineClients = getOfflinePendingClients();
+      setClients(offlineClients);
+      setTotalElements(offlineClients.length);
     } finally {
       setClientsLoading(false);
     }
@@ -702,7 +691,7 @@ function SubmittedRecordsDirectoryContent() {
                     filteredClients.map((c) => (
                       <tr key={c.id} className="hover:bg-canvas/50 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-plum">
-                          <Link href={`/clients/${c.id}?mode=view`} className="hover:underline">
+                          <Link href={`/clients/${c.id}?tab=registration&mode=view`} className="hover:underline">
                             {c.clientRef}
                           </Link>
                         </td>
@@ -721,7 +710,12 @@ function SubmittedRecordsDirectoryContent() {
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
-                          {c.syncStatus === 'SYNCED' ? (
+                          {c.syncStatus === 'SAVED_LOCALLY' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-peach text-primary border border-primary/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                              <span>{lang === 'hi' ? 'डिवाइस पर सहेजा गया' : 'Saved on this device'}</span>
+                            </span>
+                          ) : c.syncStatus === 'SYNCED' ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-mint/50 text-success-ink border border-mint">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                               <span>{lang === 'hi' ? 'सिंक पुष्ट' : 'Synced'}</span>
@@ -745,7 +739,7 @@ function SubmittedRecordsDirectoryContent() {
                           <div className="inline-flex items-center gap-1.5">
                             {/* View Button */}
                             <Link
-                              href={`/clients/${c.id}?mode=view`}
+                              href={`/clients/${c.id}?tab=registration&mode=view`}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-canvas hover:bg-border/30 text-ink font-bold rounded-[8px] border border-border/40 transition-colors text-[11px]"
                               title={lang === 'hi' ? 'विवरण देखें' : 'View record'}
                             >
@@ -755,7 +749,7 @@ function SubmittedRecordsDirectoryContent() {
 
                             {/* Edit Button */}
                             <Link
-                              href={`/clients/${c.id}?mode=edit`}
+                              href={`/clients/${c.id}?tab=registration&mode=edit`}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-plum hover:bg-[#682e77] text-white font-bold rounded-[8px] transition-colors text-[11px] shadow-2xs"
                               title={lang === 'hi' ? 'संशोधन संपादित करें' : 'Edit with revision reason'}
                             >

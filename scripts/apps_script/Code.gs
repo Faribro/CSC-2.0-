@@ -200,6 +200,16 @@ function doPost(e) {
       if (request.htmlBody) {
         emailPayload.htmlBody = request.htmlBody;
       }
+      if (request.qrDataUrl && request.qrDataUrl.indexOf('base64,') !== -1) {
+        try {
+          var b64 = request.qrDataUrl.split('base64,')[1];
+          var qrBlob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/png', 'csc2-enrolment-qr.png');
+          emailPayload.attachments = [qrBlob];
+          emailPayload.inlineImages = { qrCodeImage: qrBlob };
+        } catch (qrErr) {
+          Logger.log('QR attachment parse error: ' + qrErr);
+        }
+      }
       MailApp.sendEmail(emailPayload);
       var ss = getSpreadsheet();
       recordAuditLog(ss, Utilities.getUuid(), 'EMAIL_DISPATCH', 'SYSTEM', 'SUCCESS: Dispatched to recipient', 0);
@@ -232,7 +242,7 @@ function doPost(e) {
       }
     }
 
-    if (eventType === 'CLIENT_REGISTERED' || eventType === 'CLIENT_UPDATED' || eventType === 'CLIENT_UPSERT') {
+    if (eventType === 'CLIENT_REGISTERED' || eventType === 'CLIENT_UPDATED' || eventType === 'CLIENT_UPSERT' || eventType === 'CLIENT_PROFILE_UPDATED') {
       processClientUpsert(ss, eventId, payload);
     } else if (eventType === 'ENCOUNTER_RECORDED') {
       processEncounterRecord(ss, eventId, payload);
