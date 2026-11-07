@@ -2,15 +2,29 @@
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require(path.resolve(__dirname, '../frontend/node_modules/playwright'));
+const QRCode = require(path.resolve(__dirname, '../frontend/node_modules/qrcode'));
 
 async function main() {
   console.log('--- Starting QR Code Upload & Verification Playwright Test ---');
+
+  // Pre-generate test QR code image
+  const qrImagePath = path.resolve(__dirname, '../frontend/test_qr.png');
+  await QRCode.toFile(qrImagePath, 'CSC2-MH-8A4F102B4C5D6E7F');
+  console.log('Generated test QR image at:', qrImagePath);
+
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true
   });
+
+  // Ensure clean session before app loads
+  await context.addInitScript(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
   const page = await context.newPage();
   page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
   page.on('pageerror', err => console.error('BROWSER ERROR:', err));
@@ -18,16 +32,19 @@ async function main() {
   const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
   console.log(`Navigating to ${BASE_URL}/work...`);
   await page.goto(`${BASE_URL}/work`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.waitForTimeout(2000); // Allow React hydration and ClientOnly mount
 
-  // 1. Open Field Worker Access Modal by clicking Records & Follow-ups without session
-  console.log('Clicking Records & Follow-ups tab in bottom navigation...');
-  await page.evaluate(() => {
-    localStorage.removeItem('csc2_field_user');
-  });
-  const recordsTab = page.locator('nav[aria-label="Mobile Navigation"] a:has-text("Records & Follow-ups")');
-  await recordsTab.waitFor({ state: 'visible', timeout: 5000 });
-  await recordsTab.click();
-  await page.waitForTimeout(600);
+  // 1. Open Field Worker Access Modal by clicking Start New Registration when unauthenticated
+  console.log('Clicking Start New Registration button on /work...');
+  const startRegBtn = page.locator('a[aria-label="Start New Registration"]');
+  await startRegBtn.waitFor({ state: 'visible', timeout: 8000 });
+  await startRegBtn.click();
+  await page.waitForTimeout(1000);
+  console.log('Current URL after click:', page.url());
+  const dialogCount = await page.evaluate(() => document.querySelectorAll('div[role="dialog"]').length);
+  console.log('Dialog count in DOM:', dialogCount);
+  const bodyHtml = await page.evaluate(() => document.body.innerHTML.slice(0, 500));
+  console.log('Body HTML snippet:', bodyHtml);
 
   // 2. Verify Initial Modal State (Buttons for Upload QR Image & Scan with Camera)
   const modal = page.locator('div[role="dialog"]');
@@ -52,14 +69,18 @@ async function main() {
   console.log(`Saved: ${screenshot1}`);
 
   // 3. Upload QR Code Image
-  const qrImagePath = path.resolve('frontend/test_qr.png');
   console.log(`Uploading test QR image from: ${qrImagePath}...`);
   const fileInput = modal.locator('input[type="file"]');
   await fileInput.setInputFiles(qrImagePath);
 
   // 4. Verify Accepted State
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1500);
   const acceptedBanner = modal.locator('text=QR Code Accepted');
+  const isAccepted = await acceptedBanner.isVisible();
+  if (!isAccepted) {
+    const modalText = await modal.innerText();
+    console.log('MODAL INNER TEXT ON UPLOAD ATTEMPT:\n', modalText);
+  }
   await acceptedBanner.waitFor({ state: 'visible', timeout: 5000 });
 
   const tokenText = await modal.locator('text=CSC2-MH-8A4F102B4C5D6E7F').textContent();
@@ -92,6 +113,9 @@ async function main() {
   await modal.screenshot({ path: screenshot3 });
   console.log(`Saved: ${screenshot3}`);
 
+  if (fs.existsSync(qrImagePath)) {
+    fs.unlinkSync(qrImagePath);
+  }
   await browser.close();
   console.log('--- ALL QR CODE UPLOAD UI CHECKS PASSED SUCCESSFULLY ---');
 }
